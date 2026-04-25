@@ -66,7 +66,7 @@
     "publish": {
       "provider": "github",
       "owner": "jawadahmadjd",
-      "repo": "VidFlow"
+      "repo": "animal-channel-studio"
     }
   }
 }
