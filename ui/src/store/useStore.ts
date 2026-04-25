@@ -76,8 +76,12 @@ export interface AdvancedOptions {
 }
 
 interface AppState {
-  activeView: 'pipeline' | 'logs'
+  activeView: 'pipeline' | 'logs' | 'settings'
   isAuthorized: boolean
+  updateAvailable: boolean
+  updateVersion: string
+  setUpdateReady: (version: string) => void
+  dismissUpdate: () => void
   ideas: Idea[]
   selectedIdeaIndex: number
   settings: Settings
@@ -100,7 +104,7 @@ interface AppState {
   selectedVoiceId: string
   generatedAudioFilename: string
 
-  setActiveView: (view: 'pipeline' | 'logs') => void
+  setActiveView: (view: 'pipeline' | 'logs' | 'settings') => void
   setIsAuthorized: (v: boolean) => void
   setIdeas: (ideas: Idea[]) => void
   setSelectedIdeaIndex: (idx: number) => void
@@ -148,6 +152,10 @@ function buildDefaultStages(avgs: Partial<Record<StageId, number>> = {}): Pipeli
 export const useStore = create<AppState>((set, get) => ({
   activeView: 'pipeline',
   isAuthorized: false,
+  updateAvailable: false,
+  updateVersion: '',
+  setUpdateReady: (version) => set({ updateAvailable: true, updateVersion: version }),
+  dismissUpdate: () => set({ updateAvailable: false }),
   ideas: [],
   selectedIdeaIndex: 0,
   settings: {

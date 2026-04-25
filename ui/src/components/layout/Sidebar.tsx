@@ -1,5 +1,5 @@
-import { useEffect } from 'react'
-import { LayoutList, ScrollText, PlusCircle, ShieldCheck, ShieldAlert } from 'lucide-react'
+import { useEffect, useState } from 'react'
+import { LayoutList, ScrollText, Settings, PlusCircle, ShieldCheck, ShieldAlert } from 'lucide-react'
 import { useStore } from '../../store/useStore'
 import { api } from '../../api/client'
 
@@ -9,6 +9,11 @@ interface Props {
 
 export default function Sidebar({ onNewVideo }: Props) {
   const { activeView, setActiveView, isAuthorized, setIsAuthorized } = useStore()
+  const [appVersion, setAppVersion] = useState<string>('')
+
+  useEffect(() => {
+    window.electron?.getVersion?.().then(setAppVersion).catch(() => {})
+  }, [])
 
   useEffect(() => {
     const poll = async () => {
@@ -61,7 +66,9 @@ export default function Sidebar({ onNewVideo }: Props) {
             <span className="text-[10px] font-bold text-emerald-600">LIVE</span>
           </div>
         </div>
-        <p className="text-sm font-bold text-slate-700">V1.2.4</p>
+        <p className="text-sm font-bold text-slate-700">
+          {appVersion ? `v${appVersion}` : 'v—'}
+        </p>
       </div>
 
       {/* Nav items */}
@@ -77,6 +84,12 @@ export default function Sidebar({ onNewVideo }: Props) {
           label="Status Logs"
           active={activeView === 'logs'}
           onClick={() => setActiveView('logs')}
+        />
+        <NavItem
+          icon={<Settings size={18} />}
+          label="Settings"
+          active={activeView === 'settings'}
+          onClick={() => setActiveView('settings')}
         />
       </nav>
 

@@ -43,6 +43,13 @@ export const api = {
 
   getLogFile: (filename: string) => req<{ lines: string[] }>('GET', `/logs/${filename}`),
 
+  // App settings (C3)
+  getAppSettings: () => req<Record<string, unknown>>('GET', '/settings/app'),
+  saveAppSettings: (data: Record<string, unknown>) => req('POST', '/settings/app', data),
+  validateDeepSeek: () => req<{ ok: boolean; error?: string }>('POST', '/validate/deepseek', {}),
+  validateElevenLabs: () => req<{ ok: boolean; error?: string }>('POST', '/validate/elevenlabs', {}),
+  getHealth: () => req<{ status: string; keys: { deepseek: boolean; elevenlabs: boolean } }>('GET', '/health'),
+
   // Content creation
   generateIdea: (prompt: string) => req<{ ideas: string }>('POST', '/generate/idea', { prompt }),
   generateScript: (idea: string) => req<{ script: string }>('POST', '/generate/script', { idea }),

@@ -3,32 +3,56 @@ import {
   BrowserWindow,
   ipcMain,
   shell,
+  dialog,
 } from 'electron'
+import { autoUpdater } from 'electron-updater'
+import log from 'electron-log'
 import { spawn, ChildProcess } from 'child_process'
 import { join, resolve } from 'path'
-import { existsSync } from 'fs'
+import { existsSync, mkdirSync } from 'fs'
+
+autoUpdater.logger = log
+;(autoUpdater.logger as typeof log).transports.file.level = 'info'
 
 const BRIDGE_PORT = 7477
 let bridgeProcess: ChildProcess | null = null
 let mainWindow: BrowserWindow | null = null
 
-function getRootDir(): string {
-  // In packaged app, resources are in process.resourcesPath
-  if (app.isPackaged) {
-    return resolve(process.resourcesPath, '..')
-  }
-  // In dev, go up two levels from electron/ folder
+// ── Path helpers ──────────────────────────────────────────────────────────────
+
+function getResourcesDir(): string {
+  // In packaged app, extraResources land in process.resourcesPath
+  if (app.isPackaged) return process.resourcesPath
+  // Dev: two levels up from dist-electron/ (which mirrors electron/)
   return resolve(__dirname, '..', '..')
 }
 
+function getDataDir(): string {
+  // User-writable data dir: state/, output/, logs/, downloads/ live here
+  if (app.isPackaged) {
+    return join(app.getPath('userData'), 'AnimalChannelStudio')
+  }
+  // Dev: project root
+  return resolve(__dirname, '..', '..')
+}
+
+function getBridgeScript(): string {
+  return join(getResourcesDir(), 'bridge', 'server.py')
+}
+
+// ── Bridge lifecycle ──────────────────────────────────────────────────────────
+
 function startBridge(): void {
-  const rootDir = getRootDir()
-  const bridgeScript = join(rootDir, 'bridge', 'server.py')
+  const bridgeScript = getBridgeScript()
 
   if (!existsSync(bridgeScript)) {
     console.error('Bridge server not found:', bridgeScript)
     return
   }
+
+  const dataDir = getDataDir()
+  // Ensure data dir exists before bridge tries to write to it
+  try { mkdirSync(dataDir, { recursive: true }) } catch { /* ignore */ }
 
   const pythonExe = process.platform === 'win32' ? 'python' : 'python3'
 
@@ -36,8 +60,12 @@ function startBridge(): void {
     pythonExe,
     [bridgeScript],
     {
-      cwd: rootDir,
-      env: { ...process.env, PYTHONUTF8: '1' },
+      cwd: getResourcesDir(),
+      env: {
+        ...process.env,
+        PYTHONUTF8: '1',
+        ANIMAL_STUDIO_DATA_DIR: dataDir,
+      },
       stdio: ['ignore', 'pipe', 'pipe'],
     }
   )
@@ -60,10 +88,10 @@ function stopBridge(): void {
   }
 }
 
-async function waitForBridge(retries = 20, delayMs = 300): Promise<void> {
+async function waitForBridge(retries = 20, delayMs = 500): Promise<void> {
   for (let i = 0; i < retries; i++) {
     try {
-      const res = await fetch(`http://127.0.0.1:${BRIDGE_PORT}/auth/status`)
+      const res = await fetch(`http://127.0.0.1:${BRIDGE_PORT}/health`)
       if (res.ok) return
     } catch {
       // not ready yet
@@ -73,12 +101,14 @@ async function waitForBridge(retries = 20, delayMs = 300): Promise<void> {
   console.warn('Bridge did not become ready in time')
 }
 
+// ── Window ────────────────────────────────────────────────────────────────────
+
 async function createWindow(): Promise<void> {
   mainWindow = new BrowserWindow({
     width: 1280,
     height: 950,
     minWidth: 1100,
-    minHeight: 800,
+    minHeight: 700,
     frame: false,
     titleBarStyle: 'hidden',
     backgroundColor: '#0f172a',
@@ -92,15 +122,36 @@ async function createWindow(): Promise<void> {
   if (app.isPackaged) {
     mainWindow.loadFile(join(__dirname, '../dist/index.html'))
   } else {
-    // Wait for Vite dev server
     mainWindow.loadURL('http://localhost:5173')
   }
+}
+
+function setupAutoUpdater(): void {
+  // Only runs in packaged builds — update checks don't work in dev
+  if (!app.isPackaged) return
+
+  autoUpdater.on('update-available', (info) => {
+    mainWindow?.webContents.send('update-available', info.version)
+    log.info('Update available:', info.version)
+  })
+
+  autoUpdater.on('update-downloaded', (info) => {
+    mainWindow?.webContents.send('update-ready', info.version)
+    log.info('Update downloaded:', info.version)
+  })
+
+  autoUpdater.on('error', (err) => {
+    log.error('Auto-updater error:', err)
+  })
+
+  autoUpdater.checkForUpdatesAndNotify()
 }
 
 app.whenReady().then(async () => {
   startBridge()
   await waitForBridge()
   await createWindow()
+  setupAutoUpdater()
 
   app.on('activate', async () => {
     if (BrowserWindow.getAllWindows().length === 0) {
@@ -118,12 +169,27 @@ app.on('before-quit', stopBridge)
 
 // ── IPC handlers ──────────────────────────────────────────────────────────────
 
+// Version
 ipcMain.handle('app:version', () => app.getVersion())
+ipcMain.handle('app:getVersion', () => app.getVersion())
 
+// Folder picker for Settings screen
+ipcMain.handle('dialog:openFolder', async () => {
+  const result = await dialog.showOpenDialog(mainWindow!, {
+    properties: ['openDirectory'],
+    title: 'Select Output Folder',
+  })
+  return result.canceled ? null : result.filePaths[0]
+})
+
+ipcMain.on('install-update', () => {
+  autoUpdater.quitAndInstall()
+})
+
+// Window controls
 ipcMain.handle('app:open-path', (_event, folderPath: string) => {
   shell.openPath(folderPath)
 })
-
 ipcMain.on('window:minimize', () => mainWindow?.minimize())
 ipcMain.on('window:maximize', () => {
   if (mainWindow?.isMaximized()) {
