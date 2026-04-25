@@ -9,7 +9,7 @@ import { autoUpdater } from 'electron-updater'
 import log from 'electron-log'
 import { spawn, ChildProcess } from 'child_process'
 import { join, resolve } from 'path'
-import { existsSync, mkdirSync } from 'fs'
+import { existsSync, mkdirSync, writeFileSync } from 'fs'
 
 autoUpdater.logger = log
 ;(autoUpdater.logger as typeof log).transports.file.level = 'info'
@@ -45,6 +45,41 @@ function getPythonExe(): string {
     return join(process.resourcesPath, 'python-runtime', 'python.exe')
   }
   return process.platform === 'win32' ? 'python' : 'python3'
+}
+
+// ── First-run setup ───────────────────────────────────────────────────────────
+
+async function ensurePlaywrightBrowser(): Promise<void> {
+  const dataDir = join(app.getPath('userData'), 'AnimalChannelStudio')
+  mkdirSync(dataDir, { recursive: true })
+  const markerPath = join(dataDir, 'playwright-ready')
+  if (existsSync(markerPath)) return
+
+  const setupWin = new BrowserWindow({
+    width: 480,
+    height: 220,
+    frame: false,
+    resizable: false,
+    center: true,
+    backgroundColor: '#0f172a',
+    webPreferences: { contextIsolation: true },
+  })
+
+  setupWin.loadURL(
+    `data:text/html,<!DOCTYPE html><html><body style="margin:0;background:%230f172a;color:%23e2e8f0;font-family:system-ui,sans-serif;display:flex;flex-direction:column;align-items:center;justify-content:center;height:100vh;gap:14px;text-align:center"><img src="" style="display:none"><h2 style="margin:0;font-size:20px;font-weight:600">Animal Channel Studio</h2><p style="margin:0;font-size:14px;color:%2394a3b8">First-time setup — downloading browser engine…</p><p style="margin:0;font-size:12px;color:%2364748b">This only happens once. Please wait.</p></body></html>`
+  )
+
+  await new Promise<void>((resolve) => {
+    const proc = spawn(getPythonExe(), ['-m', 'playwright', 'install', 'chromium'], {
+      stdio: 'pipe',
+    })
+    proc.stdout?.on('data', (d: Buffer) => console.log('[setup]', d.toString().trim()))
+    proc.stderr?.on('data', (d: Buffer) => console.log('[setup]', d.toString().trim()))
+    proc.on('exit', () => resolve())
+  })
+
+  writeFileSync(markerPath, '')
+  setupWin.close()
 }
 
 // ── Bridge lifecycle ──────────────────────────────────────────────────────────
@@ -155,6 +190,7 @@ function setupAutoUpdater(): void {
 }
 
 app.whenReady().then(async () => {
+  await ensurePlaywrightBrowser()
   startBridge()
   await waitForBridge()
   await createWindow()
