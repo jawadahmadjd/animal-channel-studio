@@ -40,6 +40,13 @@ function getBridgeScript(): string {
   return join(getResourcesDir(), 'bridge', 'server.py')
 }
 
+function getPythonExe(): string {
+  if (app.isPackaged) {
+    return join(process.resourcesPath, 'python-runtime', 'python.exe')
+  }
+  return process.platform === 'win32' ? 'python' : 'python3'
+}
+
 // ── Bridge lifecycle ──────────────────────────────────────────────────────────
 
 function startBridge(): void {
@@ -54,7 +61,7 @@ function startBridge(): void {
   // Ensure data dir exists before bridge tries to write to it
   try { mkdirSync(dataDir, { recursive: true }) } catch { /* ignore */ }
 
-  const pythonExe = process.platform === 'win32' ? 'python' : 'python3'
+  const pythonExe = getPythonExe()
 
   bridgeProcess = spawn(
     pythonExe,

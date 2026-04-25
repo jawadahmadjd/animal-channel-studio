@@ -61,6 +61,10 @@
       {
         "from": "../bridge",
         "to": "bridge"
+      },
+      {
+        "from": "python-runtime",
+        "to": "python-runtime"
       }
     ],
     "publish": {
