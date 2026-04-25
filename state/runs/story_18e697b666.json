@@ -1,0 +1,249 @@
+{
+  "story_id": "story_18e697b666",
+  "idea_index": 3,
+  "idea_title": "Crocodile River Trap",
+  "run_status": "completed",
+  "created_at": "2026-04-25T05:23:30.620837+00:00",
+  "updated_at": "2026-04-25T09:14:39.512136+00:00",
+  "story_payload": {
+    "story_id": "story_18e697b666",
+    "story_title": "Crocodile River Trap",
+    "scenes": [
+      {
+        "scene_no": 1,
+        "scene_name": "Savanna Heat",
+        "vo": "The sun beats down on the dry savanna.",
+        "veo_prompt": "A lone zebra on the African savanna at midday, standing still and looking around, static wide shot, ultra realistic cinematic style, harsh sunlight, calm mood, duration 4-5 seconds, no text, no logo, no watermark, no subtitles, no humans."
+      },
+      {
+        "scene_no": 2,
+        "scene_name": "Thirsty Approach",
+        "vo": "A thirsty zebra heads toward the river.",
+        "veo_prompt": "A zebra walking slowly towards a muddy river on the African savanna at midday, slow tracking shot from behind, ultra realistic cinematic style, harsh sunlight, tense mood, duration 4-5 seconds, no text, no logo, no watermark, no subtitles, no humans."
+      },
+      {
+        "scene_no": 3,
+        "scene_name": "Calm River Surface",
+        "vo": "The river surface lies still and deceptive.",
+        "veo_prompt": "A calm river surface with ripples on the African savanna at midday, static wide shot, ultra realistic cinematic style, bright sunlight, calm mood, duration 4-5 seconds, no text, no logo, no watermark, no subtitles, no humans."
+      },
+      {
+        "scene_no": 4,
+        "scene_name": "Hidden Predator",
+        "vo": "Beneath the surface, a crocodile waits motionless.",
+        "veo_prompt": "A crocodile submerged just below the water surface with only eyes and snout visible in a muddy river on the African savanna at midday, static close-up shot, ultra realistic cinematic style, dappled light through water, ominous mood, duration 4-5 seconds, no text, no logo, no watermark, no subtitles, no humans."
+      },
+      {
+        "scene_no": 5,
+        "scene_name": "Zebra Drinks",
+        "vo": "The zebra lowers its head to drink.",
+        "veo_prompt": "A zebra lowering its head to drink at the riverbank on the African savanna at midday, medium shot from the side, slow pan, ultra realistic cinematic style, harsh sunlight, tense mood, duration 4-5 seconds, no text, no logo, no watermark, no subtitles, no humans."
+      },
+      {
+        "scene_no": 6,
+        "scene_name": "Crocodile Rises",
+        "vo": "The crocodile slowly rises beneath the water.",
+        "veo_prompt": "A crocodile slowly ascending from the murky water with bubbles in a muddy river on the African savanna at midday, underwater close-up shot, static, ultra realistic cinematic style, low light underwater, suspenseful mood, duration 4-5 seconds, no text, no logo, no watermark, no subtitles, no humans."
+      },
+      {
+        "scene_no": 7,
+        "scene_name": "Explosive Attack",
+        "vo": "In a flash, the water explodes with fury.",
+        "veo_prompt": "A crocodile lunging upward out of the water with massive splash at a riverbank on the African savanna at midday, medium shot from river level, static, ultra realistic cinematic style, bright sunlight, chaotic mood, duration 4-5 seconds, no text, no logo, no watermark, no subtitles, no humans."
+      },
+      {
+        "scene_no": 8,
+        "scene_name": "Struggle in Water",
+        "vo": "The zebra struggles as the crocodile pulls it under.",
+        "veo_prompt": "A crocodile gripping a zebra's leg in shallow water with splashing on the African savanna at midday, medium shot from riverbank, static, ultra realistic cinematic style, bright sunlight, violent mood, duration 4-5 seconds, no text, no logo, no watermark, no subtitles, no humans."
+      },
+      {
+        "scene_no": 9,
+        "scene_name": "River Calms",
+        "vo": "The river slowly returns to an eerie calm.",
+        "veo_prompt": "A calm river surface with ripples settling and no visible animals on the African savanna at midday, static wide shot, ultra realistic cinematic style, bright sunlight, eerie mood, duration 4-5 seconds, no text, no logo, no watermark, no subtitles, no humans."
+      }
+    ]
+  },
+  "scenes": [
+    {
+      "scene_no": 1,
+      "scene_name": "Savanna Heat",
+      "status": "completed",
+      "attempts": 1,
+      "downloads": [
+        "D:\\Youtube\\5- Animal Channel\\downloads\\scene_01\\clip_01_1777097168.mp4"
+      ],
+      "error": "",
+      "updated_at": "2026-04-25T08:58:57.560764+00:00"
+    },
+    {
+      "scene_no": 2,
+      "scene_name": "Thirsty Approach",
+      "status": "completed",
+      "attempts": 0,
+      "downloads": [
+        "D:\\Youtube\\5- Animal Channel\\downloads\\scene_02\\clip_01_1777097256.mp4"
+      ],
+      "error": "",
+      "updated_at": "2026-04-25T08:58:57.560885+00:00"
+    },
+    {
+      "scene_no": 3,
+      "scene_name": "Calm River Surface",
+      "status": "completed",
+      "attempts": 0,
+      "downloads": [
+        "D:\\Youtube\\5- Animal Channel\\downloads\\scene_03\\clip_03_1777097340.mp4"
+      ],
+      "error": "",
+      "updated_at": "2026-04-25T08:58:57.560990+00:00"
+    },
+    {
+      "scene_no": 4,
+      "scene_name": "Hidden Predator",
+      "status": "completed",
+      "attempts": 0,
+      "downloads": [
+        "D:\\Youtube\\5- Animal Channel\\downloads\\scene_04\\clip_03_1777097426.mp4"
+      ],
+      "error": "",
+      "updated_at": "2026-04-25T08:58:57.561084+00:00"
+    },
+    {
+      "scene_no": 5,
+      "scene_name": "Zebra Drinks",
+      "status": "completed",
+      "attempts": 0,
+      "downloads": [
+        "D:\\Youtube\\5- Animal Channel\\downloads\\scene_05\\clip_01_1777097521.mp4",
+        "D:\\Youtube\\5- Animal Channel\\downloads\\scene_05\\clip_03_1777097539.mp4"
+      ],
+      "error": "",
+      "updated_at": "2026-04-25T08:58:57.561177+00:00"
+    },
+    {
+      "scene_no": 6,
+      "scene_name": "Crocodile Rises",
+      "status": "completed",
+      "attempts": 0,
+      "downloads": [
+        "D:\\Youtube\\5- Animal Channel\\downloads\\scene_06\\clip_03_1777097637.mp4"
+      ],
+      "error": "",
+      "updated_at": "2026-04-25T08:58:57.561273+00:00"
+    },
+    {
+      "scene_no": 7,
+      "scene_name": "Explosive Attack",
+      "status": "completed",
+      "attempts": 1,
+      "downloads": [
+        "D:\\Youtube\\5- Animal Channel\\downloads\\scene_07\\clip_01_1777107722.mp4",
+        "D:\\Youtube\\5- Animal Channel\\downloads\\scene_07\\clip_03_1777107741.mp4"
+      ],
+      "error": "",
+      "updated_at": "2026-04-25T09:02:31.594861+00:00"
+    },
+    {
+      "scene_no": 8,
+      "scene_name": "Struggle in Water",
+      "status": "completed",
+      "attempts": 1,
+      "downloads": [
+        "D:\\Youtube\\5- Animal Channel\\downloads\\scene_08\\clip_01_1777107835.mp4",
+        "D:\\Youtube\\5- Animal Channel\\downloads\\scene_08\\clip_03_1777107854.mp4"
+      ],
+      "error": "",
+      "updated_at": "2026-04-25T09:04:24.352189+00:00"
+    },
+    {
+      "scene_no": 9,
+      "scene_name": "River Calms",
+      "status": "completed",
+      "attempts": 3,
+      "downloads": [
+        "D:\\Youtube\\5- Animal Channel\\downloads\\scene_09\\clip_01_1777108449.mp4",
+        "D:\\Youtube\\5- Animal Channel\\downloads\\scene_09\\clip_03_1777108468.mp4"
+      ],
+      "error": "",
+      "updated_at": "2026-04-25T09:14:38.321381+00:00"
+    }
+  ],
+  "flow_tracker": {
+    "downloaded_card_keys": [
+      "fe_id_010b827c-454b-4d9e-8467-dacbaf6ba403|/fx/tools/flow/project/469fbbfa-3209-4b98-8a49-be363e15cf03/edit/6dcf4e27-91ec-4bb1-8894-156e975dbc0e",
+      "fe_id_0b91098b-f49a-46fb-9539-e011d4d8a82e|/fx/tools/flow/project/469fbbfa-3209-4b98-8a49-be363e15cf03/edit/0b91098b-f49a-46fb-9539-e011d4d8a82e",
+      "fe_id_38fa5e48-1259-4c48-821b-4404e4dc245b",
+      "fe_id_490e5f1a-759e-43b0-bbd8-d859c108e56f",
+      "fe_id_659dab11-aa97-4670-bb53-81548629e0e0|/fx/tools/flow/project/469fbbfa-3209-4b98-8a49-be363e15cf03/edit/298da31c-f25c-45e5-a56d-3ee71b49d214",
+      "fe_id_6a3b48f3-092f-48eb-b747-bd6d1811a1da",
+      "fe_id_6a3b48f3-092f-48eb-b747-bd6d1811a1da|/fx/tools/flow/project/469fbbfa-3209-4b98-8a49-be363e15cf03/edit/1a0ebd33-19e3-4ccf-ac1a-f4dbd8cb8fa9",
+      "fe_id_830a265a-ee3d-4be8-b8be-61fde39cb859|/fx/tools/flow/project/469fbbfa-3209-4b98-8a49-be363e15cf03/edit/09b06eba-d59c-4da3-9369-0a97f7b6e3ea",
+      "fe_id_9997b363-6271-46bd-8190-d25dc6591318|/fx/tools/flow/project/469fbbfa-3209-4b98-8a49-be363e15cf03/edit/d06503db-7c94-43a0-96c8-24ba6052100a",
+      "fe_id_a52eb25e-ec6c-4845-97c5-c0e368e8f78f|/fx/tools/flow/project/469fbbfa-3209-4b98-8a49-be363e15cf03/edit/a4a0f417-0984-4429-a31e-953d9cb3661d",
+      "fe_id_a94f29ca-8c38-43a3-bd34-5380658e352b|/fx/tools/flow/project/469fbbfa-3209-4b98-8a49-be363e15cf03/edit/19e7160a-8d67-4e62-b9b3-9d2891585eff",
+      "fe_id_cfe2bc3e-d5d9-43f2-8068-4b790f3faed0|/fx/tools/flow/project/469fbbfa-3209-4b98-8a49-be363e15cf03/edit/cfe2bc3e-d5d9-43f2-8068-4b790f3faed0",
+      "fe_id_dd28941d-4ea4-47fb-86ac-5ac4a2528263"
+    ],
+    "failed_card_keys": [
+      "fe_id_38fa5e48-1259-4c48-821b-4404e4dc245b",
+      "fe_id_490e5f1a-759e-43b0-bbd8-d859c108e56f",
+      "fe_id_6a3b48f3-092f-48eb-b747-bd6d1811a1da",
+      "fe_id_dd28941d-4ea4-47fb-86ac-5ac4a2528263"
+    ]
+  },
+  "downloaded_cards": [
+    {
+      "scene_no": 7,
+      "card_key": "fe_id_830a265a-ee3d-4be8-b8be-61fde39cb859|/fx/tools/flow/project/469fbbfa-3209-4b98-8a49-be363e15cf03/edit/09b06eba-d59c-4da3-9369-0a97f7b6e3ea",
+      "files": [
+        "D:\\Youtube\\5- Animal Channel\\downloads\\scene_07\\clip_01_1777107722.mp4"
+      ],
+      "downloaded_at": "2026-04-25T09:02:13.317260+00:00"
+    },
+    {
+      "scene_no": 7,
+      "card_key": "fe_id_a94f29ca-8c38-43a3-bd34-5380658e352b|/fx/tools/flow/project/469fbbfa-3209-4b98-8a49-be363e15cf03/edit/19e7160a-8d67-4e62-b9b3-9d2891585eff",
+      "files": [
+        "D:\\Youtube\\5- Animal Channel\\downloads\\scene_07\\clip_03_1777107741.mp4"
+      ],
+      "downloaded_at": "2026-04-25T09:02:31.594841+00:00"
+    },
+    {
+      "scene_no": 8,
+      "card_key": "fe_id_9997b363-6271-46bd-8190-d25dc6591318|/fx/tools/flow/project/469fbbfa-3209-4b98-8a49-be363e15cf03/edit/d06503db-7c94-43a0-96c8-24ba6052100a",
+      "files": [
+        "D:\\Youtube\\5- Animal Channel\\downloads\\scene_08\\clip_01_1777107835.mp4"
+      ],
+      "downloaded_at": "2026-04-25T09:04:06.230560+00:00"
+    },
+    {
+      "scene_no": 8,
+      "card_key": "fe_id_659dab11-aa97-4670-bb53-81548629e0e0|/fx/tools/flow/project/469fbbfa-3209-4b98-8a49-be363e15cf03/edit/298da31c-f25c-45e5-a56d-3ee71b49d214",
+      "files": [
+        "D:\\Youtube\\5- Animal Channel\\downloads\\scene_08\\clip_03_1777107854.mp4"
+      ],
+      "downloaded_at": "2026-04-25T09:04:24.352167+00:00"
+    },
+    {
+      "scene_no": 9,
+      "card_key": "fe_id_a52eb25e-ec6c-4845-97c5-c0e368e8f78f|/fx/tools/flow/project/469fbbfa-3209-4b98-8a49-be363e15cf03/edit/a4a0f417-0984-4429-a31e-953d9cb3661d",
+      "files": [
+        "D:\\Youtube\\5- Animal Channel\\downloads\\scene_09\\clip_01_1777108449.mp4"
+      ],
+      "downloaded_at": "2026-04-25T09:14:20.235235+00:00"
+    },
+    {
+      "scene_no": 9,
+      "card_key": "fe_id_010b827c-454b-4d9e-8467-dacbaf6ba403|/fx/tools/flow/project/469fbbfa-3209-4b98-8a49-be363e15cf03/edit/6dcf4e27-91ec-4bb1-8894-156e975dbc0e",
+      "files": [
+        "D:\\Youtube\\5- Animal Channel\\downloads\\scene_09\\clip_03_1777108468.mp4"
+      ],
+      "downloaded_at": "2026-04-25T09:14:38.321358+00:00"
+    }
+  ],
+  "flow_project_url": "https://labs.google/fx/tools/flow/project/469fbbfa-3209-4b98-8a49-be363e15cf03",
+  "output_dir": "D:\\Youtube\\5- Animal Channel\\output\\Crocodile River Trap",
+  "manifest_path": "D:\\Youtube\\5- Animal Channel\\output\\Crocodile River Trap\\manifest.json"
+}

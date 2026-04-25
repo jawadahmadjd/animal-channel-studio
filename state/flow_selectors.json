@@ -1,0 +1,177 @@
+{
+  "prompt_input": [
+    "[data-slate-editor='true']",
+    "[role='textbox'][contenteditable='true']",
+    "[contenteditable='true'][role='textbox']",
+    "div.sc-f0fc903f-0",
+    "textarea"
+  ],
+  "settings_button": [
+    "button[aria-haspopup='menu']:has(i:has-text('crop_9_16'))",
+    "button[aria-haspopup='menu']:has(i:has-text('crop_16_9'))",
+    "button.sc-67b77035-1"
+  ],
+  "type_tab_image": [
+    "button[role='tab'].flow_tab_slider_trigger:has(i:has-text('image'))",
+    "button[role='tab']:has-text('Image')"
+  ],
+  "type_tab_video": [
+    "button[role='tab'].flow_tab_slider_trigger:has(i:has-text('videocam'))",
+    "button[role='tab']:has-text('Video')"
+  ],
+  "subtype_tab_frames": [
+    "button[role='tab'].flow_tab_slider_trigger:has(i:has-text('crop_free'))",
+    "button[role='tab']:has-text('Frames')"
+  ],
+  "subtype_tab_ingredients": [
+    "button[role='tab'].flow_tab_slider_trigger:has(i:has-text('chrome_extension'))",
+    "button[role='tab']:has-text('Ingredients')"
+  ],
+  "aspect_ratio_buttons": [
+    "button[role='tab']:has-text('9:16')",
+    "button[role='tab']:has-text('16:9')"
+  ],
+  "clip_count_buttons": [
+    "button[role='tab']:text-is('x1')",
+    "button[role='tab']:text-is('x2')",
+    "button[role='tab']:text-is('x3')",
+    "button[role='tab']:text-is('x4')"
+  ],
+  "duration_buttons": [
+    "button[role='tab']:text-is('4s')",
+    "button[role='tab']:text-is('6s')",
+    "button[role='tab']:text-is('8s')"
+  ],
+  "model_dropdown": [
+    "button[aria-haspopup='menu']:has(i:has-text('arrow_drop_down'))",
+    "button.sc-a0dcecfb-1",
+    "button:has-text('Veo')",
+    "button:has-text('Nano')",
+    "button:has-text('Imagen')",
+    "[role='combobox']"
+  ],
+  "model_options": [
+    "span.sc-a0dcecfb-8",
+    "[role='menuitemradio']",
+    "[role='menuitem']",
+    "[role='option']"
+  ],
+  "generate_button": [
+    "button:has-text('Create')",
+    "button.sc-e8425ea6-0",
+    "button[aria-label*='generate' i]"
+  ],
+  "new_project_button": [
+    "button:has-text('New project')",
+    "button.sc-16c4830a-1.jsIRVP",
+    "button:has(i:has-text('add_2'))"
+  ],
+  "status_running": [
+    "text=/Generating|In progress|Processing/i",
+    "[aria-busy='true']"
+  ],
+  "status_done": [
+    "button:has-text('Download')",
+    "a:has-text('Download')",
+    "button:has(i:has-text('download'))",
+    "text=/Completed|Done|Ready/i",
+    "button[aria-label*='options' i]",
+    "button[aria-label*='download' i]",
+    "button:has(i:has-text('more_vert'))"
+  ],
+  "download_buttons": [
+    "button:text-is('Download')",
+    "button:has-text('Download')",
+    "a:has-text('Download')",
+    "button:has(i:has-text('download'))",
+    "button:has(i:has-text('file_download'))",
+    "[aria-label*='download' i]",
+    "[title*='Download' i]",
+    "[data-testid*='download' i]"
+  ],
+  "project_card": [
+    "div.sc-7153f67b-0",
+    "div[class*='sc-7153f67b-0']",
+    "div.sc-7153f67b-0:has(a[href*='/fx/tools/flow/project/'])",
+    "[role='listitem']",
+    "a[href*='/project/']",
+    "a[href*='/p/']"
+  ],
+  "project_name_container": [
+    ".sc-7153f67b-5.fGigMq",
+    "span:has(button:has-text('Edit project'))",
+    "span:has(i:has-text('edit'))"
+  ],
+  "project_link": [
+    "a[href*='/fx/tools/flow/project/']",
+    "a[href*='/project/']",
+    "a[href*='/p/']",
+    "a:has(img[class*='sc-7153f67b-2'])",
+    "a:has(img.sc-7153f67b-2)"
+  ],
+  "project_more_options": [
+    "button[aria-label='More options']",
+    "button:has(i:has-text('more_vert'))",
+    "button:has(i:has-text('more_horiz'))"
+  ],
+  "project_rename_item": [
+    "button:has-text('Rename')",
+    ".sc-a431b188-7"
+  ],
+  "project_rename_input": [
+    "input[type='text']",
+    "[contenteditable='true']"
+  ],
+  "clip_card": [
+    "div[data-tile-id]",
+    "a[href*='/edit/']",
+    "div[id^='fe_id_'][data-tile-id]",
+    "div:has(> video)",
+    "div:has(> div > video)",
+    "[role='img'][aria-label*='clip' i]",
+    "button:has(video)"
+  ],
+  "clip_title": [
+    "div.sc-103881de-3",
+    "div[data-state='closed'] .sc-103881de-3"
+  ],
+  "clip_progress": [
+    "div.sc-55ebc859-7",
+    "div:has-text('%')"
+  ],
+  "clip_anchor": [
+    "a[href*='/edit/']"
+  ],
+  "clip_more_options": [
+    "button[aria-label*='options' i]",
+    "button:has(i:has-text('more_vert'))",
+    "button:has(i:has-text('more_horiz'))"
+  ],
+  "download_menu_item": [
+    "[role='menuitem']:text-is('Download')",
+    "[role='menuitem']:has-text('Download')",
+    "div:has-text('Download'):has(i:has-text('download'))"
+  ],
+  "resolution_720p": [
+    "[role='menuitem']:text-is('720p')",
+    "[role='menuitem']:has-text('720p')",
+    "div:has-text('720p')",
+    "button:text-is('720p')",
+    "button:has-text('720p')",
+    "li:has-text('720p')",
+    "span:has-text('720p')"
+  ],
+  "failure_card": [
+    "text=/Failed|Try again|Something went wrong/i"
+  ],
+  "retry_button": [
+    "button:text-is('Retry')",
+    "button:has(span:text-is('Retry'))"
+  ],
+  "back_button": [
+    "button:has(span:text-is('Go Back'))",
+    "button:has(i:has-text('arrow_back'))",
+    "button:has-text('arrow_back')",
+    "button:has-text('Back')"
+  ]
+}

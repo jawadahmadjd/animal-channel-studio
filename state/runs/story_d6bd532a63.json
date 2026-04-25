@@ -1,0 +1,274 @@
+{
+  "story_id": "story_d6bd532a63",
+  "idea_index": 4,
+  "idea_title": "Honey Badger vs Snake Pit",
+  "run_status": "in_progress",
+  "created_at": "2026-04-25T06:03:24.929557+00:00",
+  "updated_at": "2026-04-25T06:17:37.516182+00:00",
+  "story_payload": {
+    "story_id": "story_d6bd532a63",
+    "story_title": "Honey Badger vs Snake Pit",
+    "scenes": [
+      {
+        "scene_no": 1,
+        "scene_name": "Approach",
+        "vo": "A honey badger approaches a rocky den.",
+        "veo_prompt": "A honey badger in a rocky savanna at dusk, walking slowly towards a dark crevice, static wide shot, ultra realistic cinematic style, warm golden light, curious mood, duration 4-5 seconds, no text, no logo, no watermark, no subtitles, no humans."
+      },
+      {
+        "scene_no": 2,
+        "scene_name": "Entering",
+        "vo": "It sniffs the entrance, then enters.",
+        "veo_prompt": "A honey badger at the entrance of a rocky den at dusk, sniffing the ground, medium shot with slow push-in, ultra realistic cinematic style, warm golden light, tense mood, duration 4-5 seconds, no text, no logo, no watermark, no subtitles, no humans."
+      },
+      {
+        "scene_no": 3,
+        "scene_name": "First Snake",
+        "vo": "Inside, a snake coils and strikes.",
+        "veo_prompt": "A venomous snake coiled on sandy ground inside a dim rocky den at dusk, striking forward, low-angle static shot, ultra realistic cinematic style, dim natural light, tense mood, duration 4-5 seconds, no text, no logo, no watermark, no subtitles, no humans."
+      },
+      {
+        "scene_no": 4,
+        "scene_name": "Badger Reaction",
+        "vo": "The badger dodges and bites back.",
+        "veo_prompt": "A honey badger inside a rocky den at dusk, dodging a snake strike and biting the snake's head, medium shot with slow pan, ultra realistic cinematic style, dim natural light, aggressive mood, duration 4-5 seconds, no text, no logo, no watermark, no subtitles, no humans."
+      },
+      {
+        "scene_no": 5,
+        "scene_name": "Snake Writhing",
+        "vo": "The snake writhes, then goes limp.",
+        "veo_prompt": "A venomous snake writhing on the ground of a rocky den at dusk, then going limp, static close-up shot, ultra realistic cinematic style, dim natural light, grim mood, duration 4-5 seconds, no text, no logo, no watermark, no subtitles, no humans."
+      },
+      {
+        "scene_no": 6,
+        "scene_name": "Second Snake",
+        "vo": "Another snake emerges from the shadows.",
+        "veo_prompt": "A second venomous snake emerging from a dark crevice inside a rocky den at dusk, slow tracking shot, ultra realistic cinematic style, dim natural light, ominous mood, duration 4-5 seconds, no text, no logo, no watermark, no subtitles, no humans."
+      },
+      {
+        "scene_no": 7,
+        "scene_name": "Badger Advances",
+        "vo": "The badger advances, unfazed and ready.",
+        "veo_prompt": "A honey badger walking forward inside a rocky den at dusk, focused on a snake, medium shot with slow tracking, ultra realistic cinematic style, dim natural light, determined mood, duration 4-5 seconds, no text, no logo, no watermark, no subtitles, no humans."
+      },
+      {
+        "scene_no": 8,
+        "scene_name": "Final Clash",
+        "vo": "It grabs the second snake, ending the fight.",
+        "veo_prompt": "A honey badger biting a second venomous snake on the ground inside a rocky den at dusk, static medium shot, ultra realistic cinematic style, dim natural light, victorious mood, duration 4-5 seconds, no text, no logo, no watermark, no subtitles, no humans."
+      },
+      {
+        "scene_no": 9,
+        "scene_name": "Exit",
+        "vo": "The badger exits the den, victorious.",
+        "veo_prompt": "A honey badger walking out of a rocky den at twilight, with a dead snake in its mouth, slow tracking shot from behind, ultra realistic cinematic style, fading warm light, triumphant mood, duration 4-5 seconds, no text, no logo, no watermark, no subtitles, no humans."
+      },
+      {
+        "scene_no": 10,
+        "scene_name": "Final Shot",
+        "vo": "It disappears into the savanna night.",
+        "veo_prompt": "A honey badger walking away across the savanna at night, becoming a silhouette, static wide shot, ultra realistic cinematic style, moonlight, peaceful mood, duration 4-5 seconds, no text, no logo, no watermark, no subtitles, no humans."
+      }
+    ]
+  },
+  "scenes": [
+    {
+      "scene_no": 1,
+      "scene_name": "Approach",
+      "status": "completed",
+      "attempts": 1,
+      "downloads": [
+        "D:\\Youtube\\5- Animal Channel\\downloads\\scene_01\\clip_01_1777097168.mp4"
+      ],
+      "error": "",
+      "updated_at": "2026-04-25T06:06:19.412653+00:00"
+    },
+    {
+      "scene_no": 2,
+      "scene_name": "Entering",
+      "status": "completed",
+      "attempts": 1,
+      "downloads": [
+        "D:\\Youtube\\5- Animal Channel\\downloads\\scene_02\\clip_01_1777097256.mp4"
+      ],
+      "error": "",
+      "updated_at": "2026-04-25T06:07:46.949860+00:00"
+    },
+    {
+      "scene_no": 3,
+      "scene_name": "First Snake",
+      "status": "completed",
+      "attempts": 1,
+      "downloads": [
+        "D:\\Youtube\\5- Animal Channel\\downloads\\scene_03\\clip_03_1777097340.mp4"
+      ],
+      "error": "",
+      "updated_at": "2026-04-25T06:09:11.177181+00:00"
+    },
+    {
+      "scene_no": 4,
+      "scene_name": "Badger Reaction",
+      "status": "completed",
+      "attempts": 1,
+      "downloads": [
+        "D:\\Youtube\\5- Animal Channel\\downloads\\scene_04\\clip_03_1777097426.mp4"
+      ],
+      "error": "",
+      "updated_at": "2026-04-25T06:10:36.395698+00:00"
+    },
+    {
+      "scene_no": 5,
+      "scene_name": "Snake Writhing",
+      "status": "completed",
+      "attempts": 1,
+      "downloads": [
+        "D:\\Youtube\\5- Animal Channel\\downloads\\scene_05\\clip_01_1777097521.mp4",
+        "D:\\Youtube\\5- Animal Channel\\downloads\\scene_05\\clip_03_1777097539.mp4"
+      ],
+      "error": "",
+      "updated_at": "2026-04-25T06:12:30.227933+00:00"
+    },
+    {
+      "scene_no": 6,
+      "scene_name": "Second Snake",
+      "status": "completed",
+      "attempts": 1,
+      "downloads": [
+        "D:\\Youtube\\5- Animal Channel\\downloads\\scene_06\\clip_03_1777097637.mp4"
+      ],
+      "error": "",
+      "updated_at": "2026-04-25T06:14:08.008897+00:00"
+    },
+    {
+      "scene_no": 7,
+      "scene_name": "Badger Advances",
+      "status": "running",
+      "attempts": 2,
+      "downloads": [],
+      "error": "",
+      "updated_at": "2026-04-25T06:17:47.929993+00:00"
+    },
+    {
+      "scene_no": 8,
+      "scene_name": "Final Clash",
+      "status": "failed",
+      "attempts": 1,
+      "downloads": [],
+      "error": "Timed out after 300s without thumbnail completion.",
+      "updated_at": "2026-04-25T06:17:37.516101+00:00"
+    },
+    {
+      "scene_no": 9,
+      "scene_name": "Exit",
+      "status": "running",
+      "attempts": 1,
+      "downloads": [],
+      "error": "",
+      "updated_at": "2026-04-25T06:14:18.483006+00:00"
+    },
+    {
+      "scene_no": 10,
+      "scene_name": "Final Shot",
+      "status": "running",
+      "attempts": 1,
+      "downloads": [],
+      "error": "",
+      "updated_at": "2026-04-25T06:15:54.906031+00:00"
+    }
+  ],
+  "flow_tracker": {
+    "downloaded_card_keys": [
+      "fe_id_142c7c40-d843-4565-9ec8-370e78a19708|/fx/tools/flow/project/2e769607-48f3-4d31-9042-08a384d334be/edit/3563ab78-4a13-4053-bc74-1167f050a3f9",
+      "fe_id_66abfbcc-15e9-4f3b-9ea0-0659b30081e4|/fx/tools/flow/project/2e769607-48f3-4d31-9042-08a384d334be/edit/de8447f3-ee39-4215-8d0a-d8b154ac44c3",
+      "fe_id_7057ca71-f4b6-4b80-9051-63a054828c40",
+      "fe_id_720156c8-be5a-411b-8a77-083f30b79f40|/fx/tools/flow/project/2e769607-48f3-4d31-9042-08a384d334be/edit/f2f34e49-96e8-4d7e-a9cd-f57964a43d41",
+      "fe_id_8a278802-0087-471b-b766-122c75e623f9",
+      "fe_id_8a278802-0087-471b-b766-122c75e623f9|/fx/tools/flow/project/2e769607-48f3-4d31-9042-08a384d334be/edit/b4f498ab-d72a-4bfa-b9cb-958b641cfc4c",
+      "fe_id_8e248841-2961-45cf-8622-3f5246b606cc|/fx/tools/flow/project/2e769607-48f3-4d31-9042-08a384d334be/edit/fa9d199b-ba41-4fc8-ad71-05dc06e2292e",
+      "fe_id_974d7fa9-06d2-4b95-a39e-b400415f1b48",
+      "fe_id_974d7fa9-06d2-4b95-a39e-b400415f1b48|/fx/tools/flow/project/2e769607-48f3-4d31-9042-08a384d334be/edit/a6f20463-a308-49a4-a5b1-95e337c01745",
+      "fe_id_a5cdf9ad-7688-424d-bb4f-12e59143d0cb",
+      "fe_id_a5cdf9ad-7688-424d-bb4f-12e59143d0cb|/fx/tools/flow/project/2e769607-48f3-4d31-9042-08a384d334be/edit/53e52990-5c51-4743-8879-716fe59d5c7e",
+      "fe_id_a807ffdd-1c23-4314-ac8b-60213f9a6720|/fx/tools/flow/project/2e769607-48f3-4d31-9042-08a384d334be/edit/6fcfb6e4-6742-4275-bfe9-468169af5353",
+      "fe_id_b9043ca6-c371-4770-8f84-4f8f8d39c622|/fx/tools/flow/project/2e769607-48f3-4d31-9042-08a384d334be/edit/c2a8dad2-6930-4858-aa59-9c96109780ea",
+      "fe_id_bbf2e086-cf42-47a0-8d85-b0204491fcc9",
+      "fe_id_bbf2e086-cf42-47a0-8d85-b0204491fcc9|/fx/tools/flow/project/2e769607-48f3-4d31-9042-08a384d334be/edit/894c6d08-b2f8-48fc-bd79-804691571024",
+      "fe_id_de81c9e2-0145-4ebd-89a6-8a819627ab54|/fx/tools/flow/project/2e769607-48f3-4d31-9042-08a384d334be/edit/3d263218-9f85-4366-a74f-f1d4308a4d30",
+      "fe_id_e360f4cc-3fd4-441f-b6b5-7cbc05934953|/fx/tools/flow/project/2e769607-48f3-4d31-9042-08a384d334be/edit/bb233419-a1d0-4f15-b47e-e7b50d200b41",
+      "fe_id_eb304834-f2b5-41db-b478-063ef07ab31f|/fx/tools/flow/project/2e769607-48f3-4d31-9042-08a384d334be/edit/8b5a7edb-edb3-4cca-a454-20084c85f443",
+      "fe_id_eb6a1ee8-1cd7-44ef-81a1-8d3ca78b4e5a|/fx/tools/flow/project/2e769607-48f3-4d31-9042-08a384d334be/edit/5276c7f7-939c-4938-b7c6-55ab74198d80"
+    ],
+    "failed_card_keys": [
+      "fe_id_264cbb4f-9bf5-4401-a861-e30fcbff30a6",
+      "fe_id_7057ca71-f4b6-4b80-9051-63a054828c40",
+      "fe_id_8a278802-0087-471b-b766-122c75e623f9",
+      "fe_id_8a278802-0087-471b-b766-122c75e623f9|/fx/tools/flow/project/2e769607-48f3-4d31-9042-08a384d334be/edit/b4f498ab-d72a-4bfa-b9cb-958b641cfc4c",
+      "fe_id_974d7fa9-06d2-4b95-a39e-b400415f1b48",
+      "fe_id_974d7fa9-06d2-4b95-a39e-b400415f1b48|/fx/tools/flow/project/2e769607-48f3-4d31-9042-08a384d334be/edit/a6f20463-a308-49a4-a5b1-95e337c01745",
+      "fe_id_9f7fab65-1969-4b70-b543-7e968233621c",
+      "fe_id_a5cdf9ad-7688-424d-bb4f-12e59143d0cb",
+      "fe_id_a5cdf9ad-7688-424d-bb4f-12e59143d0cb|/fx/tools/flow/project/2e769607-48f3-4d31-9042-08a384d334be/edit/53e52990-5c51-4743-8879-716fe59d5c7e",
+      "fe_id_bbf2e086-cf42-47a0-8d85-b0204491fcc9",
+      "fe_id_bbf2e086-cf42-47a0-8d85-b0204491fcc9|/fx/tools/flow/project/2e769607-48f3-4d31-9042-08a384d334be/edit/894c6d08-b2f8-48fc-bd79-804691571024"
+    ]
+  },
+  "downloaded_cards": [
+    {
+      "scene_no": 1,
+      "card_key": "fe_id_8e248841-2961-45cf-8622-3f5246b606cc|/fx/tools/flow/project/2e769607-48f3-4d31-9042-08a384d334be/edit/fa9d199b-ba41-4fc8-ad71-05dc06e2292e",
+      "files": [
+        "D:\\Youtube\\5- Animal Channel\\downloads\\scene_01\\clip_01_1777097168.mp4"
+      ],
+      "downloaded_at": "2026-04-25T06:06:19.412639+00:00"
+    },
+    {
+      "scene_no": 2,
+      "card_key": "fe_id_eb6a1ee8-1cd7-44ef-81a1-8d3ca78b4e5a|/fx/tools/flow/project/2e769607-48f3-4d31-9042-08a384d334be/edit/5276c7f7-939c-4938-b7c6-55ab74198d80",
+      "files": [
+        "D:\\Youtube\\5- Animal Channel\\downloads\\scene_02\\clip_01_1777097256.mp4"
+      ],
+      "downloaded_at": "2026-04-25T06:07:46.949837+00:00"
+    },
+    {
+      "scene_no": 3,
+      "card_key": "fe_id_66abfbcc-15e9-4f3b-9ea0-0659b30081e4|/fx/tools/flow/project/2e769607-48f3-4d31-9042-08a384d334be/edit/de8447f3-ee39-4215-8d0a-d8b154ac44c3",
+      "files": [
+        "D:\\Youtube\\5- Animal Channel\\downloads\\scene_03\\clip_03_1777097340.mp4"
+      ],
+      "downloaded_at": "2026-04-25T06:09:11.177160+00:00"
+    },
+    {
+      "scene_no": 4,
+      "card_key": "fe_id_eb304834-f2b5-41db-b478-063ef07ab31f|/fx/tools/flow/project/2e769607-48f3-4d31-9042-08a384d334be/edit/8b5a7edb-edb3-4cca-a454-20084c85f443",
+      "files": [
+        "D:\\Youtube\\5- Animal Channel\\downloads\\scene_04\\clip_03_1777097426.mp4"
+      ],
+      "downloaded_at": "2026-04-25T06:10:36.395676+00:00"
+    },
+    {
+      "scene_no": 5,
+      "card_key": "fe_id_b9043ca6-c371-4770-8f84-4f8f8d39c622|/fx/tools/flow/project/2e769607-48f3-4d31-9042-08a384d334be/edit/c2a8dad2-6930-4858-aa59-9c96109780ea",
+      "files": [
+        "D:\\Youtube\\5- Animal Channel\\downloads\\scene_05\\clip_01_1777097521.mp4"
+      ],
+      "downloaded_at": "2026-04-25T06:12:12.034074+00:00"
+    },
+    {
+      "scene_no": 5,
+      "card_key": "fe_id_720156c8-be5a-411b-8a77-083f30b79f40|/fx/tools/flow/project/2e769607-48f3-4d31-9042-08a384d334be/edit/f2f34e49-96e8-4d7e-a9cd-f57964a43d41",
+      "files": [
+        "D:\\Youtube\\5- Animal Channel\\downloads\\scene_05\\clip_03_1777097539.mp4"
+      ],
+      "downloaded_at": "2026-04-25T06:12:30.227913+00:00"
+    },
+    {
+      "scene_no": 6,
+      "card_key": "fe_id_a807ffdd-1c23-4314-ac8b-60213f9a6720|/fx/tools/flow/project/2e769607-48f3-4d31-9042-08a384d334be/edit/6fcfb6e4-6742-4275-bfe9-468169af5353",
+      "files": [
+        "D:\\Youtube\\5- Animal Channel\\downloads\\scene_06\\clip_03_1777097637.mp4"
+      ],
+      "downloaded_at": "2026-04-25T06:14:08.008878+00:00"
+    }
+  ],
+  "flow_project_url": "https://labs.google/fx/tools/flow/project/2e769607-48f3-4d31-9042-08a384d334be"
+}

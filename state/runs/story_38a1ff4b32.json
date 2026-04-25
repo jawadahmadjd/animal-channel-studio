@@ -1,0 +1,297 @@
+{
+  "story_id": "story_38a1ff4b32",
+  "idea_index": 2,
+  "idea_title": "Cobra vs Mongoose Duel",
+  "run_status": "completed",
+  "created_at": "2026-04-23T04:37:46.811633+00:00",
+  "updated_at": "2026-04-24T10:52:05.962962+00:00",
+  "story_payload": {
+    "story_title": "Cobra vs Mongoose Duel",
+    "scenes": [
+      {
+        "scene_no": 1,
+        "scene_name": "Savanna Awakening",
+        "vo": "The mongoose emerges from its den at dawn.",
+        "veo_prompt": "mongoose, African savanna at dawn, prowl, wide shot with slow tracking, ultra-realistic natural history documentary style, 4K, natural morning light, calm mood, duration 4-5 seconds, no text, no logo, no watermark, no subtitles, no humans"
+      },
+      {
+        "scene_no": 2,
+        "scene_name": "Cobra's Approach",
+        "vo": "A cobra slithers silently through the tall grass.",
+        "veo_prompt": "cobra, African savanna at dawn, move, low-angle shot with static, ultra-realistic natural history documentary style, 4K, natural morning light, tense mood, duration 4-5 seconds, no text, no logo, no watermark, no subtitles, no humans"
+      },
+      {
+        "scene_no": 3,
+        "scene_name": "First Encounter",
+        "vo": "The mongoose spots the cobra and freezes.",
+        "veo_prompt": "mongoose and cobra, African savanna at dawn, face, medium shot with slow push-in, ultra-realistic natural history documentary style, 4K, natural morning light, tense mood, duration 4-5 seconds, no text, no logo, no watermark, no subtitles, no humans"
+      },
+      {
+        "scene_no": 4,
+        "scene_name": "Cobra's Strike",
+        "vo": "The cobra lunges forward with lightning speed.",
+        "veo_prompt": "cobra, African savanna at dawn, lunge, close-up with tracking, ultra-realistic natural history documentary style, 4K, natural morning light, urgent mood, duration 4-5 seconds, no text, no logo, no watermark, no subtitles, no humans"
+      },
+      {
+        "scene_no": 5,
+        "scene_name": "Mongoose Dodges",
+        "vo": "The mongoose leaps sideways, narrowly avoiding the fangs.",
+        "veo_prompt": "mongoose, African savanna at dawn, run, wide shot with pan, ultra-realistic natural history documentary style, 4K, natural morning light, chaotic mood, duration 4-5 seconds, no text, no logo, no watermark, no subtitles, no humans"
+      },
+      {
+        "scene_no": 6,
+        "scene_name": "Cobra Circles",
+        "vo": "The cobra coils and prepares for another attack.",
+        "veo_prompt": "cobra, African savanna at dawn, circle, low-angle shot with orbit, ultra-realistic natural history documentary style, 4K, natural morning light, tense mood, duration 4-5 seconds, no text, no logo, no watermark, no subtitles, no humans"
+      },
+      {
+        "scene_no": 7,
+        "scene_name": "Mongoose Watches",
+        "vo": "The mongoose crouches low, watching the cobra's movements.",
+        "veo_prompt": "mongoose, African savanna at dawn, crouch, medium shot with static, ultra-realistic natural history documentary style, 4K, natural morning light, tense mood, duration 4-5 seconds, no text, no logo, no watermark, no subtitles, no humans"
+      },
+      {
+        "scene_no": 8,
+        "scene_name": "Second Strike",
+        "vo": "The cobra strikes again, aiming for the mongoose's neck.",
+        "veo_prompt": "cobra, African savanna at dawn, attack, close-up with slow push-in, ultra-realistic natural history documentary style, 4K, natural morning light, urgent mood, duration 4-5 seconds, no text, no logo, no watermark, no subtitles, no humans"
+      },
+      {
+        "scene_no": 9,
+        "scene_name": "Precision Dodge",
+        "vo": "The mongoose twists its body, dodging with precision.",
+        "veo_prompt": "mongoose, African savanna at dawn, turn, medium shot with tracking, ultra-realistic natural history documentary style, 4K, natural morning light, chaotic mood, duration 4-5 seconds, no text, no logo, no watermark, no subtitles, no humans"
+      },
+      {
+        "scene_no": 10,
+        "scene_name": "Mongoose's Counterattack",
+        "vo": "The mongoose charges forward, aiming for the cobra's head.",
+        "veo_prompt": "mongoose, African savanna at dawn, charge, wide shot with pan, ultra-realistic natural history documentary style, 4K, natural morning light, urgent mood, duration 4-5 seconds, no text, no logo, no watermark, no subtitles, no humans"
+      },
+      {
+        "scene_no": 11,
+        "scene_name": "Final Blow",
+        "vo": "The mongoose delivers a swift bite to the cobra's neck.",
+        "veo_prompt": "mongoose and cobra, African savanna at dawn, attack, close-up with static, ultra-realistic natural history documentary style, 4K, natural morning light, tense mood, duration 4-5 seconds, no text, no logo, no watermark, no subtitles, no humans"
+      },
+      {
+        "scene_no": 12,
+        "scene_name": "Victory",
+        "vo": "The mongoose stands over the defeated cobra.",
+        "veo_prompt": "mongoose, African savanna at dawn, stand, wide shot with slow push-in, ultra-realistic natural history documentary style, 4K, natural morning light, relief mood, duration 4-5 seconds, no text, no logo, no watermark, no subtitles, no humans"
+      }
+    ]
+  },
+  "scenes": [
+    {
+      "scene_no": 1,
+      "scene_name": "Savanna Awakening",
+      "status": "completed",
+      "attempts": 1,
+      "downloads": [
+        "D:\\Youtube\\5- Animal Channel\\downloads\\scene_01\\clip_01_1776946707.mp4"
+      ],
+      "error": "",
+      "updated_at": "2026-04-23T12:18:38.070752+00:00"
+    },
+    {
+      "scene_no": 2,
+      "scene_name": "Cobra's Approach",
+      "status": "completed",
+      "attempts": 2,
+      "downloads": [
+        "D:\\Youtube\\5- Animal Channel\\downloads\\scene_02\\clip_01_1776946832.mp4"
+      ],
+      "error": "",
+      "updated_at": "2026-04-23T12:20:43.016645+00:00"
+    },
+    {
+      "scene_no": 3,
+      "scene_name": "First Encounter",
+      "status": "completed",
+      "attempts": 1,
+      "downloads": [
+        "D:\\Youtube\\5- Animal Channel\\downloads\\scene_03\\clip_01_1776946881.mp4"
+      ],
+      "error": "",
+      "updated_at": "2026-04-23T12:21:31.269497+00:00"
+    },
+    {
+      "scene_no": 4,
+      "scene_name": "Cobra's Strike",
+      "status": "completed",
+      "attempts": 1,
+      "downloads": [
+        "D:\\Youtube\\5- Animal Channel\\downloads\\scene_04\\clip_01_1776946926.mp4"
+      ],
+      "error": "",
+      "updated_at": "2026-04-23T12:22:16.856749+00:00"
+    },
+    {
+      "scene_no": 5,
+      "scene_name": "Mongoose Dodges",
+      "status": "completed",
+      "attempts": 1,
+      "downloads": [
+        "D:\\Youtube\\5- Animal Channel\\downloads\\scene_05\\clip_11_1777016061.mp4"
+      ],
+      "error": "",
+      "updated_at": "2026-04-24T10:47:35.086913+00:00"
+    },
+    {
+      "scene_no": 6,
+      "scene_name": "Cobra Circles",
+      "status": "completed",
+      "attempts": 0,
+      "downloads": [
+        "D:\\Youtube\\5- Animal Channel\\downloads\\scene_06\\clip_15_1777016080.mp4"
+      ],
+      "error": "",
+      "updated_at": "2026-04-24T10:47:35.087043+00:00"
+    },
+    {
+      "scene_no": 7,
+      "scene_name": "Mongoose Watches",
+      "status": "completed",
+      "attempts": 1,
+      "downloads": [
+        "D:\\Youtube\\5- Animal Channel\\downloads\\scene_07\\clip_10_1777027789.mp4"
+      ],
+      "error": "",
+      "updated_at": "2026-04-24T10:50:00.596636+00:00"
+    },
+    {
+      "scene_no": 8,
+      "scene_name": "Second Strike",
+      "status": "completed",
+      "attempts": 0,
+      "downloads": [
+        "D:\\Youtube\\5- Animal Channel\\downloads\\scene_08\\clip_02_1776944031.mp4"
+      ],
+      "error": "",
+      "updated_at": "2026-04-24T10:47:35.087219+00:00"
+    },
+    {
+      "scene_no": 9,
+      "scene_name": "Precision Dodge",
+      "status": "completed",
+      "attempts": 1,
+      "downloads": [
+        "D:\\Youtube\\5- Animal Channel\\downloads\\scene_09\\clip_13_1777027808.mp4"
+      ],
+      "error": "",
+      "updated_at": "2026-04-24T10:50:18.815829+00:00"
+    },
+    {
+      "scene_no": 10,
+      "scene_name": "Mongoose's Counterattack",
+      "status": "completed",
+      "attempts": 0,
+      "downloads": [
+        "D:\\Youtube\\5- Animal Channel\\downloads\\scene_10\\clip_09_1777016230.mp4"
+      ],
+      "error": "",
+      "updated_at": "2026-04-24T10:47:35.087392+00:00"
+    },
+    {
+      "scene_no": 11,
+      "scene_name": "Final Blow",
+      "status": "completed",
+      "attempts": 1,
+      "downloads": [
+        "D:\\Youtube\\5- Animal Channel\\downloads\\scene_11\\clip_01_1777027896.mp4"
+      ],
+      "error": "",
+      "updated_at": "2026-04-24T10:51:46.498720+00:00"
+    },
+    {
+      "scene_no": 12,
+      "scene_name": "Victory",
+      "status": "completed",
+      "attempts": 1,
+      "downloads": [
+        "D:\\Youtube\\5- Animal Channel\\downloads\\scene_12\\clip_03_1777027914.mp4"
+      ],
+      "error": "",
+      "updated_at": "2026-04-24T10:52:04.710559+00:00"
+    }
+  ],
+  "flow_project_url": "https://labs.google/fx/tools/flow/project/4c0f3e17-e529-4f73-9bcf-f2315c53c37d",
+  "flow_tracker": {
+    "downloaded_card_keys": [
+      "fe_id_011e497e-c578-4dd3-8190-f9b4a97e5aa0|/fx/tools/flow/project/4c0f3e17-e529-4f73-9bcf-f2315c53c37d/edit/68ffd800-c2bd-4c76-8be7-3c69f6ace760",
+      "fe_id_1f14d7dc-db4c-4fc4-b124-ad8e85ee8322",
+      "fe_id_1f14d7dc-db4c-4fc4-b124-ad8e85ee8322|/fx/tools/flow/project/4c0f3e17-e529-4f73-9bcf-f2315c53c37d/edit/38e3f208-5c3e-4b4c-8aa5-9e396c296aeb",
+      "fe_id_23dba357-0e1f-413e-a15b-475d28dfe089",
+      "fe_id_23dba357-0e1f-413e-a15b-475d28dfe089|/fx/tools/flow/project/4c0f3e17-e529-4f73-9bcf-f2315c53c37d/edit/98efb2cb-b95c-4127-9a5e-5fe21a314cb9",
+      "fe_id_27d13a50-8f0b-4bf1-9654-4048245a954c",
+      "fe_id_27d13a50-8f0b-4bf1-9654-4048245a954c|/fx/tools/flow/project/4c0f3e17-e529-4f73-9bcf-f2315c53c37d/edit/1824dd31-7bcb-471f-b819-c07a88fc9cb2",
+      "fe_id_363d06bf-908c-4bcc-8342-2c4b03f6950c|/fx/tools/flow/project/4c0f3e17-e529-4f73-9bcf-f2315c53c37d/edit/734edd4d-b384-418f-9b4f-e76202263a58",
+      "fe_id_69b202b0-361f-4eab-a426-723a45e01b98|/fx/tools/flow/project/4c0f3e17-e529-4f73-9bcf-f2315c53c37d/edit/5a2775b9-f0fc-468b-837b-4fe11bc5ad01",
+      "fe_id_6c462190-7057-4d1e-a715-5ff8508569cc",
+      "fe_id_6c462190-7057-4d1e-a715-5ff8508569cc|/fx/tools/flow/project/4c0f3e17-e529-4f73-9bcf-f2315c53c37d/edit/5ab938e8-89a3-4838-afe5-7e5afeb18173",
+      "fe_id_81865be9-e916-46f1-a10e-f39ac7e2e26a",
+      "fe_id_81865be9-e916-46f1-a10e-f39ac7e2e26a|/fx/tools/flow/project/4c0f3e17-e529-4f73-9bcf-f2315c53c37d/edit/11cbf29f-d758-4f5b-a930-1dd1d3ee22c8",
+      "fe_id_c0612045-594a-44fa-a035-08933c5c0c0d",
+      "fe_id_c0612045-594a-44fa-a035-08933c5c0c0d|/fx/tools/flow/project/4c0f3e17-e529-4f73-9bcf-f2315c53c37d/edit/2b6f950b-9205-4ce3-97c6-371c3f8ed864",
+      "fe_id_c2592b4a-e192-410e-8238-452833c0230a|/fx/tools/flow/project/4c0f3e17-e529-4f73-9bcf-f2315c53c37d/edit/5579afbd-8cc2-44ab-a39b-09605456f9c8",
+      "fe_id_d170c107-b9a5-4f8d-a62f-bdbcb3709588",
+      "fe_id_d170c107-b9a5-4f8d-a62f-bdbcb3709588|/fx/tools/flow/project/4c0f3e17-e529-4f73-9bcf-f2315c53c37d/edit/313eed63-fbfb-4421-a13f-ec3743865c48",
+      "fe_id_f1e6b27d-603c-41db-935c-6b74430ddeb9|/fx/tools/flow/project/4c0f3e17-e529-4f73-9bcf-f2315c53c37d/edit/fd8dc6eb-cb75-43ed-8ed0-cb7122a9a398",
+      "fe_id_f6250a4f-6b1f-412f-a348-9cfd2a7a17da",
+      "fe_id_f6250a4f-6b1f-412f-a348-9cfd2a7a17da|/fx/tools/flow/project/4c0f3e17-e529-4f73-9bcf-f2315c53c37d/edit/31bae31d-044a-490d-ae54-de33a7fc8469",
+      "fe_id_fd99b7f1-8a5d-434f-8dab-b3be4b8f10c0|/fx/tools/flow/project/4c0f3e17-e529-4f73-9bcf-f2315c53c37d/edit/84a17fa0-a822-4fd4-84bd-98238d9a858b"
+    ],
+    "failed_card_keys": [
+      "fe_id_1f14d7dc-db4c-4fc4-b124-ad8e85ee8322",
+      "fe_id_1f14d7dc-db4c-4fc4-b124-ad8e85ee8322|/fx/tools/flow/project/4c0f3e17-e529-4f73-9bcf-f2315c53c37d/edit/38e3f208-5c3e-4b4c-8aa5-9e396c296aeb",
+      "fe_id_23dba357-0e1f-413e-a15b-475d28dfe089",
+      "fe_id_23dba357-0e1f-413e-a15b-475d28dfe089|/fx/tools/flow/project/4c0f3e17-e529-4f73-9bcf-f2315c53c37d/edit/98efb2cb-b95c-4127-9a5e-5fe21a314cb9",
+      "fe_id_27d13a50-8f0b-4bf1-9654-4048245a954c",
+      "fe_id_6c462190-7057-4d1e-a715-5ff8508569cc",
+      "fe_id_81865be9-e916-46f1-a10e-f39ac7e2e26a",
+      "fe_id_81865be9-e916-46f1-a10e-f39ac7e2e26a|/fx/tools/flow/project/4c0f3e17-e529-4f73-9bcf-f2315c53c37d/edit/11cbf29f-d758-4f5b-a930-1dd1d3ee22c8",
+      "fe_id_c0612045-594a-44fa-a035-08933c5c0c0d",
+      "fe_id_d170c107-b9a5-4f8d-a62f-bdbcb3709588",
+      "fe_id_d170c107-b9a5-4f8d-a62f-bdbcb3709588|/fx/tools/flow/project/4c0f3e17-e529-4f73-9bcf-f2315c53c37d/edit/313eed63-fbfb-4421-a13f-ec3743865c48",
+      "fe_id_f6250a4f-6b1f-412f-a348-9cfd2a7a17da",
+      "fe_id_f6250a4f-6b1f-412f-a348-9cfd2a7a17da|/fx/tools/flow/project/4c0f3e17-e529-4f73-9bcf-f2315c53c37d/edit/31bae31d-044a-490d-ae54-de33a7fc8469"
+    ]
+  },
+  "downloaded_cards": [
+    {
+      "scene_no": 7,
+      "card_key": "fe_id_27d13a50-8f0b-4bf1-9654-4048245a954c|/fx/tools/flow/project/4c0f3e17-e529-4f73-9bcf-f2315c53c37d/edit/1824dd31-7bcb-471f-b819-c07a88fc9cb2",
+      "files": [
+        "D:\\Youtube\\5- Animal Channel\\downloads\\scene_07\\clip_10_1777027789.mp4"
+      ],
+      "downloaded_at": "2026-04-24T10:50:00.596653+00:00"
+    },
+    {
+      "scene_no": 9,
+      "card_key": "fe_id_c0612045-594a-44fa-a035-08933c5c0c0d|/fx/tools/flow/project/4c0f3e17-e529-4f73-9bcf-f2315c53c37d/edit/2b6f950b-9205-4ce3-97c6-371c3f8ed864",
+      "files": [
+        "D:\\Youtube\\5- Animal Channel\\downloads\\scene_09\\clip_13_1777027808.mp4"
+      ],
+      "downloaded_at": "2026-04-24T10:50:18.815851+00:00"
+    },
+    {
+      "scene_no": 11,
+      "card_key": "fe_id_f1e6b27d-603c-41db-935c-6b74430ddeb9|/fx/tools/flow/project/4c0f3e17-e529-4f73-9bcf-f2315c53c37d/edit/fd8dc6eb-cb75-43ed-8ed0-cb7122a9a398",
+      "files": [
+        "D:\\Youtube\\5- Animal Channel\\downloads\\scene_11\\clip_01_1777027896.mp4"
+      ],
+      "downloaded_at": "2026-04-24T10:51:46.498736+00:00"
+    },
+    {
+      "scene_no": 12,
+      "card_key": "fe_id_011e497e-c578-4dd3-8190-f9b4a97e5aa0|/fx/tools/flow/project/4c0f3e17-e529-4f73-9bcf-f2315c53c37d/edit/68ffd800-c2bd-4c76-8be7-3c69f6ace760",
+      "files": [
+        "D:\\Youtube\\5- Animal Channel\\downloads\\scene_12\\clip_03_1777027914.mp4"
+      ],
+      "downloaded_at": "2026-04-24T10:52:04.710579+00:00"
+    }
+  ],
+  "output_dir": "D:\\Youtube\\5- Animal Channel\\output\\Cobra vs Mongoose Duel",
+  "manifest_path": "D:\\Youtube\\5- Animal Channel\\output\\Cobra vs Mongoose Duel\\manifest.json"
+}

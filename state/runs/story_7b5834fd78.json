@@ -1,0 +1,136 @@
+{
+  "story_id": "story_7b5834fd78",
+  "idea_index": 5,
+  "idea_title": "Cheetah’s Final Sprint",
+  "run_status": "in_progress",
+  "created_at": "2026-04-23T06:47:17.819642+00:00",
+  "updated_at": "2026-04-23T06:47:58.658270+00:00",
+  "story_payload": {
+    "story_id": "story_7b5834fd78",
+    "story_title": "Cheetah's Final Sprint",
+    "scenes": [
+      {
+        "scene_no": 1,
+        "scene_name": "Savanna Survey",
+        "vo": "A hungry cheetah scans the open savanna.",
+        "veo_prompt": "A single cheetah in the African savanna at dawn, standing still and scanning the horizon, wide shot with static camera, ultra realistic cinematic high detail, soft morning light, tense mood, duration 4-5 seconds, no text, no logo, no watermark, no subtitles, no humans."
+      },
+      {
+        "scene_no": 2,
+        "scene_name": "Gazelle Grazing",
+        "vo": "A lone gazelle grazes peacefully nearby.",
+        "veo_prompt": "A single gazelle in the grassy savanna at dawn, grazing slowly on vegetation, medium shot with slow pan, ultra realistic cinematic high detail, soft morning light, calm mood, duration 4-5 seconds, no text, no logo, no watermark, no subtitles, no humans."
+      },
+      {
+        "scene_no": 3,
+        "scene_name": "Cheetah Stalk",
+        "vo": "The cheetah begins a slow careful stalk.",
+        "veo_prompt": "A single cheetah in the grassy savanna at dawn, moving slowly through tall grass, low-angle shot with slow tracking, ultra realistic cinematic high detail, soft morning light, tense mood, duration 4-5 seconds, no text, no logo, no watermark, no subtitles, no humans."
+      },
+      {
+        "scene_no": 4,
+        "scene_name": "Gazelle Alert",
+        "vo": "The gazelle suddenly lifts its head alert.",
+        "veo_prompt": "A single gazelle in the grassy savanna at dawn, lifting its head and looking around, close-up shot with static camera, ultra realistic cinematic high detail, soft morning light, alert mood, duration 4-5 seconds, no text, no logo, no watermark, no subtitles, no humans."
+      },
+      {
+        "scene_no": 5,
+        "scene_name": "Cheetah Acceleration",
+        "vo": "The cheetah explodes into a lightning sprint.",
+        "veo_prompt": "A single cheetah in the open savanna at dawn, accelerating into a fast run, wide shot with slow tracking, ultra realistic cinematic high detail, soft morning light, urgent mood, duration 4-5 seconds, no text, no logo, no watermark, no subtitles, no humans."
+      },
+      {
+        "scene_no": 6,
+        "scene_name": "Gazelle Flee",
+        "vo": "The gazelle bolts away in sheer panic.",
+        "veo_prompt": "A single gazelle in the open savanna at dawn, running at full speed away from camera, medium shot with slow tracking, ultra realistic cinematic high detail, soft morning light, frantic mood, duration 4-5 seconds, no text, no logo, no watermark, no subtitles, no humans."
+      },
+      {
+        "scene_no": 7,
+        "scene_name": "Chase Close-up",
+        "vo": "Muscles strain as both animals push limits.",
+        "veo_prompt": "A single cheetah in the open savanna at dawn, running with powerful strides, close-up shot with slow tracking, ultra realistic cinematic high detail, soft morning light, intense mood, duration 4-5 seconds, no text, no logo, no watermark, no subtitles, no humans."
+      },
+      {
+        "scene_no": 8,
+        "scene_name": "Final Lunge",
+        "vo": "The cheetah makes one final desperate lunge.",
+        "veo_prompt": "A single cheetah in the open savanna at dawn, leaping forward with extended paws, low-angle shot with static camera, ultra realistic cinematic high detail, soft morning light, dramatic mood, duration 4-5 seconds, no text, no logo, no watermark, no subtitles, no humans."
+      }
+    ]
+  },
+  "scenes": [
+    {
+      "scene_no": 1,
+      "scene_name": "Savanna Survey",
+      "status": "running",
+      "attempts": 1,
+      "downloads": [],
+      "error": "",
+      "updated_at": "2026-04-23T06:47:58.658258+00:00"
+    },
+    {
+      "scene_no": 2,
+      "scene_name": "Gazelle Grazing",
+      "status": "pending",
+      "attempts": 0,
+      "downloads": [],
+      "error": "",
+      "updated_at": "2026-04-23T06:47:17.819624+00:00"
+    },
+    {
+      "scene_no": 3,
+      "scene_name": "Cheetah Stalk",
+      "status": "pending",
+      "attempts": 0,
+      "downloads": [],
+      "error": "",
+      "updated_at": "2026-04-23T06:47:17.819627+00:00"
+    },
+    {
+      "scene_no": 4,
+      "scene_name": "Gazelle Alert",
+      "status": "pending",
+      "attempts": 0,
+      "downloads": [],
+      "error": "",
+      "updated_at": "2026-04-23T06:47:17.819630+00:00"
+    },
+    {
+      "scene_no": 5,
+      "scene_name": "Cheetah Acceleration",
+      "status": "pending",
+      "attempts": 0,
+      "downloads": [],
+      "error": "",
+      "updated_at": "2026-04-23T06:47:17.819632+00:00"
+    },
+    {
+      "scene_no": 6,
+      "scene_name": "Gazelle Flee",
+      "status": "pending",
+      "attempts": 0,
+      "downloads": [],
+      "error": "",
+      "updated_at": "2026-04-23T06:47:17.819634+00:00"
+    },
+    {
+      "scene_no": 7,
+      "scene_name": "Chase Close-up",
+      "status": "pending",
+      "attempts": 0,
+      "downloads": [],
+      "error": "",
+      "updated_at": "2026-04-23T06:47:17.819637+00:00"
+    },
+    {
+      "scene_no": 8,
+      "scene_name": "Final Lunge",
+      "status": "pending",
+      "attempts": 0,
+      "downloads": [],
+      "error": "",
+      "updated_at": "2026-04-23T06:47:17.819639+00:00"
+    }
+  ]
+}

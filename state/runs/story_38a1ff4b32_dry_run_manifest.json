@@ -1,0 +1,140 @@
+{
+  "story_id": "story_38a1ff4b32",
+  "story_title": "Cobra vs Mongoose Duel",
+  "dry_run": true,
+  "note": "No browser automation executed; no media files downloaded.",
+  "scenes": [
+    {
+      "scene_no": 1,
+      "scene_name": "Savanna Awakening",
+      "status": "completed",
+      "attempts": 1,
+      "downloads": [
+        "D:\\Youtube\\5- Animal Channel\\downloads\\scene_01\\clip_01_1776946707.mp4"
+      ],
+      "error": "",
+      "updated_at": "2026-04-23T12:18:38.070752+00:00"
+    },
+    {
+      "scene_no": 2,
+      "scene_name": "Cobra's Approach",
+      "status": "completed",
+      "attempts": 2,
+      "downloads": [
+        "D:\\Youtube\\5- Animal Channel\\downloads\\scene_02\\clip_01_1776946832.mp4"
+      ],
+      "error": "",
+      "updated_at": "2026-04-23T12:20:43.016645+00:00"
+    },
+    {
+      "scene_no": 3,
+      "scene_name": "First Encounter",
+      "status": "completed",
+      "attempts": 1,
+      "downloads": [
+        "D:\\Youtube\\5- Animal Channel\\downloads\\scene_03\\clip_01_1776946881.mp4"
+      ],
+      "error": "",
+      "updated_at": "2026-04-23T12:21:31.269497+00:00"
+    },
+    {
+      "scene_no": 4,
+      "scene_name": "Cobra's Strike",
+      "status": "completed",
+      "attempts": 1,
+      "downloads": [
+        "D:\\Youtube\\5- Animal Channel\\downloads\\scene_04\\clip_01_1776946926.mp4"
+      ],
+      "error": "",
+      "updated_at": "2026-04-23T12:22:16.856749+00:00"
+    },
+    {
+      "scene_no": 5,
+      "scene_name": "Mongoose Dodges",
+      "status": "completed",
+      "attempts": 1,
+      "downloads": [
+        "D:\\Youtube\\5- Animal Channel\\downloads\\scene_05\\clip_11_1777016061.mp4"
+      ],
+      "error": "",
+      "updated_at": "2026-04-24T10:47:35.086913+00:00"
+    },
+    {
+      "scene_no": 6,
+      "scene_name": "Cobra Circles",
+      "status": "completed",
+      "attempts": 0,
+      "downloads": [
+        "D:\\Youtube\\5- Animal Channel\\downloads\\scene_06\\clip_15_1777016080.mp4"
+      ],
+      "error": "",
+      "updated_at": "2026-04-24T10:47:35.087043+00:00"
+    },
+    {
+      "scene_no": 7,
+      "scene_name": "Mongoose Watches",
+      "status": "completed",
+      "attempts": 1,
+      "downloads": [
+        "D:\\Youtube\\5- Animal Channel\\downloads\\scene_07\\clip_10_1777027789.mp4"
+      ],
+      "error": "",
+      "updated_at": "2026-04-24T10:50:00.596636+00:00"
+    },
+    {
+      "scene_no": 8,
+      "scene_name": "Second Strike",
+      "status": "completed",
+      "attempts": 0,
+      "downloads": [
+        "D:\\Youtube\\5- Animal Channel\\downloads\\scene_08\\clip_02_1776944031.mp4"
+      ],
+      "error": "",
+      "updated_at": "2026-04-24T10:47:35.087219+00:00"
+    },
+    {
+      "scene_no": 9,
+      "scene_name": "Precision Dodge",
+      "status": "completed",
+      "attempts": 1,
+      "downloads": [
+        "D:\\Youtube\\5- Animal Channel\\downloads\\scene_09\\clip_13_1777027808.mp4"
+      ],
+      "error": "",
+      "updated_at": "2026-04-24T10:50:18.815829+00:00"
+    },
+    {
+      "scene_no": 10,
+      "scene_name": "Mongoose's Counterattack",
+      "status": "completed",
+      "attempts": 0,
+      "downloads": [
+        "D:\\Youtube\\5- Animal Channel\\downloads\\scene_10\\clip_09_1777016230.mp4"
+      ],
+      "error": "",
+      "updated_at": "2026-04-24T10:47:35.087392+00:00"
+    },
+    {
+      "scene_no": 11,
+      "scene_name": "Final Blow",
+      "status": "completed",
+      "attempts": 1,
+      "downloads": [
+        "D:\\Youtube\\5- Animal Channel\\downloads\\scene_11\\clip_01_1777027896.mp4"
+      ],
+      "error": "",
+      "updated_at": "2026-04-24T10:51:46.498720+00:00"
+    },
+    {
+      "scene_no": 12,
+      "scene_name": "Victory",
+      "status": "completed",
+      "attempts": 1,
+      "downloads": [
+        "D:\\Youtube\\5- Animal Channel\\downloads\\scene_12\\clip_03_1777027914.mp4"
+      ],
+      "error": "",
+      "updated_at": "2026-04-24T10:52:04.710559+00:00"
+    }
+  ]
+}

@@ -1,0 +1,387 @@
+{
+  "meta": {
+    "version": 2,
+    "description": "Centralized Google Flow element sheet. Update selectors here first when UI changes.",
+    "updated_at": "2026-04-24 (failure_card + retry_button confirmed from live HTML)",
+    "owner": "automation",
+    "missing_policy": "Mark unresolved selectors in notes with TODO_MISSING.",
+    "notes": "Selectors updated from live HTML inspection. Icon buttons (containing Google Symbols <i> text) require :has-text() not :text-is() because the icon ligature text is included in textContent."
+  },
+  "elements": {
+    "settings_button": {
+      "selectors": [
+        "button[aria-haspopup='menu']:has(i:has-text('crop_9_16'))",
+        "button[aria-haspopup='menu']:has(i:has-text('crop_16_9'))",
+        "button.sc-67b77035-1"
+      ],
+      "notes": "The settings toggle button shows current mode ('Video'/'Image') + orientation icon (crop_9_16/crop_16_9) + clip count (x4). It does NOT have 'Settings' text. Distinguish from model dropdown (which has arrow_drop_down icon). Class sc-67b77035-1 is a brittle fallback.",
+      "used_in": [
+        "scripts/flow_automation.py:_ensure_settings_panel_open"
+      ]
+    },
+    "type_tab_image": {
+      "selectors": [
+        "button[role='tab'].flow_tab_slider_trigger:has(i:has-text('image'))",
+        "button[role='tab']:has-text('Image')"
+      ],
+      "notes": "Top-level type tab for Image mode. HTML: <i>image</i>Image. Use :has-text not :text-is because icon text is in textContent.",
+      "used_in": [
+        "scripts/flow_automation.py:apply_settings"
+      ]
+    },
+    "type_tab_video": {
+      "selectors": [
+        "button[role='tab'].flow_tab_slider_trigger:has(i:has-text('videocam'))",
+        "button[role='tab']:has-text('Video')"
+      ],
+      "notes": "Top-level type tab for Video mode. HTML: <i>videocam</i>Video. Use :has-text not :text-is. Note: button[role='tab'] scoping prevents matching the settings toggle button (no role='tab' on that).",
+      "used_in": [
+        "scripts/flow_automation.py:apply_settings"
+      ]
+    },
+    "subtype_tab_frames": {
+      "selectors": [
+        "button[role='tab'].flow_tab_slider_trigger:has(i:has-text('crop_free'))",
+        "button[role='tab']:has-text('Frames')"
+      ],
+      "notes": "Video sub-type tab for Frames (VIDEO_FRAMES). HTML: <i>crop_free</i>Frames. Only appears after selecting Video mode.",
+      "used_in": [
+        "scripts/flow_automation.py:apply_settings"
+      ]
+    },
+    "subtype_tab_ingredients": {
+      "selectors": [
+        "button[role='tab'].flow_tab_slider_trigger:has(i:has-text('chrome_extension'))",
+        "button[role='tab']:has-text('Ingredients')"
+      ],
+      "notes": "Video sub-type tab for Ingredients (VIDEO_REFERENCES). HTML: <i>chrome_extension</i>Ingredients. Only appears after selecting Video mode.",
+      "used_in": [
+        "scripts/flow_automation.py:apply_settings"
+      ]
+    },
+    "aspect_ratio_buttons": {
+      "selectors": [
+        "button[role='tab']:has-text('9:16')",
+        "button[role='tab']:has-text('16:9')"
+      ],
+      "notes": "Orientation tabs. HTML includes crop icon inside button: <i>crop_9_16</i>9:16. Use :has-text not :text-is because icon text is in textContent. Scoped to role='tab' so settings toggle button (no role='tab') is excluded.",
+      "used_in": []
+    },
+    "clip_count_buttons": {
+      "selectors": [
+        "button[role='tab']:text-is('x1')",
+        "button[role='tab']:text-is('x2')",
+        "button[role='tab']:text-is('x3')",
+        "button[role='tab']:text-is('x4')"
+      ],
+      "notes": "Clip count tabs have NO icons, so :text-is exact match works.",
+      "used_in": []
+    },
+    "duration_buttons": {
+      "selectors": [
+        "button[role='tab']:text-is('4s')",
+        "button[role='tab']:text-is('6s')",
+        "button[role='tab']:text-is('8s')"
+      ],
+      "notes": "Duration tabs have NO icons, so :text-is exact match works.",
+      "used_in": []
+    },
+    "model_dropdown": {
+      "selectors": [
+        "button[aria-haspopup='menu']:has(i:has-text('arrow_drop_down'))",
+        "button.sc-a0dcecfb-1",
+        "button:has-text('Veo')",
+        "button:has-text('Nano')",
+        "button:has-text('Imagen')",
+        "[role='combobox']"
+      ],
+      "notes": "Model dropdown button always has arrow_drop_down icon. Distinguish from settings_button (which has crop_9_16/crop_16_9 icon). Class sc-a0dcecfb-1 is a brittle fallback. Content-based :has-text('Veo') is safe since settings button never shows 'Veo'.",
+      "used_in": [
+        "scripts/flow_automation.py:465"
+      ]
+    },
+    "model_options": {
+      "selectors": [
+        "span.sc-a0dcecfb-8",
+        "[role='menuitemradio']",
+        "[role='menuitem']",
+        "[role='option']"
+      ],
+      "notes": "Model option items in the opened dropdown. Span class sc-a0dcecfb-8 is the label. Known models: 'Veo 3.1 - Lite', 'Veo 3.1 - Fast', 'Veo 3.1 - Quality', 'Veo 3.1 - Lite [Lower Priority]', 'Veo 3.1 - Fast [Lower Priority] (leaving 5/10)'.",
+      "used_in": []
+    },
+    "prompt_input": {
+      "selectors": [
+        "[data-slate-editor='true']",
+        "[role='textbox'][contenteditable='true']",
+        "[contenteditable='true'][role='textbox']",
+        "div.sc-f0fc903f-0",
+        "textarea"
+      ],
+      "notes": "",
+      "used_in": []
+    },
+    "generate_button": {
+      "selectors": [
+        "button:has-text('Create')",
+        "button.sc-e8425ea6-0",
+        "button[aria-label*='generate' i]"
+      ],
+      "notes": "",
+      "used_in": [
+        "scripts/flow_automation.py:758",
+        "scripts/flow_automation.py:769"
+      ]
+    },
+    "new_project_button": {
+      "selectors": [
+        "button:has-text('New project')",
+        "button.sc-16c4830a-1.jsIRVP",
+        "button:has(i:has-text('add_2'))"
+      ],
+      "notes": "",
+      "used_in": [
+        "scripts/flow_automation.py:613"
+      ]
+    },
+    "back_button": {
+      "selectors": [
+        "button:has(span:text-is('Go Back'))",
+        "button:has(i:has-text('arrow_back'))",
+        "button:has-text('arrow_back')",
+        "button:has-text('Back')"
+      ],
+      "notes": "",
+      "used_in": [
+        "scripts/flow_automation.py:1198"
+      ]
+    },
+    "clip_anchor": {
+      "selectors": [
+        "a[href*='/edit/']"
+      ],
+      "notes": "TODO_MISSING: Confirm stable href pattern for clip/job id extraction if Google changes /edit/ route.",
+      "used_in": [
+        "scripts/flow_automation.py:818"
+      ]
+    },
+    "clip_card": {
+      "selectors": [
+        "div[data-tile-id]",
+        "a[href*='/edit/']",
+        "div[id^='fe_id_'][data-tile-id]",
+        "div:has(> video)",
+        "div:has(> div > video)",
+        "[role='img'][aria-label*='clip' i]",
+        "button:has(video)"
+      ],
+      "notes": "TODO_MISSING: Confirm one stable root selector that always maps 1 tile = 1 generation card after UI updates.",
+      "used_in": [
+        "scripts/flow_automation.py:1056",
+        "scripts/flow_automation.py:1110",
+        "scripts/flow_automation.py:800",
+        "scripts/flow_automation.py:815"
+      ]
+    },
+    "clip_more_options": {
+      "selectors": [
+        "button[aria-label*='options' i]",
+        "button:has(i:has-text('more_vert'))",
+        "button:has(i:has-text('more_horiz'))"
+      ],
+      "notes": "",
+      "used_in": [
+        "scripts/flow_automation.py:1140"
+      ]
+    },
+    "clip_progress": {
+      "selectors": [
+        "div.sc-55ebc859-7",
+        "div:has-text('%')"
+      ],
+      "notes": "TODO_MISSING: Confirm stable progress element selector (e.g., XX%) for in-progress detection.",
+      "used_in": [
+        "scripts/flow_automation.py:817"
+      ]
+    },
+    "clip_title": {
+      "selectors": [
+        "div.sc-103881de-3",
+        "div[data-state='closed'] .sc-103881de-3"
+      ],
+      "notes": "",
+      "used_in": [
+        "scripts/flow_automation.py:816"
+      ]
+    },
+    "download_buttons": {
+      "selectors": [
+        "button:text-is('Download')",
+        "button:has-text('Download')",
+        "a:has-text('Download')",
+        "button:has(i:has-text('download'))",
+        "button:has(i:has-text('file_download'))",
+        "[aria-label*='download' i]",
+        "[title*='Download' i]",
+        "[data-testid*='download' i]"
+      ],
+      "notes": "",
+      "used_in": [
+        "scripts/flow_automation.py:1050",
+        "scripts/flow_automation.py:1135"
+      ]
+    },
+    "download_menu_item": {
+      "selectors": [
+        "[role='menuitem']:text-is('Download')",
+        "[role='menuitem']:has-text('Download')",
+        "div:has-text('Download'):has(i:has-text('download'))"
+      ],
+      "notes": "",
+      "used_in": [
+        "scripts/flow_automation.py:1145"
+      ]
+    },
+    "failure_card": {
+      "selectors": [
+        "div.sc-adc89304-1.eQDVum",
+        "div.sc-adc89304-1",
+        "text=/Failed|Try again|Something went wrong/i"
+      ],
+      "notes": "Confirmed from live HTML: <div class=\"sc-adc89304-1 eQDVum\">Failed</div>. sc-adc89304-1 is stable styled-component class; eQDVum is the theme variant. Text fallback retained for robustness.",
+      "used_in": [
+        "scripts/flow_automation.py:1074",
+        "scripts/flow_automation.py:929"
+      ]
+    },
+    "project_card": {
+      "selectors": [
+        "div.sc-7153f67b-0",
+        "div[class*='sc-7153f67b-0']",
+        "div.sc-7153f67b-0:has(a[href*='/fx/tools/flow/project/'])",
+        "[role='listitem']",
+        "a[href*='/project/']",
+        "a[href*='/p/']"
+      ],
+      "notes": "",
+      "used_in": [
+        "scripts/flow_automation.py:701"
+      ]
+    },
+    "project_link": {
+      "selectors": [
+        "a[href*='/fx/tools/flow/project/']",
+        "a[href*='/project/']",
+        "a[href*='/p/']",
+        "a:has(img[class*='sc-7153f67b-2'])",
+        "a:has(img.sc-7153f67b-2)"
+      ],
+      "notes": "",
+      "used_in": [
+        "scripts/flow_automation.py:702"
+      ]
+    },
+    "project_more_options": {
+      "selectors": [
+        "button[aria-label='More options']",
+        "button:has(i:has-text('more_vert'))",
+        "button:has(i:has-text('more_horiz'))"
+      ],
+      "notes": "",
+      "used_in": [
+        "scripts/flow_automation.py:645"
+      ]
+    },
+    "project_name_container": {
+      "selectors": [
+        ".sc-7153f67b-5.fGigMq",
+        "span:has(button:has-text('Edit project'))",
+        "span:has(i:has-text('edit'))"
+      ],
+      "notes": "",
+      "used_in": [
+        "scripts/flow_automation.py:667"
+      ]
+    },
+    "project_rename_input": {
+      "selectors": [
+        "input[type='text']",
+        "[contenteditable='true']"
+      ],
+      "notes": "",
+      "used_in": [
+        "scripts/flow_automation.py:677"
+      ]
+    },
+    "project_rename_item": {
+      "selectors": [
+        "button:has-text('Rename')",
+        ".sc-a431b188-7"
+      ],
+      "notes": "",
+      "used_in": [
+        "scripts/flow_automation.py:655"
+      ]
+    },
+    "resolution_720p": {
+      "selectors": [
+        "[role='menuitem']:text-is('720p')",
+        "[role='menuitem']:has-text('720p')",
+        "div:has-text('720p')",
+        "button:text-is('720p')",
+        "button:has-text('720p')",
+        "li:has-text('720p')",
+        "span:has-text('720p')"
+      ],
+      "notes": "",
+      "used_in": []
+    },
+    "retry_button": {
+      "selectors": [
+        "button.sc-e7a64add-0:has(i:has-text('refresh'))",
+        "button.sc-16c4830a-1:has(i:has-text('refresh'))",
+        "button:has(i:has-text('refresh')):has(span:has-text('Retry'))",
+        "button:text-is('Retry')",
+        "button:has(span:text-is('Retry'))"
+      ],
+      "notes": "Confirmed from live HTML: <button class=\"sc-16c4830a-1 ehipYG sc-e7a64add-0 sc-e7a64add-2 ...\"><i>refresh</i><span>Retry</span></button>. sc-e7a64add-0 is the specific action-button component class; sc-16c4830a-1 is the base icon-button class. Both scoped with :has(i:has-text('refresh')) to avoid matching other icon buttons.",
+      "used_in": [
+        "scripts/flow_automation.py:787",
+        "scripts/flow_automation.py:946"
+      ]
+    },
+    "status_done": {
+      "selectors": [
+        "button:has-text('Download')",
+        "a:has-text('Download')",
+        "button:has(i:has-text('download'))",
+        "text=/Completed|Done|Ready/i",
+        "button[aria-label*='options' i]",
+        "button[aria-label*='download' i]",
+        "button:has(i:has-text('more_vert'))"
+      ],
+      "notes": "TODO_MISSING: Need exact per-card completed/ready marker if available (better than generic Download/Ready text).",
+      "used_in": [
+        "scripts/flow_automation.py:1091"
+      ]
+    },
+    "status_running": {
+      "selectors": [
+        "text=/Generating|In progress|Processing/i",
+        "[aria-busy='true']"
+      ],
+      "notes": "",
+      "used_in": []
+    },
+    "clip_job_id": {
+      "selectors": [],
+      "notes": "TODO_MISSING: Exact selector/attribute for immutable clip or generation job id per card.",
+      "used_in": []
+    },
+    "thumbnail_ready_marker": {
+      "selectors": [],
+      "notes": "TODO_MISSING: Exact marker that means thumbnail/video is ready to download for this card.",
+      "used_in": []
+    }
+  }
+}

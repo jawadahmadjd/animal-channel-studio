@@ -1,0 +1,79 @@
+{
+  "processed_story_ids": [
+    "story_18e697b666",
+    "story_38a1ff4b32",
+    "story_7a508ce22f"
+  ],
+  "processed_titles": [
+    "Cobra vs Mongoose Duel",
+    "Crocodile River Trap",
+    "Lion vs Hyena Ambush"
+  ],
+  "history": [
+    {
+      "story_id": "story_7a508ce22f",
+      "title": "Lion vs Hyena Ambush",
+      "processed_at": "2026-04-22T13:16:31.457079+00:00"
+    },
+    {
+      "story_id": "story_7a508ce22f",
+      "title": "Lion vs Hyena Ambush",
+      "processed_at": "2026-04-22T13:30:28.044749+00:00"
+    },
+    {
+      "story_id": "story_7a508ce22f",
+      "title": "Lion vs Hyena Ambush",
+      "processed_at": "2026-04-22T13:32:27.678699+00:00"
+    },
+    {
+      "story_id": "story_7a508ce22f",
+      "title": "Lion vs Hyena Ambush",
+      "processed_at": "2026-04-22T14:04:39.657112+00:00"
+    },
+    {
+      "story_id": "story_7a508ce22f",
+      "title": "Lion vs Hyena Ambush",
+      "processed_at": "2026-04-22T14:05:06.379473+00:00"
+    },
+    {
+      "story_id": "story_7a508ce22f",
+      "title": "Lion vs Hyena Ambush",
+      "processed_at": "2026-04-22T14:11:07.236550+00:00"
+    },
+    {
+      "story_id": "story_7a508ce22f",
+      "title": "Lion vs Hyena Ambush",
+      "processed_at": "2026-04-22T14:12:28.265851+00:00"
+    },
+    {
+      "story_id": "story_7a508ce22f",
+      "title": "Lion vs Hyena Ambush",
+      "processed_at": "2026-04-22T14:15:35.791567+00:00"
+    },
+    {
+      "story_id": "story_7a508ce22f",
+      "title": "Lion vs Hyena Ambush",
+      "processed_at": "2026-04-22T14:16:06.051551+00:00"
+    },
+    {
+      "story_id": "story_7a508ce22f",
+      "title": "Lion vs Hyena Ambush",
+      "processed_at": "2026-04-22T14:19:26.143594+00:00"
+    },
+    {
+      "story_id": "story_7a508ce22f",
+      "title": "Lion vs Hyena Ambush",
+      "processed_at": "2026-04-22T14:34:23.138571+00:00"
+    },
+    {
+      "story_id": "story_38a1ff4b32",
+      "title": "Cobra vs Mongoose Duel",
+      "processed_at": "2026-04-24T10:52:05.968883+00:00"
+    },
+    {
+      "story_id": "story_18e697b666",
+      "title": "Crocodile River Trap",
+      "processed_at": "2026-04-25T09:14:39.518383+00:00"
+    }
+  ]
+}
