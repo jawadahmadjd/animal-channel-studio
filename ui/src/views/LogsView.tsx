@@ -42,8 +42,26 @@ function groupBySessions(lines: ParsedLine[]): Session[] {
   const sessions: Session[] = []
   let current: ParsedLine[] = []
   let sessionIdx = 1
+  let prevWasFileLine = true
 
   for (const line of lines) {
+    // Positive IDs = from fileLines, negative = live logLines.
+    // When we cross from file → live and the current session is still open,
+    // close it as incomplete so the live run starts a fresh card.
+    const isFileLine = line.id > 0
+    if (prevWasFileLine && !isFileLine && current.length > 0) {
+      const alreadyClosed = current.some(
+        (l) => /\[done.*exit code/i.test(l.raw) || l.raw.includes('[Stopped by user]')
+      )
+      if (!alreadyClosed) {
+        const startTs = current.find((l) => l.timestamp)?.timestamp ?? ''
+        const endTs = [...current].reverse().find((l) => l.timestamp)?.timestamp ?? ''
+        sessions.push({ id: sessionIdx++, lines: current, ended: true, success: null, startTimestamp: startTs, endTimestamp: endTs })
+        current = []
+      }
+    }
+    prevWasFileLine = isFileLine
+
     current.push(line)
     const isDone = /\[done.*exit code/i.test(line.raw) || line.raw.includes('[Stopped by user]')
     if (isDone) {
@@ -79,7 +97,7 @@ const LEVEL_LABEL_COLORS: Record<ParsedLine['level'], { bg: string; text: string
 }
 
 export default function LogsView() {
-  const { logLines } = useStore()
+  const { logLines, runState } = useStore()
   const [fileLines, setFileLines] = useState<ParsedLine[]>([])
   const [filterLevel, setFilterLevel] = useState<Level>('ALL')
   const [search, setSearch] = useState('')
@@ -288,12 +306,14 @@ export default function LogsView() {
                 } border-slate-100`}
               >
                 {/* Status icon */}
-                {!session.ended ? (
+                {!session.ended && runState === 'running' ? (
                   <Loader2 size={15} className="text-blue-500 animate-spin flex-shrink-0" />
-                ) : session.success ? (
+                ) : session.success === true ? (
                   <CheckCircle2 size={15} className="text-emerald-500 flex-shrink-0" />
-                ) : (
+                ) : session.success === false ? (
                   <XCircle size={15} className="text-red-500 flex-shrink-0" />
+                ) : (
+                  <XCircle size={15} className="text-slate-400 flex-shrink-0" />
                 )}
 
                 {/* Session number */}
@@ -314,14 +334,22 @@ export default function LogsView() {
                 {/* Status badge */}
                 <span
                   className={`px-2 py-0.5 rounded-lg text-[10px] font-black uppercase tracking-widest border ${
-                    !session.ended
+                    !session.ended && runState === 'running'
                       ? 'bg-blue-50 text-blue-600 border-blue-100'
-                      : session.success
+                      : session.success === true
                       ? 'bg-emerald-50 text-emerald-600 border-emerald-100'
-                      : 'bg-red-50 text-red-600 border-red-100'
+                      : session.success === false
+                      ? 'bg-red-50 text-red-600 border-red-100'
+                      : 'bg-slate-50 text-slate-500 border-slate-100'
                   }`}
                 >
-                  {!session.ended ? 'Active' : session.success ? 'Complete' : 'Failed'}
+                  {!session.ended && runState === 'running'
+                    ? 'Active'
+                    : session.success === true
+                    ? 'Complete'
+                    : session.success === false
+                    ? 'Failed'
+                    : 'Incomplete'}
                 </span>
 
                 {/* Line count */}
