@@ -16,6 +16,9 @@ const electronAPI = {
   },
   installUpdate: () => ipcRenderer.send('install-update'),
 
+  // Relaunch (used by bridge-error screen)
+  relaunch: () => ipcRenderer.send('app:relaunch'),
+
   // Window controls
   minimize: () => ipcRenderer.send('window:minimize'),
   maximize: () => ipcRenderer.send('window:maximize'),

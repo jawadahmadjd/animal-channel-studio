@@ -11,15 +11,14 @@ export default function Header({ title }: Props) {
     runState, setRunState, setStatusText, setActiveStep,
     appendLog, setCurrentScene, setTotalScenes,
     resetPipelineStages, updateStageFromLine,
-    ideas, selectedIdeaIndex, advanced,
+    selectedStoryId, advanced,
   } = useStore()
 
   const isRunning = runState === 'running'
 
   async function handleGenerate() {
     if (isRunning) return
-    const idea = ideas[selectedIdeaIndex]
-    if (!idea) {
+    if (!selectedStoryId) {
       alert('Please select a story first.')
       return
     }
@@ -31,7 +30,7 @@ export default function Header({ title }: Props) {
       appendLog({ text: `\n===== Generate All Videos =====\n`, level: 'header', timestamp: ts() })
 
       await api.runPipeline({
-        idea_index: idea.index,
+        story_id: selectedStoryId,
         wait_between_sec: advanced.waitBetweenSec,
         wait_max_sec: advanced.waitMaxSec,
         scene_max_retries: advanced.sceneMaxRetries,

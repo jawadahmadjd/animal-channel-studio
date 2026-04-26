@@ -1,142 +1,194 @@
 import { useEffect, useState } from 'react'
-import { RefreshCw, Trash2, FolderOutput, Copy, Check } from 'lucide-react'
+import { Trash2, XCircle, ChevronDown, Mic2, Film } from 'lucide-react'
 import { useStore } from '../../store/useStore'
-import { api, subscribeToStream, classifyLogLine } from '../../api/client'
+import { api, type IdeaDbEntry } from '../../api/client'
 import StepCard from './StepCard'
 
 export default function PickStoryStep() {
   const {
-    ideas, selectedIdeaIndex, setIdeas, setSelectedIdeaIndex,
-    appendLog, runState, setRunState, setActiveStep, advanced,
+    runState, setSelectedStoryId, setSelectedStoryTitle, resetContentCreation,
   } = useStore()
 
-  useEffect(() => {
-    api.getIdeas().then(setIdeas).catch(() => {})
-  }, [setIdeas])
+  const [dbIdeas, setDbIdeas] = useState<IdeaDbEntry[]>([])
+  const [selectedIndex, setSelectedIndex] = useState(0)
+  const [expandedSection, setExpandedSection] = useState<'script' | 'vo' | null>(null)
+  const [removing, setRemoving] = useState(false)
+  const [clearing, setClearing] = useState(false)
+  const [actionError, setActionError] = useState('')
 
-  const selectedIdea = ideas[selectedIdeaIndex]
-
-  async function startAndStream(label: string, startFn: () => Promise<unknown>) {
+  async function loadDb() {
     try {
-      setRunState('running')
-      appendLog({ text: `\n===== ${label} =====\n`, level: 'header', timestamp: ts() })
-      await startFn()
-      const unsub = subscribeToStream(
-        (line) => appendLog({ text: line, level: classifyLogLine(line), timestamp: ts() }),
-        () => { setRunState('idle'); unsub() }
-      )
+      const ideas = await api.getIdeasDb()
+      setDbIdeas(ideas)
+      setSelectedIndex(0)
     } catch {
-      setRunState('error')
+      setDbIdeas([])
     }
   }
 
-  async function handleResume() {
-    if (!selectedIdea) return
-    setActiveStep(6)
-    await startAndStream('Resume Pipeline', () =>
-      api.runResume({
-        story_id: selectedIdea.story_id,
-        wait_between_sec: advanced.waitBetweenSec,
-        wait_max_sec: advanced.waitMaxSec,
-        scene_max_retries: advanced.sceneMaxRetries,
-        timeout_sec: advanced.timeoutSec,
-        dry_run: advanced.dryRun,
-        headless: advanced.headless,
-      })
-    )
+  useEffect(() => {
+    loadDb()
+  }, [])
+
+  const selected = dbIdeas[selectedIndex] ?? null
+
+  useEffect(() => {
+    if (selected) {
+      setSelectedStoryId(selected.story_id)
+      setSelectedStoryTitle(selected.title)
+    }
+  }, [selected, setSelectedStoryId, setSelectedStoryTitle])
+
+  async function handleRemoveIdea() {
+    if (!selected) return
+    if (!confirm(`Remove "${selected.title}" permanently? This deletes it from the database and Ideas.md.`)) return
+    setRemoving(true)
+    setActionError('')
+    try {
+      await api.deleteIdeaFromDb(selected.story_id)
+      resetContentCreation()
+      await loadDb()
+    } catch (e: unknown) {
+      setActionError(e instanceof Error ? e.message : 'Failed to remove idea')
+    } finally {
+      setRemoving(false)
+    }
   }
 
-  async function handleFreshStart() {
-    if (!selectedIdea) return
-    if (!confirm(`Delete ALL progress for "${selectedIdea.title}"? This cannot be undone.`)) return
-    await api.runFreshStart(selectedIdea.story_id)
-    appendLog({ text: `\n[Fresh Start] Progress cleared for "${selectedIdea.title}"\n`, level: 'ok', timestamp: ts() })
-  }
-
-  async function handleFinalize() {
-    if (!selectedIdea) return
-    setActiveStep(6)
-    await startAndStream('Finalize Story', () => api.runFinalize(selectedIdea.story_id))
+  async function handleClearMetadata() {
+    if (!selected) return
+    if (!confirm(`Clear all metadata for "${selected.title}"? The idea stays in Ideas.md but script, VO narrations and VEO prompts will be deleted. You can regenerate them from Steps 3–4.`)) return
+    setClearing(true)
+    setActionError('')
+    try {
+      await api.deleteIdeaFromDb(selected.story_id)
+      await loadDb()
+    } catch (e: unknown) {
+      setActionError(e instanceof Error ? e.message : 'Failed to clear metadata')
+    } finally {
+      setClearing(false)
+    }
   }
 
   const busy = runState === 'running'
 
   return (
-    <StepCard title="6. Pick a Story from Ideas" subtitle="Select from trending animal narrative concepts.">
-      {/* Dropdown */}
-      <div className="relative mb-4">
-        <select
-          className="w-full px-4 py-3 rounded-xl text-sm font-bold bg-slate-50 border border-slate-100 text-slate-900 outline-none appearance-none focus:border-emerald-500 focus:ring-4 focus:ring-emerald-50 transition-all"
-          value={selectedIdeaIndex}
-          onChange={(e) => setSelectedIdeaIndex(Number(e.target.value))}
-        >
-          {ideas.length === 0 && <option value={0}>(Loading ideas…)</option>}
-          {ideas.map((idea, i) => (
-            <option key={idea.story_id} value={i}>
-              {idea.index}. {idea.title}
-            </option>
-          ))}
-        </select>
-        <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400">
-          <RefreshCw size={14} className={busy ? 'animate-spin' : ''} />
+    <StepCard title="6. Pick a Story" subtitle="Select a story with pre-generated metadata to bridge into video generation.">
+
+      {dbIdeas.length === 0 ? (
+        <div className="flex flex-col items-center gap-3 py-8 text-center">
+          <p className="text-sm font-bold text-slate-500">No ready ideas yet.</p>
+          <p className="text-xs text-slate-400 font-medium max-w-xs leading-relaxed">
+            Complete Steps 2–4 (Idea → Script → Narration &amp; Prompts) and save to the database. Only fully prepared ideas appear here.
+          </p>
         </div>
-      </div>
+      ) : (
+        <>
+          {/* Selector row */}
+          <div className="relative mb-4">
+            <select
+              className="w-full px-4 py-3 rounded-xl text-sm font-bold bg-slate-50 border border-slate-100 text-slate-900 outline-none appearance-none focus:border-emerald-500 focus:ring-4 focus:ring-emerald-50 transition-all"
+              value={selectedIndex}
+              onChange={(e) => { setSelectedIndex(Number(e.target.value)); setExpandedSection(null); setActionError('') }}
+            >
+              {dbIdeas.map((idea, i) => (
+                <option key={idea.story_id} value={i}>
+                  {idea.title}
+                </option>
+              ))}
+            </select>
+            <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400">
+              <ChevronDown size={14} />
+            </div>
+          </div>
 
-      {/* Story ID — subtle copyable chip, not a raw text dump */}
-      {selectedIdea && <StoryIdChip id={selectedIdea.story_id} />}
+          {/* Metadata preview */}
+          {selected && (
+            <div className="space-y-3 mb-5">
+              {/* Description */}
+              <div className="px-4 py-3 rounded-xl bg-slate-50 border border-slate-100">
+                <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1">Description</p>
+                <p className="text-sm text-slate-700 font-medium leading-relaxed">{selected.description}</p>
+              </div>
 
-      {/* Action buttons — unified outline style, semantically coloured on hover */}
-      <div className="flex gap-3 mt-6">
-        <ActionBtn
-          icon={<RefreshCw size={14} />}
-          label="Resume"
-          onClick={handleResume}
-          disabled={busy || !selectedIdea}
-          title="Continue an existing generation for this story."
-          variant="primary"
-        />
-        <ActionBtn
-          icon={<FolderOutput size={14} />}
-          label="Finalize"
-          onClick={handleFinalize}
-          disabled={busy || !selectedIdea}
-          title="Move downloaded clips to the final output folder."
-          variant="secondary"
-        />
-        <ActionBtn
-          icon={<Trash2 size={14} />}
-          label="Fresh Start"
-          onClick={handleFreshStart}
-          disabled={busy || !selectedIdea}
-          title="Delete all saved progress and start from scratch."
-          variant="danger"
-        />
-      </div>
+              {/* Script preview (collapsible) */}
+              <div className="rounded-xl border border-slate-100 overflow-hidden">
+                <button
+                  onClick={() => setExpandedSection(expandedSection === 'script' ? null : 'script')}
+                  className="w-full flex items-center justify-between px-4 py-3 bg-slate-50 hover:bg-slate-100 transition-colors"
+                >
+                  <span className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-slate-500">
+                    <Film size={12} /> Script
+                  </span>
+                  <ChevronDown
+                    size={13}
+                    className={`text-slate-400 transition-transform ${expandedSection === 'script' ? 'rotate-180' : ''}`}
+                  />
+                </button>
+                {expandedSection === 'script' && (
+                  <div className="px-4 py-3 border-t border-slate-100 max-h-48 overflow-y-auto custom-scrollbar">
+                    <p className="text-xs text-slate-700 font-medium leading-relaxed whitespace-pre-wrap">{selected.script}</p>
+                  </div>
+                )}
+              </div>
+
+              {/* VO Narrations preview (collapsible) */}
+              <div className="rounded-xl border border-slate-100 overflow-hidden">
+                <button
+                  onClick={() => setExpandedSection(expandedSection === 'vo' ? null : 'vo')}
+                  className="w-full flex items-center justify-between px-4 py-3 bg-slate-50 hover:bg-slate-100 transition-colors"
+                >
+                  <span className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-slate-500">
+                    <Mic2 size={12} /> {selected.vo_narrations.length} VO Narrations &amp; VEO 3 Prompts
+                  </span>
+                  <ChevronDown
+                    size={13}
+                    className={`text-slate-400 transition-transform ${expandedSection === 'vo' ? 'rotate-180' : ''}`}
+                  />
+                </button>
+                {expandedSection === 'vo' && (
+                  <div className="border-t border-slate-100 divide-y divide-slate-100 max-h-64 overflow-y-auto custom-scrollbar">
+                    {selected.vo_narrations.map((item, i) => (
+                      <div key={i} className="px-4 py-3 space-y-1">
+                        <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">Scene {i + 1}</p>
+                        <p className="text-xs text-slate-700 font-medium leading-relaxed">{item.narration}</p>
+                        <p className="text-[11px] text-violet-600 font-medium leading-relaxed italic">{item.veo_prompt}</p>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* Management actions */}
+          <div className="flex gap-2 flex-wrap">
+            <ActionBtn
+              icon={<XCircle size={14} />}
+              label={clearing ? 'Clearing…' : 'Clear Metadata'}
+              onClick={handleClearMetadata}
+              disabled={busy || !selected || clearing || removing}
+              title="Delete saved script/VO/prompts so you can regenerate them. Idea stays in Ideas.md."
+              variant="warn"
+            />
+            <ActionBtn
+              icon={<Trash2 size={14} />}
+              label={removing ? 'Removing…' : 'Remove Idea'}
+              onClick={handleRemoveIdea}
+              disabled={busy || !selected || removing || clearing}
+              title="Permanently delete this idea from the database and Ideas.md."
+              variant="danger"
+            />
+          </div>
+
+          {actionError && (
+            <p className="mt-3 text-xs font-bold text-red-500 bg-red-50 px-4 py-2 rounded-lg border border-red-100">
+              {actionError}
+            </p>
+          )}
+        </>
+      )}
     </StepCard>
-  )
-}
-
-function StoryIdChip({ id }: { id: string }) {
-  const [copied, setCopied] = useState(false)
-
-  function handleCopy() {
-    navigator.clipboard.writeText(id).then(() => {
-      setCopied(true)
-      setTimeout(() => setCopied(false), 1500)
-    })
-  }
-
-  return (
-    <div
-      className="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg text-[10px] font-black font-mono cursor-pointer select-none bg-slate-50 border border-slate-100 text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition-all"
-      onClick={handleCopy}
-      title="Click to copy story ID"
-    >
-      <span className="truncate max-w-[200px] uppercase tracking-wider">{id}</span>
-      {copied
-        ? <Check size={12} className="text-emerald-500" strokeWidth={3} />
-        : <Copy size={12} strokeWidth={3} />}
-    </div>
   )
 }
 
@@ -148,21 +200,21 @@ function ActionBtn({
   onClick: () => void
   disabled: boolean
   title: string
-  variant: 'primary' | 'secondary' | 'danger'
+  variant: 'primary' | 'secondary' | 'warn' | 'danger'
 }) {
   const colors = {
     primary:   'bg-emerald-50 text-emerald-600 border-emerald-100 hover:bg-emerald-100',
     secondary: 'bg-slate-50 text-slate-600 border-slate-100 hover:bg-slate-100',
+    warn:      'bg-amber-50 text-amber-600 border-amber-100 hover:bg-amber-100',
     danger:    'bg-red-50 text-red-600 border-red-100 hover:bg-red-100',
   }
-  const c = colors[variant]
 
   return (
     <button
       onClick={onClick}
       disabled={disabled}
       title={title}
-      className={`flex-1 flex items-center justify-center gap-2 px-4 py-3 rounded-xl text-xs font-black uppercase tracking-widest border-2 transition-all disabled:opacity-20 ${c}`}
+      className={`flex items-center justify-center gap-1.5 px-3 py-2.5 rounded-xl text-xs font-black uppercase tracking-widest border-2 transition-all disabled:opacity-20 ${colors[variant]}`}
     >
       {icon}
       {label}
@@ -170,6 +222,3 @@ function ActionBtn({
   )
 }
 
-function ts() {
-  return new Date().toLocaleTimeString('en-US', { hour12: false })
-}

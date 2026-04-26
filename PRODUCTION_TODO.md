@@ -374,15 +374,15 @@ StartStep (step 6)
   → "Start Pipeline" passes selected_story_id from store into POST /run/pipeline
 ```
 
-- [ ] Add to `useStore.ts`: `generatedIdea`, `generatedScript`, `generatedScenes`, `selectedStoryId` state fields
-- [ ] **IdeaGenerationStep**: on "Generate" click, call `POST /generate/idea`, store result, mark step complete
-- [ ] **ScriptGenerationStep**: read `generatedIdea` from store, call `POST /generate/script`, store result; disable this step until previous step is complete
-- [ ] **VoNarrationStep**: read `generatedScript`, call `POST /generate/vo-narration`, store scenes
-- [ ] **GenerateVoiceoverStep**: call `POST /generate/voiceover` for each scene, show audio player per scene
-- [ ] **PickStoryStep**: show the generated story title + a list of existing unprocessed ideas from `GET /ideas`; user picks one and clicks "Use This Story" → store `selectedStoryId`
-- [ ] **StartStep**: include `selectedStoryId` in the pipeline start request body
-- [ ] Add "Continue →" button to each step — only enabled when the step has completed successfully
-- [ ] Add a "Reset" button that clears all generated state and starts over from Step 1
+- [x] Add to `useStore.ts`: `generatedIdea`, `generatedScript`, `generatedScenes`, `selectedStoryId` state fields
+- [x] **IdeaGenerationStep**: on "Generate" click, call `POST /generate/idea`, store result, mark step complete
+- [x] **ScriptGenerationStep**: read `generatedIdea` from store, call `POST /generate/script`, store result; disable this step until previous step is complete
+- [x] **VoNarrationStep**: read `generatedScript`, call `POST /generate/vo-narration`, store scenes
+- [x] **GenerateVoiceoverStep**: call `POST /generate/voiceover` for each scene, show audio player per scene
+- [x] **PickStoryStep**: show the generated story title + a list of existing unprocessed ideas from `GET /ideas`; user picks one and clicks "Use This Story" → store `selectedStoryId`
+- [x] **StartStep**: include `selectedStoryId` in the pipeline start request body
+- [x] Add "Continue →" button to each step — only enabled when the step has completed successfully
+- [x] Add a "Reset" button that clears all generated state and starts over from Step 1
 
 ---
 
@@ -390,11 +390,11 @@ StartStep (step 6)
 
 **Context:** Currently Python scripts print exceptions directly to stdout (mixed with normal output) and the UI displays them raw in the log. A customer seeing `AttributeError: 'NoneType' object has no attribute 'click'` or a 50-line traceback has no idea what happened or what to do. We need structured error events on the SSE stream and friendly UI rendering.
 
-- [ ] In `bridge/server.py`, wrap all subprocess stderr capture: if a line matches a Python traceback pattern, emit a structured SSE event: `data: {"type":"error","message":"Pipeline stopped unexpectedly. Check logs for details.","detail":"<raw traceback>"}\n\n`
+- [x] In `bridge/server.py`, wrap all subprocess stderr capture: if a line matches a Python traceback pattern, emit a structured SSE event: `data: {"type":"error","message":"Pipeline stopped unexpectedly. Check logs for details.","detail":"<raw traceback>"}\n\n`
 - [ ] In Python scripts, replace bare `except:` and `except Exception as e: print(e)` with structured output: `print(json.dumps({"type": "error", "message": "human-friendly message", "detail": str(e)}))`
-- [ ] In `ui/src/components/monitor/LiveLog.tsx`, render SSE events with `type == "error"` in red with a collapsed "Show details" toggle that reveals the raw detail
-- [ ] Never show a Python traceback as the main visible text — always show the human-friendly message first
-- [ ] Add a "Copy error" button on error log entries (copies the detail text to clipboard for support tickets)
+- [x] In `ui/src/components/monitor/LiveLog.tsx`, render SSE events with `type == "error"` in red with a collapsed "Show details" toggle that reveals the raw detail
+- [x] Never show a Python traceback as the main visible text — always show the human-friendly message first
+- [x] Add a "Copy error" button on error log entries (copies the detail text to clipboard for support tickets)
 
 ---
 
@@ -402,10 +402,10 @@ StartStep (step 6)
 
 **Context:** `VideoPreview.tsx` exists and has a `<video>` element, but it is static — it doesn't update as new clips are downloaded during a pipeline run. The customer stares at an empty preview box for the entire run (which can take 30–60 minutes). Showing the latest downloaded clip as it arrives makes the tool feel alive and gives confidence the run is working.
 
-- [ ] Add `GET /output/watch` SSE endpoint in `bridge/server.py`: watches the `output/` directory for new `.mp4` files using `watchfiles` (add to bridge requirements) and emits `data: {"type":"clip_ready","path":"<relative_path>","scene":N}\n\n` events
-- [ ] `VideoPreview.tsx` subscribes to this SSE stream on mount; on `clip_ready` event, updates its `src` to the new clip via `GET /output/file?path=<path>` (add a simple file-serving endpoint in bridge)
-- [ ] Add a scene counter below the video: "Scene 3 of 12 — Clip 2"
-- [ ] Add a thumbnail strip below the video showing all downloaded clips as small `<video>` thumbnails; clicking one loads it in the main player
+- [x] Add `GET /output/watch` SSE endpoint in `bridge/server.py`: watches the `output/` directory for new `.mp4` files using `watchfiles` (add to bridge requirements) and emits `data: {"type":"clip_ready","path":"<relative_path>","scene":N}\n\n` events
+- [x] `VideoPreview.tsx` subscribes to this SSE stream on mount; on `clip_ready` event, updates its `src` to the new clip via `GET /output/file?path=<path>` (add a simple file-serving endpoint in bridge)
+- [x] Add a scene counter below the video: "Scene 3 of 12 — Clip 2"
+- [x] Add a thumbnail strip below the video showing all downloaded clips as small `<video>` thumbnails; clicking one loads it in the main player
 
 ---
 
@@ -413,11 +413,11 @@ StartStep (step 6)
 
 **Context:** `LogsView` exists as a full-width log viewer but only reads static log files after the fact. During a pipeline run, the customer has to switch back to PipelineView to see what's happening. LogsView should show the same live SSE stream as PipelineView so customers can switch freely.
 
-- [ ] In `useStore.ts`, store the live log entries in a persistent array `logEntries: LogEntry[]` that is populated by the SSE stream; entries persist when the user switches views
-- [ ] Both `LiveLog.tsx` (in PipelineView) and `LogsView.tsx` should read from this same store array
-- [ ] LogsView should additionally allow browsing historical log files: show a list of past sessions from `GET /logs/sessions` and load a selected session's log
-- [ ] Add filter buttons in LogsView: All / Info / Warning / Error (filter by `entry.level`)
-- [ ] Add a search input that filters entries by text
+- [x] In `useStore.ts`, store the live log entries in a persistent array `logEntries: LogEntry[]` that is populated by the SSE stream; entries persist when the user switches views
+- [x] Both `LiveLog.tsx` (in PipelineView) and `LogsView.tsx` should read from this same store array
+- [x] LogsView should additionally allow browsing historical log files: show a list of past sessions from `GET /logs/sessions` and load a selected session's log
+- [x] Add filter buttons in LogsView: All / Info / Warning / Error (filter by `entry.level`)
+- [x] Add a search input that filters entries by text
 
 ---
 
@@ -425,9 +425,9 @@ StartStep (step 6)
 
 **Context:** The `AdvancedOptions` panel (collapsible section in the UI) lets users set wait time, retries, and timeout per run. Currently these values reset to defaults every time the app is opened. This forces power users to re-enter their preferred settings on every session.
 
-- [ ] When the user changes any advanced option, call `POST /settings/app` to persist it immediately (debounced by 500ms — don't call on every keystroke)
-- [ ] On app launch, `GET /settings/app` and pre-fill the AdvancedOptions panel with the saved values
-- [ ] The advanced options that should persist: `wait_between_scenes`, `max_retries_per_scene`, `pipeline_timeout_minutes`, `flow_headless`
+- [x] When the user changes any advanced option, call `POST /settings/app` to persist it immediately (debounced by 500ms — don't call on every keystroke)
+- [x] On app launch, `GET /settings/app` and pre-fill the AdvancedOptions panel with the saved values
+- [x] The advanced options that should persist: `wait_between_scenes`, `max_retries_per_scene`, `pipeline_timeout_minutes`, `flow_headless`
 
 ---
 
@@ -435,10 +435,10 @@ StartStep (step 6)
 
 **Context:** Google Flow login state is saved in `state/flow_auth.json` (Playwright browser cookies). These cookies expire after some period (typically 7–30 days depending on Google's session policy). When they expire, the automation silently fails mid-run — Playwright lands on the Google login page instead of Flow, and all scene generation fails. The current code has no expiry check.
 
-- [ ] In `bridge/server.py`, extend `GET /auth/status`: instead of just checking if `flow_auth.json` exists, also check the `expires` timestamp of the cookies inside it. If any critical Google cookie (e.g. `SAPISID`, `SID`) expires within 24 hours, return `{ "logged_in": true, "expires_soon": true }`
-- [ ] In `ui/src/components/layout/Sidebar.tsx`, if `expires_soon` is true, show the auth badge in orange with tooltip "Session expires soon — re-login to avoid interruptions"
-- [ ] Before starting a pipeline run (in StartStep), check auth status. If `logged_in` is false or `expires_soon` is true, show a modal: "Your Google session has expired. Please re-login before starting." with a "Go to Login" button
-- [ ] Add a "Re-login" button in the sidebar auth badge area that directly triggers the login flow
+- [x] In `bridge/server.py`, extend `GET /auth/status`: instead of just checking if `flow_auth.json` exists, also check the `expires` timestamp of the cookies inside it. If any critical Google cookie (e.g. `SAPISID`, `SID`) expires within 24 hours, return `{ "logged_in": true, "expires_soon": true }`
+- [x] In `ui/src/components/layout/Sidebar.tsx`, if `expires_soon` is true, show the auth badge in orange with tooltip "Session expires soon — re-login to avoid interruptions"
+- [x] Before starting a pipeline run (in StartStep), check auth status. If `logged_in` is false or `expires_soon` is true, show a modal: "Your Google session has expired. Please re-login before starting." with a "Go to Login" button
+- [x] Add a "Re-login" button in the sidebar auth badge area that directly triggers the login flow
 
 ---
 
@@ -453,10 +453,10 @@ StartStep (step 6)
 
 **Context:** The bridge accepts user-controlled values like `story_id` and `idea_index` and passes them directly to Python subprocess arguments and file system paths. A malformed `story_id` like `../../etc/passwd` or `; rm -rf /` could cause unexpected behavior or security issues. Since this is a local desktop app the risk is low, but validation also catches honest mistakes (typos, out-of-bounds indices) early.
 
-- [ ] In `bridge/server.py`, add a validator for `story_id`: regex `^[a-zA-Z0-9_-]{1,100}$` — if invalid, return HTTP 422 with `{"error": "Invalid story_id format"}`
-- [ ] Validate `idea_index`: must be a non-negative integer; check against the actual count of ideas from `Ideas.md`
-- [ ] Validate `scene_count`: integer between 1 and 20
-- [ ] Validate file paths returned to the UI: ensure they are within the configured data directory
+- [x] In `bridge/server.py`, add a validator for `story_id`: regex `^[a-zA-Z0-9_-]{1,100}$` — if invalid, return HTTP 422 with `{"error": "Invalid story_id format"}`
+- [x] Validate `idea_index`: must be a non-negative integer; check against the actual count of ideas from `Ideas.md`
+- [x] Validate `scene_count`: integer between 1 and 20
+- [x] Validate file paths returned to the UI: ensure they are within the configured data directory
 
 ---
 
@@ -464,10 +464,10 @@ StartStep (step 6)
 
 **Context:** The bridge takes 1–3 seconds to start up (Python import time + Uvicorn startup). If React loads and immediately makes API calls before the bridge is ready, all calls fail and the UI shows errors. We need a loading state while the bridge starts.
 
-- [ ] Add `GET /health` endpoint to `bridge/server.py`: returns `{ "status": "ok", "python_version": "...", "data_dir": "...", "keys": { "deepseek": bool, "elevenlabs": bool } }`
-- [ ] In `electron/main.ts`, after spawning the bridge, poll `http://localhost:8765/health` every 500ms for up to 10 seconds before loading the React app URL
-- [ ] In React, show a full-screen "Connecting..." splash screen while waiting for the bridge (store a `bridgeReady` boolean in Zustand, set to true when the first successful API call completes)
-- [ ] If the bridge does not respond within 10 seconds, show an error dialog: "Could not start the background service. Try restarting the app." with a "Restart" button that calls `app.relaunch()`
+- [x] Add `GET /health` endpoint to `bridge/server.py`: returns `{ "status": "ok", "python_version": "...", "data_dir": "...", "keys": { "deepseek": bool, "elevenlabs": bool } }`
+- [x] In `electron/main.ts`, after spawning the bridge, poll `http://localhost:8765/health` every 500ms for up to 10 seconds before loading the React app URL
+- [x] In React, show a full-screen "Connecting..." splash screen while waiting for the bridge (store a `bridgeReady` boolean in Zustand, set to true when the first successful API call completes)
+- [x] If the bridge does not respond within 10 seconds, show an error dialog: "Could not start the background service. Try restarting the app." with a "Restart" button that calls `app.relaunch()`
 
 ---
 
@@ -475,11 +475,11 @@ StartStep (step 6)
 
 **Context:** Multiple UI buttons currently have no disabled state during API calls. A user clicking "Start Pipeline" twice will spawn two parallel Python processes writing to the same files — causing corrupted state and unpredictable behavior. Step "Generate" buttons also have no loading indicator, so users don't know if their click registered.
 
-- [ ] Add `pipelineRunning: boolean` to Zustand store; set to true when SSE stream opens, false when it closes
-- [ ] Disable the "Start Pipeline" button when `pipelineRunning` is true; show a spinner inside it
-- [ ] Each step card's "Generate" button: disable during its API call, show a spinner
-- [ ] If the user clicks "Start Pipeline" while one is already running, show a toast: "A pipeline is already running. Stop it first."
-- [ ] Debounce the settings save call (H5) by 500ms to avoid hammering the bridge on every keystroke
+- [x] Add `pipelineRunning: boolean` to Zustand store; set to true when SSE stream opens, false when it closes
+- [x] Disable the "Start Pipeline" button when `pipelineRunning` is true; show a spinner inside it
+- [x] Each step card's "Generate" button: disable during its API call, show a spinner
+- [x] If the user clicks "Start Pipeline" while one is already running, show a toast: "A pipeline is already running. Stop it first."
+- [x] Debounce the settings save call (H5) by 500ms to avoid hammering the bridge on every keystroke
 
 ---
 
@@ -487,8 +487,8 @@ StartStep (step 6)
 
 **Context:** Resume functionality lets a run continue from where it left off after a crash or stop. Run state is saved in `state/runs/<story_id>.json`. If the Python scripts are updated between a stop and a resume, the saved state format might not match the new code, causing crashes on resume. This is a real risk after every update.
 
-- [ ] In `state/runs/<story_id>.json`, include a `schema_version` field matching the current code's schema version (a simple incrementing integer in `run_pipeline.py`)
-- [ ] On resume, if the saved `schema_version` does not match, log a warning and show a UI prompt: "This run was saved with an older version of the app. Resume may be unreliable. Continue anyway or start fresh?"
+- [x] In `state/runs/<story_id>.json`, include a `schema_version` field matching the current code's schema version (a simple incrementing integer in `run_pipeline.py`)
+- [x] On resume, if the saved `schema_version` does not match, log a warning and show a UI prompt: "This run was saved with an older version of the app. Resume may be unreliable. Continue anyway or start fresh?"
 
 ---
 
@@ -496,9 +496,9 @@ StartStep (step 6)
 
 **Context:** ElevenLabs charges per character of text-to-speech. DeepSeek charges per token. A user accidentally clicking "Generate All" for a 12-scene story with long voiceover scripts could spend $5–10 without realizing it. We need visible cost estimates and confirmation before expensive operations.
 
-- [ ] Before calling ElevenLabs voiceover (`POST /generate/voiceover`), count the total characters in the VO text and show an estimate dialog: "This will use approximately X characters (~$Y). Continue?"
+- [x] Before calling ElevenLabs voiceover (`POST /generate/voiceover`), count the total characters in the VO text and show an estimate dialog: "This will use approximately X characters (~$Y). Continue?"
 - [ ] In the bridge, calculate estimated DeepSeek token count before making LLM calls and log it at INFO level
-- [ ] Add a "Confirm costly operations" toggle in Settings (default: on) — when off, skips these confirmation dialogs for power users who know what they're doing
+- [x] Add a "Confirm costly operations" toggle in Settings (default: on) — when off, skips these confirmation dialogs for power users who know what they're doing
 
 ---
 
@@ -642,11 +642,11 @@ Update these counts as you check off items above.
 |---|---|---|---|
 | Critical (C1–C6) | 22 | 18 | 4 |
 | Auto-Update (U1–U5) | 17 | 13 | 4 |
-| High (H1–H6) | 18 | 0 | 18 |
-| Medium (M1–M5) | 10 | 0 | 10 |
+| High (H1–H6) | 18 | 17 | 1 |
+| Medium (M1–M5) | 10 | 9 | 1 |
 | Low (L1–L6) | 10 | 0 | 10 |
 | Packaging (P1–P5) | 12 | 0 | 12 |
-| **Total** | **89** | **31** | **58** |
+| **Total** | **89** | **57** | **32** |
 
 ---
 

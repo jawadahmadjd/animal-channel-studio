@@ -9,7 +9,6 @@ import GenerateVoiceoverStep from '../components/pipeline/GenerateVoiceoverStep'
 import PickStoryStep from '../components/pipeline/PickStoryStep'
 import SettingsStep from '../components/pipeline/SettingsStep'
 import StartStep from '../components/pipeline/StartStep'
-import AdvancedOptions from '../components/pipeline/AdvancedOptions'
 import VideoPreview from '../components/monitor/VideoPreview'
 import PipelineActivity from '../components/monitor/PipelineActivity'
 
@@ -40,7 +39,6 @@ export default function PipelineView({ scrollRef }: Props) {
             <PickStoryStep />
             <SettingsStep />
             <StartStep />
-            <AdvancedOptions />
           </div>
 
           <div className="flex-1" style={{ minHeight: '4rem' }} />

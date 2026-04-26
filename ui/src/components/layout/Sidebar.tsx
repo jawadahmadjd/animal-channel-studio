@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { LayoutList, ScrollText, Settings, PlusCircle, ShieldCheck, ShieldAlert } from 'lucide-react'
+import { LayoutList, ScrollText, Settings, PlusCircle, ShieldCheck, ShieldAlert, AlertCircle, LogIn, KeyRound, CheckCircle2, XCircle } from 'lucide-react'
 import { useStore } from '../../store/useStore'
 import { api } from '../../api/client'
 
@@ -8,8 +8,9 @@ interface Props {
 }
 
 export default function Sidebar({ onNewVideo }: Props) {
-  const { activeView, setActiveView, isAuthorized, setIsAuthorized } = useStore()
+  const { activeView, setActiveView, isAuthorized, setIsAuthorized, runState, apiKeysConfigured } = useStore()
   const [appVersion, setAppVersion] = useState<string>('')
+  const [expiresSoon, setExpiresSoon] = useState(false)
 
   useEffect(() => {
     window.electron?.getVersion?.().then(setAppVersion).catch(() => {})
@@ -18,16 +19,24 @@ export default function Sidebar({ onNewVideo }: Props) {
   useEffect(() => {
     const poll = async () => {
       try {
-        const { authorized } = await api.getAuthStatus()
-        setIsAuthorized(authorized)
+        const result = await api.getAuthStatus()
+        setIsAuthorized(result.authorized)
+        setExpiresSoon(result.expires_soon ?? false)
       } catch {
         // bridge not ready yet
       }
     }
+    // Poll less frequently when no pipeline running
+    const interval = runState === 'running' ? 4000 : 15000
     poll()
-    const id = setInterval(poll, 4000)
+    const id = setInterval(poll, interval)
     return () => clearInterval(id)
-  }, [setIsAuthorized])
+  }, [setIsAuthorized, runState])
+
+  function handleRelogin() {
+    api.runLogin(false).catch(() => {})
+    setActiveView('pipeline')
+  }
 
   return (
     <aside
@@ -102,13 +111,45 @@ export default function Sidebar({ onNewVideo }: Props) {
         </p>
         <div
           className={`flex items-center gap-3 px-4 py-3 rounded-xl text-xs font-bold transition-all ${
-            isAuthorized 
-              ? 'bg-emerald-50 text-emerald-700 border border-emerald-100' 
-              : 'bg-red-50 text-red-700 border border-red-100'
+            !isAuthorized
+              ? 'bg-red-50 text-red-700 border border-red-100'
+              : expiresSoon
+              ? 'bg-amber-50 text-amber-700 border border-amber-100'
+              : 'bg-emerald-50 text-emerald-700 border border-emerald-100'
           }`}
+          title={expiresSoon ? 'Session expires soon — re-login to avoid interruptions' : undefined}
         >
-          {isAuthorized ? <ShieldCheck size={16} /> : <ShieldAlert size={16} />}
-          {isAuthorized ? 'AUTHORIZED' : 'UNAUTHORIZED'}
+          {!isAuthorized
+            ? <ShieldAlert size={16} />
+            : expiresSoon
+            ? <AlertCircle size={16} />
+            : <ShieldCheck size={16} />}
+          {!isAuthorized ? 'UNAUTHORIZED' : expiresSoon ? 'EXPIRES SOON' : 'AUTHORIZED'}
+        </div>
+
+        {/* Re-login button — shown when expired or expiring soon */}
+        {(!isAuthorized || expiresSoon) && (
+          <button
+            onClick={handleRelogin}
+            className="mt-2 w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-[11px] font-black uppercase tracking-widest text-slate-600 bg-slate-50 border border-slate-200 hover:bg-slate-100 transition-all"
+          >
+            <LogIn size={13} />
+            Re-login to Google
+          </button>
+        )}
+
+        {/* API Keys status */}
+        <div className="mt-4 flex flex-col gap-1.5">
+          <ApiKeyRow
+            label="DeepSeek"
+            configured={apiKeysConfigured.deepseek}
+            onFix={() => setActiveView('settings')}
+          />
+          <ApiKeyRow
+            label="ElevenLabs"
+            configured={apiKeysConfigured.elevenlabs}
+            onFix={() => setActiveView('settings')}
+          />
         </div>
       </div>
 
@@ -125,6 +166,34 @@ export default function Sidebar({ onNewVideo }: Props) {
         </button>
       </div>
     </aside>
+  )
+}
+
+function ApiKeyRow({ label, configured, onFix }: { label: string; configured: boolean; onFix: () => void }) {
+  return (
+    <div
+      className={`flex items-center justify-between px-3 py-2 rounded-lg text-[11px] font-bold border ${
+        configured
+          ? 'bg-emerald-50 border-emerald-100 text-emerald-700'
+          : 'bg-red-50 border-red-100 text-red-600'
+      }`}
+    >
+      <div className="flex items-center gap-1.5">
+        <KeyRound size={11} strokeWidth={2.5} />
+        {label}
+      </div>
+      {configured
+        ? <CheckCircle2 size={12} strokeWidth={2.5} />
+        : (
+          <button
+            onClick={onFix}
+            className="text-[10px] font-black uppercase tracking-widest underline underline-offset-2 hover:text-red-800 transition-colors"
+          >
+            Set up
+          </button>
+        )
+      }
+    </div>
   )
 }
 

@@ -233,6 +233,7 @@ ipcMain.on('install-update', () => {
 ipcMain.handle('app:open-path', (_event, folderPath: string) => {
   shell.openPath(folderPath)
 })
+ipcMain.on('app:relaunch', () => { app.relaunch(); app.quit() })
 ipcMain.on('window:minimize', () => mainWindow?.minimize())
 ipcMain.on('window:maximize', () => {
   if (mainWindow?.isMaximized()) {

@@ -1,4 +1,5 @@
 import { create } from 'zustand'
+import { persist, createJSONStorage } from 'zustand/middleware'
 import {
   parseLogLine,
   saveTimingSession,
@@ -49,6 +50,20 @@ export interface VoNarrationItem {
   veoPrompt: string
 }
 
+export interface MultiScriptEntry {
+  ideaTitle: string
+  ideaDescription: string
+  script: string
+  wordCount?: number
+  targetWordCount?: number
+  lengthOk?: boolean
+}
+
+export interface GeneratedIdea {
+  title: string
+  description: string
+}
+
 export interface ElevenLabsVoice {
   voice_id: string
   name: string
@@ -77,16 +92,19 @@ export interface AdvancedOptions {
 
 interface AppState {
   activeView: 'pipeline' | 'logs' | 'settings'
+  bridgeReady: boolean
+  setBridgeReady: (v: boolean) => void
+  apiKeysConfigured: { deepseek: boolean; elevenlabs: boolean }
+  setApiKeysConfigured: (v: { deepseek: boolean; elevenlabs: boolean }) => void
   isAuthorized: boolean
   updateAvailable: boolean
   updateVersion: string
   setUpdateReady: (version: string) => void
   dismissUpdate: () => void
-  ideas: Idea[]
-  selectedIdeaIndex: number
   settings: Settings
   advanced: AdvancedOptions
   runState: 'idle' | 'running' | 'stopped' | 'complete' | 'error'
+  pipelineRunning: boolean
   activeStep: 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8
   currentScene: number
   totalScenes: number
@@ -96,18 +114,27 @@ interface AppState {
 
   // Content creation state (steps 2-5)
   ideaInput: string
-  generatedIdeas: string
+  ideaNiche: string
+  ideaContentType: string
+  generatedIdeas: GeneratedIdea[]
+  selectedIdeaIds: Set<number>
+  approvedIdeas: GeneratedIdea[]
+  activeApprovedIdeaIndex: number
   scriptInput: string
   generatedScript: string
   voNarrations: VoNarrationItem[]
+  multiScripts: MultiScriptEntry[]
+  selectedMultiScriptIndices: Set<number>
+  multiVoNarrations: VoNarrationItem[][]
   elevenlabsVoices: ElevenLabsVoice[]
   selectedVoiceId: string
   generatedAudioFilename: string
+  sceneAudioFilenames: string[]
+  selectedStoryId: string
+  selectedStoryTitle: string
 
   setActiveView: (view: 'pipeline' | 'logs' | 'settings') => void
   setIsAuthorized: (v: boolean) => void
-  setIdeas: (ideas: Idea[]) => void
-  setSelectedIdeaIndex: (idx: number) => void
   setSettings: (s: Partial<Settings>) => void
   setAdvanced: (a: Partial<AdvancedOptions>) => void
   setRunState: (s: AppState['runState']) => void
@@ -122,14 +149,29 @@ interface AppState {
   updateStageFromLine: (line: string) => void
 
   setIdeaInput: (v: string) => void
-  setGeneratedIdeas: (v: string) => void
+  setIdeaNiche: (v: string) => void
+  setIdeaContentType: (v: string) => void
+  setGeneratedIdeas: (ideas: GeneratedIdea[]) => void
+  toggleIdeaSelected: (index: number) => void
+  clearSelectedIdeas: () => void
+  setApprovedIdeas: (ideas: GeneratedIdea[]) => void
+  setActiveApprovedIdeaIndex: (i: number) => void
   setScriptInput: (v: string) => void
   setGeneratedScript: (v: string) => void
   setVoNarrations: (items: VoNarrationItem[]) => void
+  setMultiScripts: (scripts: MultiScriptEntry[]) => void
+  toggleMultiScriptSelected: (index: number) => void
+  setMultiVoNarrationsForIndex: (index: number, items: VoNarrationItem[]) => void
+  updateMultiVoNarrationItem: (scriptIdx: number, itemIdx: number, patch: Partial<VoNarrationItem>) => void
   setElevenLabsVoices: (voices: ElevenLabsVoice[]) => void
   setSelectedVoiceId: (id: string) => void
   setGeneratedAudioFilename: (filename: string) => void
+  setSceneAudioFilenames: (filenames: string[]) => void
+  updateSceneAudioFilename: (index: number, filename: string) => void
+  setSelectedStoryId: (id: string) => void
+  setSelectedStoryTitle: (title: string) => void
   updateVoNarrationItem: (index: number, patch: Partial<VoNarrationItem>) => void
+  resetContentCreation: () => void
 }
 
 let _logId = 0
@@ -149,15 +191,19 @@ function buildDefaultStages(avgs: Partial<Record<StageId, number>> = {}): Pipeli
   }))
 }
 
-export const useStore = create<AppState>((set, get) => ({
+export const useStore = create<AppState>()(
+  persist(
+    (set, get) => ({
   activeView: 'pipeline',
+  bridgeReady: false,
+  setBridgeReady: (bridgeReady) => set({ bridgeReady }),
+  apiKeysConfigured: { deepseek: false, elevenlabs: false },
+  setApiKeysConfigured: (apiKeysConfigured) => set({ apiKeysConfigured }),
   isAuthorized: false,
   updateAvailable: false,
   updateVersion: '',
   setUpdateReady: (version) => set({ updateAvailable: true, updateVersion: version }),
   dismissUpdate: () => set({ updateAvailable: false }),
-  ideas: [],
-  selectedIdeaIndex: 0,
   settings: {
     mode: 'Video',
     sub_type: 'Frames',
@@ -176,6 +222,7 @@ export const useStore = create<AppState>((set, get) => ({
     singleScene: 1,
   },
   runState: 'idle',
+  pipelineRunning: false,
   activeStep: 1,
   currentScene: 0,
   totalScenes: 0,
@@ -184,21 +231,30 @@ export const useStore = create<AppState>((set, get) => ({
   pipelineStages: buildDefaultStages(computeAverages()),
 
   ideaInput: '',
-  generatedIdeas: '',
+  ideaNiche: '',
+  ideaContentType: '',
+  generatedIdeas: [],
+  selectedIdeaIds: new Set(),
+  approvedIdeas: [],
+  activeApprovedIdeaIndex: 0,
   scriptInput: '',
   generatedScript: '',
   voNarrations: [],
+  multiScripts: [],
+  selectedMultiScriptIndices: new Set(),
+  multiVoNarrations: [],
   elevenlabsVoices: [],
   selectedVoiceId: '',
   generatedAudioFilename: '',
+  sceneAudioFilenames: [],
+  selectedStoryId: '',
+  selectedStoryTitle: '',
 
   setActiveView: (activeView) => set({ activeView }),
   setIsAuthorized: (isAuthorized) => set({ isAuthorized }),
-  setIdeas: (ideas) => set({ ideas }),
-  setSelectedIdeaIndex: (selectedIdeaIndex) => set({ selectedIdeaIndex }),
   setSettings: (s) => set((st) => ({ settings: { ...st.settings, ...s } })),
   setAdvanced: (a) => set((st) => ({ advanced: { ...st.advanced, ...a } })),
-  setRunState: (runState) => set({ runState }),
+  setRunState: (runState) => set({ runState, pipelineRunning: runState === 'running' }),
   setActiveStep: (activeStep) => set({ activeStep }),
   setCurrentScene: (currentScene) => set({ currentScene }),
   setTotalScenes: (totalScenes) => set({ totalScenes }),
@@ -208,17 +264,79 @@ export const useStore = create<AppState>((set, get) => ({
   clearLogs: () => set({ logLines: [] }),
 
   setIdeaInput: (ideaInput) => set({ ideaInput }),
-  setGeneratedIdeas: (generatedIdeas) => set({ generatedIdeas }),
+  setIdeaNiche: (ideaNiche) => set({ ideaNiche }),
+  setIdeaContentType: (ideaContentType) => set({ ideaContentType }),
+  setGeneratedIdeas: (generatedIdeas) => set({ generatedIdeas, selectedIdeaIds: new Set() }),
+  toggleIdeaSelected: (index) => set((st) => {
+    const next = new Set(st.selectedIdeaIds)
+    if (next.has(index)) next.delete(index)
+    else next.add(index)
+    return { selectedIdeaIds: next }
+  }),
+  clearSelectedIdeas: () => set({ selectedIdeaIds: new Set() }),
+  setApprovedIdeas: (approvedIdeas) => set({ approvedIdeas }),
+  setActiveApprovedIdeaIndex: (activeApprovedIdeaIndex) => set({ activeApprovedIdeaIndex }),
   setScriptInput: (scriptInput) => set({ scriptInput }),
   setGeneratedScript: (generatedScript) => set({ generatedScript }),
   setVoNarrations: (voNarrations) => set({ voNarrations }),
+  setMultiScripts: (multiScripts) => set({ multiScripts, multiVoNarrations: multiScripts.map(() => []), selectedMultiScriptIndices: new Set() }),
+  toggleMultiScriptSelected: (index) => set((st) => {
+    const next = new Set(st.selectedMultiScriptIndices)
+    if (next.has(index)) next.delete(index)
+    else next.add(index)
+    return { selectedMultiScriptIndices: next }
+  }),
+  setMultiVoNarrationsForIndex: (index, items) =>
+    set((st) => {
+      const next = [...st.multiVoNarrations]
+      next[index] = items
+      return { multiVoNarrations: next }
+    }),
+  updateMultiVoNarrationItem: (scriptIdx, itemIdx, patch) =>
+    set((st) => {
+      const next = st.multiVoNarrations.map((arr, si) =>
+        si === scriptIdx ? arr.map((item, ii) => (ii === itemIdx ? { ...item, ...patch } : item)) : arr
+      )
+      return { multiVoNarrations: next }
+    }),
   setElevenLabsVoices: (elevenlabsVoices) => set({ elevenlabsVoices }),
   setSelectedVoiceId: (selectedVoiceId) => set({ selectedVoiceId }),
   setGeneratedAudioFilename: (generatedAudioFilename) => set({ generatedAudioFilename }),
+  setSceneAudioFilenames: (sceneAudioFilenames) => set({ sceneAudioFilenames }),
+  updateSceneAudioFilename: (index, filename) =>
+    set((st) => {
+      const updated = [...st.sceneAudioFilenames]
+      while (updated.length <= index) updated.push('')
+      updated[index] = filename
+      return { sceneAudioFilenames: updated }
+    }),
+  setSelectedStoryId: (selectedStoryId) => set({ selectedStoryId }),
+  setSelectedStoryTitle: (selectedStoryTitle) => set({ selectedStoryTitle }),
   updateVoNarrationItem: (index, patch) =>
     set((st) => ({
       voNarrations: st.voNarrations.map((item, i) => (i === index ? { ...item, ...patch } : item)),
     })),
+  resetContentCreation: () =>
+    set({
+      ideaInput: '',
+      ideaNiche: '',
+      ideaContentType: '',
+      generatedIdeas: [],
+      selectedIdeaIds: new Set(),
+      approvedIdeas: [],
+      activeApprovedIdeaIndex: 0,
+      scriptInput: '',
+      generatedScript: '',
+      voNarrations: [],
+      multiScripts: [],
+      selectedMultiScriptIndices: new Set(),
+      multiVoNarrations: [],
+      generatedAudioFilename: '',
+      sceneAudioFilenames: [],
+      selectedStoryId: '',
+      selectedStoryTitle: '',
+      activeStep: 2,
+    }),
 
   resetPipelineStages: () => {
     _stageStartMs = {}
@@ -342,4 +460,46 @@ export const useStore = create<AppState>((set, get) => ({
       return { pipelineStages: stages }
     })
   },
-}))
+    }),
+    {
+      name: 'animal-channel-studio-state',
+      storage: createJSONStorage(() => localStorage),
+      // Only persist user-facing state — skip runtime/transient fields
+      partialize: (state) => ({
+        activeView: state.activeView,
+        activeStep: state.activeStep,
+        settings: state.settings,
+        advanced: state.advanced,
+        ideaInput: state.ideaInput,
+        ideaNiche: state.ideaNiche,
+        ideaContentType: state.ideaContentType,
+        generatedIdeas: state.generatedIdeas,
+        // Serialize Set as array
+        selectedIdeaIds: Array.from(state.selectedIdeaIds),
+        approvedIdeas: state.approvedIdeas,
+        activeApprovedIdeaIndex: state.activeApprovedIdeaIndex,
+        scriptInput: state.scriptInput,
+        generatedScript: state.generatedScript,
+        voNarrations: state.voNarrations,
+        multiScripts: state.multiScripts,
+        selectedMultiScriptIndices: Array.from(state.selectedMultiScriptIndices),
+        multiVoNarrations: state.multiVoNarrations,
+        selectedVoiceId: state.selectedVoiceId,
+        generatedAudioFilename: state.generatedAudioFilename,
+        sceneAudioFilenames: state.sceneAudioFilenames,
+        selectedStoryId: state.selectedStoryId,
+        selectedStoryTitle: state.selectedStoryTitle,
+      }),
+      // Deserialize array back to Set
+      merge: (persisted: unknown, current) => {
+        const p = persisted as Partial<AppState> & { selectedIdeaIds?: number[]; selectedMultiScriptIndices?: number[] }
+        return {
+          ...current,
+          ...p,
+          selectedIdeaIds: new Set<number>(p.selectedIdeaIds ?? []),
+          selectedMultiScriptIndices: new Set<number>(p.selectedMultiScriptIndices ?? []),
+        }
+      },
+    }
+  )
+)

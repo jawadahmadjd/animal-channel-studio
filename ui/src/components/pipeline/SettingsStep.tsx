@@ -1,5 +1,5 @@
-import { useEffect } from 'react'
-import { Save, Zap, Film, Check } from 'lucide-react'
+import { useEffect, useState } from 'react'
+import { Save, Zap, Film, Check, CheckCircle } from 'lucide-react'
 import { useStore } from '../../store/useStore'
 import { api } from '../../api/client'
 import StepCard from './StepCard'
@@ -19,6 +19,7 @@ const VIDEO_MODELS  = [
 export default function SettingsStep() {
   const { settings, setSettings, appendLog } = useStore()
   const isVideo = settings.mode === 'Video'
+  const [saved, setSaved] = useState(false)
 
   useEffect(() => {
     api.getSettings().then((s) => {
@@ -52,6 +53,8 @@ export default function SettingsStep() {
     }
     await api.saveSettings(payload)
     appendLog({ text: `\n[Settings saved] ${JSON.stringify(payload)}\n`, level: 'ok', timestamp: ts() })
+    setSaved(true)
+    setTimeout(() => setSaved(false), 2500)
   }
 
   return (
@@ -167,14 +170,22 @@ export default function SettingsStep() {
         </>
       )}
 
-      {/* SAVE — outline style, secondary visual weight */}
-      <button
-        onClick={handleSave}
-        className="w-full flex items-center justify-center gap-2 py-4 rounded-xl text-sm font-bold text-emerald-600 bg-emerald-50 border-2 border-emerald-100 hover:bg-emerald-100 transition-all"
-      >
-        <Save size={18} />
-        Save Parameters
-      </button>
+      {/* SAVE */}
+      <div className="flex items-center gap-4">
+        <button
+          onClick={handleSave}
+          className="flex-1 flex items-center justify-center gap-2 py-4 rounded-xl text-sm font-bold text-emerald-600 bg-emerald-50 border-2 border-emerald-100 hover:bg-emerald-100 transition-all"
+        >
+          <Save size={18} />
+          Save Parameters
+        </button>
+        {saved && (
+          <div className="flex items-center gap-1.5 text-sm font-bold text-emerald-600 whitespace-nowrap">
+            <CheckCircle size={15} />
+            Saved!
+          </div>
+        )}
+      </div>
     </StepCard>
   )
 }

@@ -78,7 +78,12 @@ from write_stories import append_story_block
 
 
 ROOT_DIR = Path(__file__).resolve().parents[1]
+
+# Increment this whenever the run-state JSON schema changes in a breaking way.
+RUN_STATE_SCHEMA_VERSION = 1
+
 IDEAS_PATH = ROOT_DIR / "Ideas.md"
+IDEAS_DB_PATH = ROOT_DIR / "state" / "ideas_db.json"
 MASTER_PROMPT_PATH = ROOT_DIR / "Master_Prompts.md"
 RUNS_DIR = ROOT_DIR / "state" / "runs"
 PIPELINE_STATE_PATH = ROOT_DIR / "state" / "processed_ideas.json"
@@ -114,6 +119,16 @@ def log_event(path: Path, event: str, payload: dict[str, Any]) -> None:
 def select_idea(ideas: list[Idea], story_id: str | None, idea_index: int | None, idea_title: str | None) -> Idea:
     if story_id:
         match = next((item for item in ideas if item.story_id == story_id), None)
+        if not match and IDEAS_DB_PATH.exists():
+            db = json.loads(IDEAS_DB_PATH.read_text(encoding="utf-8"))
+            entry = db.get(story_id)
+            if entry:
+                match = Idea(
+                    index=0,
+                    title=entry["title"],
+                    description=entry.get("description", ""),
+                    story_id=story_id,
+                )
     elif idea_index is not None:
         match = next((item for item in ideas if item.index == idea_index), None)
     elif idea_title:
@@ -224,6 +239,7 @@ def init_run_state(run_path: Path, idea: Idea, story_payload: dict[str, Any]) ->
         )
 
     state = {
+        "schema_version": RUN_STATE_SCHEMA_VERSION,
         "story_id": idea.story_id,
         "idea_index": idea.index,
         "idea_title": idea.title,
@@ -556,8 +572,8 @@ def main() -> None:
                 print(f"  [OK]  Scene {scene_no} — found {len(found_clips)} existing clip(s) in output folder, marking as done")
                 continue
 
-        # 2) Raw downloads dir: state/downloads/scene_XX/*.mp4
-        raw_scene_dir = downloads_dir / f"scene_{scene_no:02d}"
+        # 2) Raw scene sub-folder inside output dir (before organize renames them)
+        raw_scene_dir = story_dir / f"scene_{scene_no:02d}"
         if raw_scene_dir.exists():
             raw_clips = [p for p in raw_scene_dir.iterdir() if p.suffix.lower() in (".mp4", ".webm", ".mov")]
             if raw_clips:
@@ -910,7 +926,7 @@ def main() -> None:
                         scene_no = int(completed_job["scene_no"])
                         known_keys_at_submit = completed_job.get("known_card_keys_at_submit", set())
                         scene_state = scenes_by_no_state[scene_no]
-                        scene_dir = Path(args.downloads_dir) / f"scene_{scene_no:02d}"
+                        scene_dir = story_dir / f"scene_{scene_no:02d}"
 
                         # Wait a few seconds so all x4 generated clips finish rendering
                         _info(f"Scene {scene_no}: first clip ready — waiting 8s for all clips to finish...")

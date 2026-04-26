@@ -4,6 +4,7 @@ interface ElectronAPI {
   openPath: (path: string) => Promise<void>
   onUpdateReady: (cb: (version: string) => void) => void
   installUpdate: () => void
+  relaunch: () => void
   minimize: () => void
   maximize: () => void
   close: () => void

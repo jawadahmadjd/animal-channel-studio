@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
-import { Settings, Eye, EyeOff, CheckCircle, XCircle, Folder, Loader2 } from 'lucide-react'
+import { Settings, Eye, EyeOff, CheckCircle, XCircle, Folder, Loader2, KeyRound } from 'lucide-react'
 import { api } from '../api/client'
+import { useStore } from '../store/useStore'
 
 interface AppSettings {
   deepseek_api_key: string
@@ -10,11 +11,14 @@ interface AppSettings {
   flow_headless: boolean
   wait_between_scenes: number
   max_retries_per_scene: number
+  pipeline_timeout_sec: number
+  confirm_costly_operations: boolean
 }
 
-type ValidateState = 'idle' | 'testing' | 'ok' | 'error'
+type ValidateState = 'idle' | 'configured' | 'testing' | 'ok' | 'error'
 
 export default function SettingsView() {
+  const { setApiKeysConfigured, advanced, setAdvanced } = useStore()
   const [form, setForm] = useState<AppSettings>({
     deepseek_api_key: '',
     elevenlabs_api_key: '',
@@ -23,6 +27,8 @@ export default function SettingsView() {
     flow_headless: false,
     wait_between_scenes: 5,
     max_retries_per_scene: 3,
+    pipeline_timeout_sec: 300,
+    confirm_costly_operations: true,
   })
   const [showDeepSeek, setShowDeepSeek] = useState(false)
   const [showElevenLabs, setShowElevenLabs] = useState(false)
@@ -36,8 +42,10 @@ export default function SettingsView() {
   useEffect(() => {
     api.getAppSettings().then((data) => {
       setForm((f) => ({ ...f, ...data }))
+      if (data.deepseek_api_key === '***') setDsValidate('configured')
+      if (data.elevenlabs_api_key === '***') setElValidate('configured')
     }).catch(() => {})
-  }, [])
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
   function patch<K extends keyof AppSettings>(key: K, value: AppSettings[K]) {
     setForm((f) => ({ ...f, [key]: value }))
@@ -75,7 +83,13 @@ export default function SettingsView() {
   async function handleSave() {
     setSaving(true)
     try {
-      await api.saveAppSettings(form as unknown as Record<string, unknown>)
+      const payload = Object.fromEntries(
+        Object.entries(form).filter(([, v]) => v !== '***')
+      ) as Record<string, unknown>
+      await api.saveAppSettings(payload)
+      // Refresh global key status so Sidebar updates immediately
+      const health = await api.getHealth()
+      setApiKeysConfigured(health.keys)
       setToast('saved')
       setTimeout(() => setToast(null), 2500)
     } catch {
@@ -122,8 +136,9 @@ export default function SettingsView() {
               </div>
               <TestButton state={dsValidate} onClick={handleTestDeepSeek} />
             </div>
-            {dsValidate === 'ok' && <ValidMsg ok text="Connected successfully" />}
-            {dsValidate === 'error' && <ValidMsg ok={false} text={dsError} />}
+            {dsValidate === 'configured' && <ValidMsg state="configured" text="Key saved — click Test Connection to verify" />}
+            {dsValidate === 'ok' && <ValidMsg state="ok" text="Connected successfully" />}
+            {dsValidate === 'error' && <ValidMsg state="error" text={dsError} />}
           </Field>
 
           <Field label="ElevenLabs API Key" hint="elevenlabs.io — free tier available">
@@ -145,8 +160,9 @@ export default function SettingsView() {
               </div>
               <TestButton state={elValidate} onClick={handleTestElevenLabs} />
             </div>
-            {elValidate === 'ok' && <ValidMsg ok text="Connected successfully" />}
-            {elValidate === 'error' && <ValidMsg ok={false} text={elError} />}
+            {elValidate === 'configured' && <ValidMsg state="configured" text="Key saved — click Test Connection to verify" />}
+            {elValidate === 'ok' && <ValidMsg state="ok" text="Connected successfully" />}
+            {elValidate === 'error' && <ValidMsg state="error" text={elError} />}
           </Field>
         </Section>
 
@@ -221,6 +237,52 @@ export default function SettingsView() {
               className="w-28 px-3 py-2.5 rounded-lg border border-slate-200 text-sm focus:outline-none focus:border-emerald-400 focus:ring-2 focus:ring-emerald-100"
             />
           </Field>
+
+          <Field label="Pipeline Timeout (seconds)" hint="Maximum time to wait for the entire pipeline run before aborting">
+            <input
+              type="number"
+              min={60}
+              max={3600}
+              value={form.pipeline_timeout_sec}
+              onChange={(e) => patch('pipeline_timeout_sec', parseInt(e.target.value) || 300)}
+              className="w-28 px-3 py-2.5 rounded-lg border border-slate-200 text-sm focus:outline-none focus:border-emerald-400 focus:ring-2 focus:ring-emerald-100"
+            />
+          </Field>
+
+          <Field label="Confirm Costly Operations" hint="Show a cost estimate and confirmation before generating ElevenLabs voiceovers (recommended)">
+            <button
+              onClick={() => patch('confirm_costly_operations', !form.confirm_costly_operations)}
+              className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${form.confirm_costly_operations ? 'bg-emerald-500' : 'bg-slate-200'}`}
+            >
+              <span className={`inline-block h-4 w-4 transform rounded-full bg-white shadow transition-transform ${form.confirm_costly_operations ? 'translate-x-6' : 'translate-x-1'}`} />
+            </button>
+            <span className="ml-3 text-sm text-slate-500">{form.confirm_costly_operations ? 'Enabled (show cost estimate)' : 'Disabled (skip confirmation)'}</span>
+          </Field>
+        </Section>
+
+        <div className="my-6 h-px bg-slate-100" />
+
+        {/* Advanced */}
+        <Section title="Advanced">
+          <Field label="Dry Run" hint="Simulate the pipeline without actually generating any video (useful for testing)">
+            <button
+              onClick={() => setAdvanced({ dryRun: !advanced.dryRun })}
+              className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${advanced.dryRun ? 'bg-amber-400' : 'bg-slate-200'}`}
+            >
+              <span className={`inline-block h-4 w-4 transform rounded-full bg-white shadow transition-transform ${advanced.dryRun ? 'translate-x-6' : 'translate-x-1'}`} />
+            </button>
+            <span className="ml-3 text-sm text-slate-500">{advanced.dryRun ? 'Dry run enabled (no video generated)' : 'Disabled (real run)'}</span>
+          </Field>
+
+          <Field label="Run Only Scene Number" hint="When set to a specific scene number, only that scene will be generated (1 = all scenes)">
+            <input
+              type="number"
+              min={1}
+              value={advanced.singleScene}
+              onChange={(e) => setAdvanced({ singleScene: parseInt(e.target.value) || 1 })}
+              className="w-28 px-3 py-2.5 rounded-lg border border-slate-200 text-sm focus:outline-none focus:border-emerald-400 focus:ring-2 focus:ring-emerald-100"
+            />
+          </Field>
         </Section>
 
         {/* Save */}
@@ -283,16 +345,28 @@ function TestButton({ state, onClick }: { state: ValidateState; onClick: () => v
     >
       {state === 'testing' && <Loader2 size={12} className="animate-spin" />}
       {state === 'ok' && <CheckCircle size={12} className="text-emerald-500" />}
+      {state === 'configured' && <KeyRound size={12} className="text-slate-400" />}
       {state === 'error' && <XCircle size={12} className="text-red-500" />}
       Test Connection
     </button>
   )
 }
 
-function ValidMsg({ ok, text }: { ok: boolean; text: string }) {
+function ValidMsg({ state, text }: { state: 'configured' | 'ok' | 'error'; text: string }) {
+  const styles = {
+    configured: 'text-slate-500 bg-slate-50 border-slate-100',
+    ok:         'text-emerald-700 bg-emerald-50 border-emerald-100',
+    error:      'text-red-600 bg-red-50 border-red-100',
+  }
+  const icons = {
+    configured: <KeyRound size={11} className="shrink-0 mt-0.5" />,
+    ok:         <CheckCircle size={11} className="shrink-0 mt-0.5" />,
+    error:      <XCircle size={11} className="shrink-0 mt-0.5" />,
+  }
   return (
-    <p className={`text-xs mt-1 font-medium w-full ${ok ? 'text-emerald-600' : 'text-red-500'}`}>
+    <div className={`flex items-start gap-1.5 text-xs mt-1.5 font-medium w-full px-2.5 py-1.5 rounded-lg border ${styles[state]}`}>
+      {icons[state]}
       {text}
-    </p>
+    </div>
   )
 }

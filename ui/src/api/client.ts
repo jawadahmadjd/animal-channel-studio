@@ -1,4 +1,5 @@
 const BASE = 'http://127.0.0.1:7477'
+export const REQUIRED_BRIDGE_VERSION = 2
 
 async function req<T>(method: string, path: string, body?: unknown): Promise<T> {
   const res = await fetch(`${BASE}${path}`, {
@@ -26,9 +27,17 @@ export interface VoNarrationItem {
   veo_prompt: string
 }
 
+export interface IdeaDbEntry {
+  story_id: string
+  title: string
+  description: string
+  script: string
+  vo_narrations: VoNarrationItem[]
+  saved_at: string
+}
+
 export const api = {
-  getIdeas: () => req<{ index: number; title: string; story_id: string }[]>('GET', '/ideas'),
-  getAuthStatus: () => req<{ authorized: boolean }>('GET', '/auth/status'),
+  getAuthStatus: () => req<{ authorized: boolean; expires_soon?: boolean; keys_configured?: { deepseek: boolean; elevenlabs: boolean } }>('GET', '/auth/status'),
   deleteAuth: () => req<{ status: string }>('DELETE', '/auth'),
   getSettings: () => req<Record<string, string>>('GET', '/settings'),
   saveSettings: (data: Record<string, string>) => req('POST', '/settings', data),
@@ -37,22 +46,32 @@ export const api = {
   runPipeline: (params: Record<string, unknown>) => req('POST', '/run/pipeline', params),
   runResume: (params: Record<string, unknown>) => req('POST', '/run/resume', params),
   runSingleScene: (params: Record<string, unknown>) => req('POST', '/run/single-scene', params),
+  runFlowOnly: (params: Record<string, unknown>) => req('POST', '/run/flow-only', params),
   runFinalize: (story_id: string) => req('POST', '/run/finalize', { story_id }),
   runFreshStart: (story_id: string) => req('POST', '/run/fresh-start', { story_id }),
   runStop: () => req('POST', '/run/stop', {}),
+  getRunState: (story_id: string) =>
+    req<{ story_id: string; run_status: string; schema_version: number; schema_ok: boolean; schema_message: string | null; scenes_done: number; scenes_total: number }>(
+      'GET', `/run/state/${encodeURIComponent(story_id)}`
+    ),
 
   getLogFile: (filename: string) => req<{ lines: string[] }>('GET', `/logs/${filename}`),
+  getLogSessions: () => req<{ sessions: { id: number; line_count: number; success: boolean | null; start_timestamp: string; end_timestamp: string }[] }>('GET', '/logs/sessions'),
+
+  videoFileUrl: (path: string) => `${BASE}/output/file?path=${encodeURIComponent(path)}`,
 
   // App settings (C3)
   getAppSettings: () => req<Record<string, unknown>>('GET', '/settings/app'),
   saveAppSettings: (data: Record<string, unknown>) => req('POST', '/settings/app', data),
   validateDeepSeek: () => req<{ ok: boolean; error?: string }>('POST', '/validate/deepseek', {}),
   validateElevenLabs: () => req<{ ok: boolean; error?: string }>('POST', '/validate/elevenlabs', {}),
-  getHealth: () => req<{ status: string; keys: { deepseek: boolean; elevenlabs: boolean } }>('GET', '/health'),
+  getHealth: () => req<{ status: string; bridge_version?: number; keys: { deepseek: boolean; elevenlabs: boolean } }>('GET', '/health'),
 
   // Content creation
-  generateIdea: (prompt: string) => req<{ ideas: string }>('POST', '/generate/idea', { prompt }),
-  generateScript: (idea: string) => req<{ script: string }>('POST', '/generate/script', { idea }),
+  generateIdea: (niche: string, content_type: string) =>
+    req<{ ideas: { title: string; description: string }[] }>('POST', '/generate/idea', { niche, content_type }),
+  generateScript: (niche: string, idea: string, word_count: number) =>
+    req<{ script: string; word_count: number; target_word_count: number; length_ok: boolean }>('POST', '/generate/script', { niche, idea, word_count }),
   generateVoNarration: (script: string) =>
     req<{ items: VoNarrationItem[] }>('POST', '/generate/vo-narration', { script }),
   getElevenLabsVoices: () =>
@@ -60,6 +79,12 @@ export const api = {
   generateVoiceover: (narration_text: string, voice_id: string) =>
     req<{ filename: string }>('POST', '/generate/voiceover', { narration_text, voice_id }),
   audioUrl: (filename: string) => `${BASE}/audio/${filename}`,
+
+  // Ideas DB
+  saveIdeaMetadata: (title: string, description: string, script: string, vo_narrations: VoNarrationItem[]) =>
+    req<{ story_id: string }>('POST', '/ideas/db/save', { title, description, script, vo_narrations }),
+  getIdeasDb: () => req<IdeaDbEntry[]>('GET', '/ideas/db'),
+  deleteIdeaFromDb: (story_id: string) => req<{ status: string; found: boolean }>('DELETE', `/ideas/db/${encodeURIComponent(story_id)}`),
 }
 
 export function classifyLogLine(text: string): 'error' | 'ok' | 'warn' | 'header' | 'info' {

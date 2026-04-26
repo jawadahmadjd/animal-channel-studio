@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { ChevronRight, ChevronDown } from 'lucide-react'
 import { useStore } from '../../store/useStore'
 import { api, subscribeToStream, classifyLogLine } from '../../api/client'
@@ -6,13 +6,27 @@ import { api, subscribeToStream, classifyLogLine } from '../../api/client'
 export default function AdvancedOptions() {
   const [open, setOpen] = useState(false)
   const { advanced, setAdvanced, runState, setRunState, appendLog,
-          ideas, selectedIdeaIndex, setActiveStep } = useStore()
+          selectedStoryId, setActiveStep } = useStore()
+
+  // Debounced persist to app_settings whenever advanced changes
+  const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
+  useEffect(() => {
+    if (saveTimer.current) clearTimeout(saveTimer.current)
+    saveTimer.current = setTimeout(() => {
+      api.saveAppSettings({
+        wait_between_scenes:   advanced.waitBetweenSec,
+        max_retries_per_scene: advanced.sceneMaxRetries,
+        pipeline_timeout_sec:  advanced.timeoutSec,
+        flow_headless:         advanced.headless,
+      }).catch(() => {})
+    }, 500)
+    return () => { if (saveTimer.current) clearTimeout(saveTimer.current) }
+  }, [advanced.waitBetweenSec, advanced.sceneMaxRetries, advanced.timeoutSec, advanced.headless])
 
   const busy = runState === 'running'
 
   async function handleSingleScene() {
-    const idea = ideas[selectedIdeaIndex]
-    if (!idea) { alert('Please select a story first.'); return }
+    if (!selectedStoryId) { alert('Please select a story first.'); return }
 
     try {
       setRunState('running')
@@ -20,7 +34,7 @@ export default function AdvancedOptions() {
       appendLog({ text: '\n===== Run Single Scene =====\n', level: 'header', timestamp: ts() })
 
       await api.runSingleScene({
-        idea_index: idea.index,
+        story_id: selectedStoryId,
         scene_number: advanced.singleScene,
         wait_between_sec: advanced.waitBetweenSec,
         wait_max_sec: advanced.waitMaxSec,
