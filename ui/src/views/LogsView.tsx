@@ -1,7 +1,22 @@
 import { useState, useEffect, useMemo, useRef } from 'react'
-import { FolderOpen, Trash2, Search, Copy, Check, ChevronDown, ChevronRight, CheckCircle2, XCircle, Loader2 } from 'lucide-react'
+import { FolderOpen, Trash2, Search, Copy, Check, ChevronDown, ChevronRight, CheckCircle2, XCircle, Loader2, Download } from 'lucide-react'
 import { api } from '../api/client'
 import { useStore } from '../store/useStore'
+
+const BASE = 'http://127.0.0.1:7477'
+
+interface SessionFile {
+  filename: string
+  size_bytes: number
+  modified_at: string
+  is_current: boolean
+}
+
+function formatBytes(b: number): string {
+  if (b < 1024) return `${b} B`
+  if (b < 1024 * 1024) return `${(b / 1024).toFixed(1)} KB`
+  return `${(b / (1024 * 1024)).toFixed(1)} MB`
+}
 
 type Level = 'ALL' | 'INFO' | 'OK' | 'WARN' | 'ERROR'
 
@@ -102,6 +117,8 @@ export default function LogsView() {
   const [filterLevel, setFilterLevel] = useState<Level>('ALL')
   const [search, setSearch] = useState('')
   const [copiedId, setCopiedId] = useState<number | null>(null)
+  const [sessionFiles, setSessionFiles] = useState<SessionFile[]>([])
+  const [showSessionFiles, setShowSessionFiles] = useState(false)
   // Map<sessionId, 'collapsed' | 'expanded'> — overrides the default collapse logic
   const [overrides, setOverrides] = useState<Map<number, 'collapsed' | 'expanded'>>(new Map())
 
@@ -123,6 +140,12 @@ export default function LogsView() {
       setFileLines(results)
     }
     load()
+
+    // Load session file list
+    fetch(`${BASE}/logs/list`)
+      .then(r => r.json())
+      .then((data: { files: SessionFile[] }) => setSessionFiles(data.files ?? []))
+      .catch(() => {})
   }, [])
 
   // Scroll to bottom on mount
@@ -208,7 +231,7 @@ export default function LogsView() {
     <div className="flex flex-col h-full bg-slate-50">
       {/* Header */}
       <div
-        className="flex items-center justify-between px-10 py-8 bg-white border-b border-slate-200 sticky top-0 z-10"
+        className="relative flex items-center justify-between px-10 py-8 bg-white border-b border-slate-200 sticky top-0 z-10"
         style={{ flexShrink: 0 }}
       >
         <div className="flex flex-col">
@@ -219,22 +242,74 @@ export default function LogsView() {
             System History & Debugging
           </p>
         </div>
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-3">
+          <button
+            onClick={() => setShowSessionFiles(p => !p)}
+            className="flex items-center gap-2 px-5 py-3 rounded-xl text-sm font-bold text-slate-600 bg-slate-100 hover:bg-slate-200 transition-all"
+            title="Download a session log file to share with support"
+          >
+            <Download size={16} />
+            Session Logs
+            {sessionFiles.length > 0 && (
+              <span className="ml-1 px-1.5 py-0.5 rounded-md text-[10px] font-black bg-emerald-100 text-emerald-700">
+                {sessionFiles.length}
+              </span>
+            )}
+          </button>
           <button
             onClick={openLogsFolder}
-            className="flex items-center gap-2 px-6 py-3 rounded-xl text-sm font-bold text-slate-600 bg-slate-100 hover:bg-slate-200 transition-all"
+            className="flex items-center gap-2 px-5 py-3 rounded-xl text-sm font-bold text-slate-600 bg-slate-100 hover:bg-slate-200 transition-all"
           >
-            <FolderOpen size={18} />
-            Open Logs Folder
+            <FolderOpen size={16} />
+            Open Folder
           </button>
           <button
             onClick={() => setFileLines([])}
-            className="flex items-center gap-2 px-6 py-3 rounded-xl text-sm font-bold text-white bg-red-500 hover:bg-red-600 transition-all shadow-lg shadow-red-100"
+            className="flex items-center gap-2 px-5 py-3 rounded-xl text-sm font-bold text-white bg-red-500 hover:bg-red-600 transition-all shadow-lg shadow-red-100"
           >
-            <Trash2 size={18} />
-            Clear All
+            <Trash2 size={16} />
+            Clear
           </button>
         </div>
+
+        {/* Session log files panel */}
+        {showSessionFiles && (
+          <div className="absolute top-full right-10 mt-2 z-20 w-96 bg-white rounded-2xl border border-slate-200 shadow-xl overflow-hidden">
+            <div className="px-5 py-3 border-b border-slate-100 flex items-center justify-between">
+              <span className="text-xs font-black uppercase tracking-widest text-slate-600">
+                Session Log Files
+              </span>
+              <span className="text-[10px] font-bold text-slate-400">
+                Click to download — share with support
+              </span>
+            </div>
+            <div className="max-h-72 overflow-auto">
+              {sessionFiles.length === 0 ? (
+                <p className="px-5 py-4 text-xs text-slate-400 font-bold">No session logs found yet.</p>
+              ) : sessionFiles.map(f => (
+                <a
+                  key={f.filename}
+                  href={`${BASE}/logs/download/${encodeURIComponent(f.filename)}`}
+                  download={f.filename}
+                  className="flex items-center gap-3 px-5 py-3 hover:bg-slate-50 transition-colors border-b border-slate-50 last:border-0"
+                >
+                  <Download size={13} className="text-slate-400 flex-shrink-0" />
+                  <div className="flex-1 min-w-0">
+                    <p className="text-xs font-bold text-slate-800 truncate">{f.filename}</p>
+                    <p className="text-[10px] font-medium text-slate-400">
+                      {formatBytes(f.size_bytes)} · {new Date(f.modified_at).toLocaleString()}
+                    </p>
+                  </div>
+                  {f.is_current && (
+                    <span className="text-[10px] font-black text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-lg">
+                      Current
+                    </span>
+                  )}
+                </a>
+              ))}
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Filters Bar */}

@@ -1,7 +1,8 @@
 {
   "name": "animal-channel-studio",
-  "version": "1.2.6",
+  "version": "1.2.8",
   "description": "Animal Channel Creator Studio",
+  "author": "Jawad Ahmad <jawadahmadjd@gmail.com>",
   "main": "dist-electron/main.js",
   "scripts": {
     "dev": "vite",
@@ -49,6 +50,12 @@
       "target": "nsis",
       "icon": "public/icon.ico"
     },
+    "nsis": {
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "runAfterFinish": true,
+      "license": "LICENSE.txt"
+    },
     "files": [
       "dist/**/*",
       "dist-electron/**/*"
@@ -64,13 +71,15 @@
       },
       {
         "from": "python-runtime",
-        "to": "python-runtime"
+        "to": "python-runtime",
+        "filter": ["**/*"]
       }
     ],
     "publish": {
       "provider": "github",
       "owner": "jawadahmadjd",
-      "repo": "animal-channel-studio"
+      "repo": "animal-channel-studio",
+      "releaseType": "release"
     }
   }
 }

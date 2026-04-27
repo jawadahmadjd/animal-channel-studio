@@ -1,12 +1,13 @@
 import { LogIn, RotateCcw } from 'lucide-react'
 import { useStore } from '../../store/useStore'
-import { api, subscribeToStream, classifyLogLine } from '../../api/client'
+import { api, subscribeToStream, classifyLogLine, logUIEvent } from '../../api/client'
 import StepCard from './StepCard'
 
 export default function LoginStep() {
   const { isAuthorized, setIsAuthorized, advanced, appendLog, runState, setRunState, setActiveStep } = useStore()
 
   async function handleConnect() {
+    logUIEvent('click:login:connect', { headless: advanced.headless })
     try {
       setRunState('running')
       setActiveStep(1)
@@ -14,9 +15,13 @@ export default function LoginStep() {
       await api.runLogin(advanced.headless)
       const unsub = subscribeToStream(
         (line) => appendLog({ text: line, level: classifyLogLine(line), timestamp: ts() }),
-        () => {
+        async () => {
           setRunState('idle')
           unsub()
+          try {
+            const status = await api.getAuthStatus()
+            setIsAuthorized(status.authorized)
+          } catch { /* ignore */ }
         }
       )
     } catch {
@@ -26,6 +31,7 @@ export default function LoginStep() {
 
   async function handleReset() {
     if (!confirm('Delete your saved session and log in again?')) return
+    logUIEvent('click:login:reset')
     await api.deleteAuth()
     setIsAuthorized(false)
     appendLog({ text: '\n[Login session cleared]\n', level: 'info', timestamp: ts() })

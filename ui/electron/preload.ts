@@ -10,6 +10,11 @@ const electronAPI = {
   // Open path in Explorer
   openPath: (path: string): Promise<void> => ipcRenderer.invoke('app:open-path', path),
 
+  // First-time setup progress from background installer
+  onSetupProgress: (cb: (payload: { stage: string; detail: string }) => void) => {
+    ipcRenderer.on('setup:progress', (_event, payload) => cb(payload))
+  },
+
   // Auto-update (wired up once electron-updater is added in U2)
   onUpdateReady: (cb: (version: string) => void) => {
     ipcRenderer.on('update-ready', (_event, version: string) => cb(version))

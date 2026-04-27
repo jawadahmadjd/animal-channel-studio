@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Save, Zap, Film, Check, CheckCircle } from 'lucide-react'
 import { useStore } from '../../store/useStore'
-import { api } from '../../api/client'
+import { api, logUIEvent } from '../../api/client'
 import StepCard from './StepCard'
 
 const VIDEO_ASPECTS = ['9:16', '16:9']
@@ -51,6 +51,7 @@ export default function SettingsStep() {
       duration: settings.duration,
       model: settings.model,
     }
+    logUIEvent('click:settings:save', payload)
     await api.saveSettings(payload)
     appendLog({ text: `\n[Settings saved] ${JSON.stringify(payload)}\n`, level: 'ok', timestamp: ts() })
     setSaved(true)

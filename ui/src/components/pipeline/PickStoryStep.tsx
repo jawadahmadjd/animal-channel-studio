@@ -79,7 +79,7 @@ export default function PickStoryStep() {
         <div className="flex flex-col items-center gap-3 py-8 text-center">
           <p className="text-sm font-bold text-slate-500">No ready ideas yet.</p>
           <p className="text-xs text-slate-400 font-medium max-w-xs leading-relaxed">
-            Complete Steps 2–4 (Idea → Script → Narration &amp; Prompts) and save to the database. Only fully prepared ideas appear here.
+            Complete Steps 2 &amp; 4 (Idea → VEO 3 Prompts) and save to the database. Script and voiceover are optional — only the idea and VEO prompts are required here.
           </p>
         </div>
       ) : (

@@ -2,19 +2,22 @@ from __future__ import annotations
 
 import asyncio
 import json
+import logging
 import os
 import re
 import subprocess
 import sys
 import time
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import AsyncGenerator
 
 import requests as _requests
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse, StreamingResponse
 from pydantic import BaseModel, field_validator
+from starlette.middleware.base import BaseHTTPMiddleware
 
 # ── Directory layout ───────────────────────────────────────────────────────────
 #
@@ -45,6 +48,34 @@ AUDIO_DIR     = DATA_DIR / "output" / "audio"
 
 for _d in (AUTH_FILE.parent, RUNS_DIR, LOGS_DIR, AUDIO_DIR):
     _d.mkdir(parents=True, exist_ok=True)
+
+# ── Session logger ─────────────────────────────────────────────────────────────
+# Each bridge launch gets its own timestamped log file so you can send a user
+# a specific file (e.g. session_20250427_143012.log) to diagnose their problem.
+
+_SESSION_START = datetime.now(timezone.utc)
+_SESSION_LOG_FILE = LOGS_DIR / f"session_{_SESSION_START.strftime('%Y%m%d_%H%M%S')}.log"
+
+_log_fmt = logging.Formatter(
+    fmt="%(asctime)s.%(msecs)03d [%(levelname)s] %(message)s",
+    datefmt="%H:%M:%S",
+)
+
+blog = logging.getLogger("bridge")
+blog.setLevel(logging.DEBUG)
+
+_fh = logging.FileHandler(_SESSION_LOG_FILE, encoding="utf-8")
+_fh.setLevel(logging.DEBUG)
+_fh.setFormatter(_log_fmt)
+blog.addHandler(_fh)
+
+_ch = logging.StreamHandler(sys.stdout)
+_ch.setLevel(logging.INFO)
+_ch.setFormatter(_log_fmt)
+blog.addHandler(_ch)
+
+blog.info(f"Session log: {_SESSION_LOG_FILE}")
+blog.info(f"ROOT_DIR={ROOT_DIR}  DATA_DIR={DATA_DIR}")
 
 # ── App settings (merged from app_settings.json + env vars) ───────────────────
 
@@ -112,13 +143,14 @@ _config_status = {
     "deepseek":   bool(_deepseek_key()),
     "elevenlabs": bool(_elevenlabs_key()),
 }
-if not _config_status["deepseek"]:
-    print("[bridge] WARNING: deepseek_api_key not configured — use Settings to add it")
-if not _config_status["elevenlabs"]:
-    print("[bridge] WARNING: elevenlabs_api_key not configured — use Settings to add it")
 
 # Subprocess env
 _ENV = {**os.environ, "PYTHONUTF8": "1"}
+
+if not _config_status["deepseek"]:
+    blog.warning("deepseek_api_key not configured — use Settings to add it")
+if not _config_status["elevenlabs"]:
+    blog.warning("elevenlabs_api_key not configured — use Settings to add it")
 
 # ── FastAPI app ────────────────────────────────────────────────────────────────
 
@@ -132,6 +164,54 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+
+class _RequestLogMiddleware(BaseHTTPMiddleware):
+    """Log every HTTP request + response with timing."""
+
+    # Keys whose values should never appear in logs
+    _REDACT = {"deepseek_api_key", "elevenlabs_api_key", "xi-api-key", "Authorization"}
+
+    async def dispatch(self, request: Request, call_next):
+        t0 = time.monotonic()
+        path = request.url.path
+        method = request.method
+
+        # Skip noisy polling endpoints
+        skip_log = path in ("/run/stream", "/output/watch", "/health")
+
+        body_str = ""
+        if not skip_log and method in ("POST", "PUT", "PATCH"):
+            try:
+                raw = await request.body()
+                body = json.loads(raw) if raw else {}
+                body = self._redact(body)
+                body_str = f" body={json.dumps(body, separators=(',', ':'))}"
+                # Rebuild the body so FastAPI can still read it
+                async def _receive():
+                    return {"type": "http.request", "body": raw}
+                request = Request(request.scope, _receive)
+            except Exception:
+                pass
+
+        response = await call_next(request)
+        ms = int((time.monotonic() - t0) * 1000)
+
+        if not skip_log:
+            blog.info(f"[http] {method} {path}{body_str} → {response.status_code} ({ms}ms)")
+
+        return response
+
+    def _redact(self, obj):
+        if isinstance(obj, dict):
+            return {
+                k: ("***" if k in self._REDACT and v else v)
+                for k, v in obj.items()
+            }
+        return obj
+
+
+app.add_middleware(_RequestLogMiddleware)
 
 # ── Active subprocess state ────────────────────────────────────────────────────
 
@@ -205,13 +285,15 @@ async def _stream_process(cmd: list[str], cwd: str, timeout_seconds: int = 1800)
         import threading
         import re as _re
 
+        short_cmd = " ".join(str(a) for a in cmd[-6:])  # last 6 args for brevity
+        blog.info(f"[subprocess] START  cmd=…{short_cmd}  cwd={cwd}  timeout={timeout_seconds}s")
+
         def _timeout_kill():
             proc = _active_proc
             if proc and proc.poll() is None:
-                loop.call_soon_threadsafe(
-                    _log_queue.put_nowait,
-                    f'\n[Error: Pipeline timed out after {timeout_seconds // 60} minutes. Stopping.]\n',
-                )
+                msg = f'\n[Error: Pipeline timed out after {timeout_seconds // 60} minutes. Stopping.]\n'
+                blog.error(f"[subprocess] TIMEOUT after {timeout_seconds}s — killing PID {proc.pid}")
+                loop.call_soon_threadsafe(_log_queue.put_nowait, msg)
                 _kill_proc_tree(proc.pid)
 
         timer = threading.Timer(timeout_seconds, _timeout_kill)
@@ -219,60 +301,69 @@ async def _stream_process(cmd: list[str], cwd: str, timeout_seconds: int = 1800)
         def emit(line: str) -> None:
             loop.call_soon_threadsafe(_log_queue.put_nowait, line)
 
-        try:
-            _active_proc = subprocess.Popen(
-                cmd, cwd=cwd,
-                stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
-                text=True, bufsize=1, encoding="utf-8", errors="replace",
-                env=_ENV,
-            )
-            timer.start()
-            assert _active_proc.stdout
+        # Open a per-run section in the session log file
+        with open(_SESSION_LOG_FILE, "a", encoding="utf-8") as _sf:
+            def tee(line: str) -> None:
+                emit(line)
+                _sf.write(line)
+                _sf.flush()
 
-            tb_buf: list[str] = []
-            in_tb = False
+            try:
+                _active_proc = subprocess.Popen(
+                    cmd, cwd=cwd,
+                    stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
+                    text=True, bufsize=1, encoding="utf-8", errors="replace",
+                    env=_ENV,
+                )
+                blog.info(f"[subprocess] PID={_active_proc.pid}")
+                timer.start()
+                assert _active_proc.stdout
 
-            for raw_line in _active_proc.stdout:
-                # Always emit raw line for the live log
-                emit(raw_line)
-                stripped = raw_line.rstrip()
+                tb_buf: list[str] = []
+                in_tb = False
 
-                # Detect start of Python traceback
-                if 'Traceback (most recent call last):' in stripped:
-                    in_tb = True
-                    tb_buf = [stripped]
-                    continue
+                for raw_line in _active_proc.stdout:
+                    # Tee raw line to both the SSE stream and the session log
+                    tee(raw_line)
+                    stripped = raw_line.rstrip()
 
-                if in_tb:
-                    tb_buf.append(stripped)
-                    # Exception class line ends the traceback (e.g. "AttributeError: ...")
-                    if _re.match(r'^[A-Za-z][A-Za-z0-9_.]*(?:Error|Exception|Warning)[^:]*:', stripped):
-                        struct = json.dumps({
-                            "type": "error",
-                            "message": _friendly_error_msg(stripped),
-                            "detail": '\n'.join(tb_buf),
-                        })
-                        emit(struct + '\n')
-                        in_tb = False
-                        tb_buf = []
-                    elif stripped and stripped[0] not in (' ', '\t', '|', '+', '_') and stripped != '':
-                        # Non-indented line that is not an exception → end tb without match
-                        in_tb = False
-                        tb_buf = []
+                    # Detect start of Python traceback
+                    if 'Traceback (most recent call last):' in stripped:
+                        in_tb = True
+                        tb_buf = [stripped]
+                        continue
 
-            code = _active_proc.wait()
-            loop.call_soon_threadsafe(
-                _log_queue.put_nowait, f"\n[Done — exit code {code}]\n"
-            )
-            loop.call_soon_threadsafe(_log_queue.put_nowait, None)
-        except Exception as exc:
-            loop.call_soon_threadsafe(
-                _log_queue.put_nowait, f"\n[Error starting process: {exc}]\n"
-            )
-            loop.call_soon_threadsafe(_log_queue.put_nowait, None)
-        finally:
-            timer.cancel()
-            _active_proc = None
+                    if in_tb:
+                        tb_buf.append(stripped)
+                        # Exception class line ends the traceback (e.g. "AttributeError: ...")
+                        if _re.match(r'^[A-Za-z][A-Za-z0-9_.]*(?:Error|Exception|Warning)[^:]*:', stripped):
+                            struct = json.dumps({
+                                "type": "error",
+                                "message": _friendly_error_msg(stripped),
+                                "detail": '\n'.join(tb_buf),
+                            })
+                            emit(struct + '\n')
+                            blog.error(f"[subprocess] Python exception: {stripped[:200]}")
+                            in_tb = False
+                            tb_buf = []
+                        elif stripped and stripped[0] not in (' ', '\t', '|', '+', '_') and stripped != '':
+                            # Non-indented line that is not an exception → end tb without match
+                            in_tb = False
+                            tb_buf = []
+
+                code = _active_proc.wait()
+                done_msg = f"\n[Done — exit code {code}]\n"
+                tee(done_msg)
+                blog.info(f"[subprocess] EXIT code={code}")
+                loop.call_soon_threadsafe(_log_queue.put_nowait, None)
+            except Exception as exc:
+                err_msg = f"\n[Error starting process: {exc}]\n"
+                tee(err_msg)
+                blog.error(f"[subprocess] FAILED to start: {exc}")
+                loop.call_soon_threadsafe(_log_queue.put_nowait, None)
+            finally:
+                timer.cancel()
+                _active_proc = None
 
     await loop.run_in_executor(None, _run)
 
@@ -315,7 +406,6 @@ def save_idea_to_db(req: IdeaDbSaveRequest):
     story_id = make_story_id(req.title, req.description)
 
     db = _load_ideas_db()
-    from datetime import datetime, timezone
     db[story_id] = {
         "story_id": story_id,
         "title": req.title,
@@ -513,10 +603,12 @@ class LoginRequest(BaseModel):
 
 @app.post("/run/login")
 async def run_login(req: LoginRequest):
+    blog.info(f"[run/login] headless={req.headless}")
     cmd = [
         PYTHON_EXE, str(SCRIPTS_DIR / "flow_automation.py"),
         "--mode", "login",
         "--headless", "true" if req.headless else "false",
+        "--auth-path", str(AUTH_FILE),
     ]
     _start_background(cmd)
     return {"status": "started"}
@@ -549,6 +641,8 @@ def _validate_idea_index(idea_index: int) -> None:
 
 @app.post("/run/pipeline")
 async def run_pipeline(req: PipelineRequest):
+    blog.info(f"[run/pipeline] story_id={req.story_id!r} idea_index={req.idea_index} "
+              f"headless={req.headless} dry_run={req.dry_run} timeout={req.timeout_sec}s")
     if req.story_id:
         if not re.match(r'^[a-zA-Z0-9_\- ]{1,120}$', req.story_id):
             raise HTTPException(status_code=422, detail="Invalid story_id format")
@@ -592,6 +686,7 @@ class ResumeRequest(BaseModel):
 
 @app.post("/run/resume")
 async def run_resume(req: ResumeRequest):
+    blog.info(f"[run/resume] story_id={req.story_id!r} headless={req.headless} dry_run={req.dry_run}")
     # Validate story_id to prevent path traversal
     if not re.match(r'^[a-zA-Z0-9_\- ]{1,120}$', req.story_id):
         raise HTTPException(status_code=422, detail="Invalid story_id format")
@@ -624,6 +719,7 @@ class SingleSceneRequest(BaseModel):
 
 @app.post("/run/single-scene")
 async def run_single_scene(req: SingleSceneRequest):
+    blog.info(f"[run/single-scene] story_id={req.story_id!r} scene={req.scene_number} headless={req.headless}")
     if req.scene_number < 1 or req.scene_number > 50:
         raise HTTPException(status_code=422, detail="scene_number must be between 1 and 50")
     if req.story_id:
@@ -657,6 +753,7 @@ class FinalizeRequest(BaseModel):
 
 @app.post("/run/finalize")
 async def run_finalize(req: FinalizeRequest):
+    blog.info(f"[run/finalize] story_id={req.story_id!r}")
     if not re.match(r'^[a-zA-Z0-9_\- ]{1,120}$', req.story_id):
         raise HTTPException(status_code=422, detail="Invalid story_id format")
     cmd = [
@@ -681,9 +778,11 @@ class FlowOnlyRequest(BaseModel):
 async def run_flow_only(req: FlowOnlyRequest):
     """Start browser automation directly, skipping story generation.
 
+
     Builds the run state from ideas_db.json if not already present,
     then resumes directly into the Google Flow browser step.
     """
+    blog.info(f"[run/flow-only] story_id={req.story_id!r} headless={req.headless} dry_run={req.dry_run}")
     if not re.match(r'^[a-zA-Z0-9_\- ]{1,120}$', req.story_id):
         raise HTTPException(status_code=422, detail="Invalid story_id format")
 
@@ -700,7 +799,6 @@ async def run_flow_only(req: FlowOnlyRequest):
                        "Complete Steps 2–5 and save to the database first."
             )
 
-        from datetime import datetime, timezone
         now_iso = datetime.now(timezone.utc).isoformat()
         vo_narrations = entry.get("vo_narrations", [])
 
@@ -782,6 +880,7 @@ def run_fresh_start(req: FreshStartRequest):
 def run_stop():
     global _active_proc
     if _active_proc and _active_proc.poll() is None:
+        blog.info(f"[run/stop] killing PID {_active_proc.pid}")
         try:
             _kill_proc_tree(_active_proc.pid)
         except Exception:
@@ -790,6 +889,7 @@ def run_stop():
             except Exception:
                 pass
         return {"status": "stopped"}
+    blog.info("[run/stop] nothing running")
     return {"status": "nothing_running"}
 
 
@@ -1162,6 +1262,58 @@ def get_log_sessions():
         })
 
     return {"sessions": sessions}
+
+
+# ── Routes: UI event logging ───────────────────────────────────────────────────
+
+class UIEventRequest(BaseModel):
+    action: str
+    detail: str = ""
+    timestamp: str = ""
+
+
+@app.post("/ui/event")
+def ui_event(req: UIEventRequest):
+    """Frontend sends button clicks and state transitions here for server-side logging."""
+    ts = req.timestamp or datetime.now(timezone.utc).strftime("%H:%M:%S")
+    blog.info(f"[ui] {ts} {req.action}" + (f" | {req.detail}" if req.detail else ""))
+    return {"ok": True}
+
+
+# ── Routes: Log file listing ───────────────────────────────────────────────────
+
+@app.get("/logs/list")
+def list_log_files():
+    """Return all session log files with size and modification time, newest first."""
+    files = []
+    for p in sorted(LOGS_DIR.glob("*.log"), key=lambda f: f.stat().st_mtime, reverse=True):
+        stat = p.stat()
+        files.append({
+            "filename": p.name,
+            "size_bytes": stat.st_size,
+            "modified_at": datetime.fromtimestamp(stat.st_mtime, tz=timezone.utc).isoformat(),
+            "is_current": p == _SESSION_LOG_FILE,
+        })
+    return {"files": files, "current_session": _SESSION_LOG_FILE.name}
+
+
+@app.get("/logs/download/{filename}")
+def download_log_file(filename: str):
+    """Download a raw log file (for sharing with support)."""
+    safe_name = Path(filename).name
+    log_path = LOGS_DIR / safe_name
+    if not log_path.exists():
+        raise HTTPException(status_code=404, detail="Log file not found")
+    # Resolve and verify it's inside LOGS_DIR (path-traversal guard)
+    try:
+        log_path.resolve().relative_to(LOGS_DIR.resolve())
+    except ValueError:
+        raise HTTPException(status_code=403, detail="Access denied")
+    return FileResponse(
+        str(log_path),
+        media_type="text/plain",
+        filename=safe_name,
+    )
 
 
 if __name__ == "__main__":

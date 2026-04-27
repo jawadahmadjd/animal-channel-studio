@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { Clapperboard, AlertTriangle, Loader2, RefreshCw, FolderOutput } from 'lucide-react'
 import { useStore } from '../../store/useStore'
-import { api, subscribeToStream, classifyLogLine, parseSceneProgress } from '../../api/client'
+import { api, subscribeToStream, classifyLogLine, parseSceneProgress, logUIEvent } from '../../api/client'
 import StepCard from './StepCard'
 import StatusBadge from '../shared/StatusBadge'
 
@@ -36,6 +36,7 @@ export default function StartStep() {
 
   async function handleResume() {
     if (!selectedStoryId) return
+    logUIEvent('click:start:resume', { story_id: selectedStoryId })
     try {
       const state = await api.getRunState(selectedStoryId)
       if (!state.schema_ok && state.schema_message) {
@@ -62,6 +63,7 @@ export default function StartStep() {
 
   async function handleFinalize() {
     if (!selectedStoryId) return
+    logUIEvent('click:start:finalize', { story_id: selectedStoryId })
     await startAndStream('Finalize Story', () => api.runFinalize(selectedStoryId))
   }
 
@@ -73,10 +75,12 @@ export default function StartStep() {
   async function handleStart() {
     if (pipelineRunning) {
       showAlreadyRunningToast()
+      logUIEvent('click:start:blocked-already-running')
       return
     }
 
     if (!selectedStoryId) { alert('Please select a story first.'); return }
+    logUIEvent('click:start:generate', { story_id: selectedStoryId, ...advanced })
 
     // H6: check auth before starting
     setAuthWarning('')

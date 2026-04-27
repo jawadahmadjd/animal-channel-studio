@@ -92,6 +92,9 @@ export interface AdvancedOptions {
 
 interface AppState {
   activeView: 'pipeline' | 'logs' | 'settings'
+  setupStage: 'idle' | 'python' | 'pip' | 'bridge' | 'browser' | 'done' | 'error'
+  setupDetail: string
+  setSetupProgress: (stage: AppState['setupStage'], detail: string) => void
   bridgeReady: boolean
   setBridgeReady: (v: boolean) => void
   apiKeysConfigured: { deepseek: boolean; elevenlabs: boolean }
@@ -195,6 +198,9 @@ export const useStore = create<AppState>()(
   persist(
     (set, get) => ({
   activeView: 'pipeline',
+  setupStage: 'idle',
+  setupDetail: '',
+  setSetupProgress: (setupStage, setupDetail) => set({ setupStage, setupDetail }),
   bridgeReady: false,
   setBridgeReady: (bridgeReady) => set({ bridgeReady }),
   apiKeysConfigured: { deepseek: false, elevenlabs: false },
@@ -466,7 +472,6 @@ export const useStore = create<AppState>()(
       storage: createJSONStorage(() => localStorage),
       // Only persist user-facing state — skip runtime/transient fields
       partialize: (state) => ({
-        activeView: state.activeView,
         activeStep: state.activeStep,
         settings: state.settings,
         advanced: state.advanced,

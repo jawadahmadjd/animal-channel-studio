@@ -1,6 +1,6 @@
 import { Square, Play } from 'lucide-react'
 import { useStore } from '../../store/useStore'
-import { api, subscribeToStream, classifyLogLine, parseSceneProgress } from '../../api/client'
+import { api, subscribeToStream, classifyLogLine, parseSceneProgress, logUIEvent } from '../../api/client'
 
 interface Props {
   title: string
@@ -63,6 +63,7 @@ export default function Header({ title }: Props) {
   }
 
   async function handleStop() {
+    logUIEvent('click:header:stop')
     try {
       await api.runStop()
       setRunState('stopped')

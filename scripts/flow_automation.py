@@ -1765,19 +1765,26 @@ def run_open_mode(flow_url: str, auth_path: Path) -> None:
 
 def run_login_mode(flow_url: str, headless: bool, auth_path: Path, timeout_sec: int = 300) -> None:
     auth_path.parent.mkdir(parents=True, exist_ok=True)
+    _print("[Login] Opening browser — please sign in with your Google account...")
     with sync_playwright() as pw:
-        browser = pw.chromium.launch(headless=headless)
+        launch_args = ["--foreground"] if not headless else []
+        browser = pw.chromium.launch(headless=headless, args=launch_args)
         context = browser.new_context(accept_downloads=True)
         page = context.new_page()
+        _print(f"[Login] Navigating to {flow_url}")
         page.goto(flow_url, wait_until="domcontentloaded")
+        page.bring_to_front()
+        _print("[Login] Waiting for Google sign-in to complete...")
         deadline = time.time() + timeout_sec
         while time.time() < deadline:
             if _is_authenticated(page): break
             page.wait_for_timeout(1000)
         else: raise SystemExit("Login timed out")
-        page.wait_for_timeout(15000)
+        _print("[Login] Sign-in detected — saving session...")
+        page.wait_for_timeout(2000)
         context.storage_state(path=str(auth_path))
         browser.close()
+        _print("[Login] Session saved. Authorization complete.")
 
 
 def run_generate_mode(

@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
-import { Volume2, Loader2, Play, Pause, RefreshCw, ArrowRight, Check, ChevronDown, Square, X, RotateCcw } from 'lucide-react'
+import { Volume2, Loader2, Play, Pause, RefreshCw, ArrowRight, Check, ChevronDown, Square, X, RotateCcw, FolderOpen } from 'lucide-react'
 import { useStore } from '../../store/useStore'
-import { api } from '../../api/client'
+import { api, logUIEvent } from '../../api/client'
 import StepCard from './StepCard'
 
 const ELEVENLABS_COST_PER_1K_CHARS = 0.30
@@ -37,9 +37,10 @@ export default function GenerateVoiceoverStep() {
   const [playingIndex, setPlayingIndex] = useState<number | null>(null)
   const [audioObjects, setAudioObjects] = useState<Record<number, HTMLAudioElement>>({})
   const [previewAudio, setPreviewAudio] = useState<HTMLAudioElement | null>(null)
-  // Expandable cards for multi-script mode
   const [expandedCards, setExpandedCards] = useState<Set<number>>(new Set([0]))
   const [voiceSelectorOpen, setVoiceSelectorOpen] = useState(false)
+  // Per-scene manual filename inputs
+  const [manualFilenameInput, setManualFilenameInput] = useState<Record<number, string>>({})
 
   const isMulti = multiVoNarrations.length > 1
   const effectiveNarrations = voNarrations.length > 0
@@ -48,8 +49,8 @@ export default function GenerateVoiceoverStep() {
   const hasNarrations = effectiveNarrations.length > 0
   const allGenerated = hasNarrations && sceneAudioFilenames.length === effectiveNarrations.length
     && sceneAudioFilenames.every(Boolean)
+  const anyGenerated = sceneAudioFilenames.some(Boolean)
 
-  // Flat index offset for a given script card
   function flatOffset(scriptIdx: number): number {
     let offset = 0
     for (let i = 0; i < scriptIdx; i++) {
@@ -83,6 +84,10 @@ export default function GenerateVoiceoverStep() {
   async function generateScene(index: number) {
     if (!selectedVoiceId) return
     const text = effectiveNarrations[index].narration
+    if (!text.trim()) {
+      setError(`Scene ${index + 1} has no narration text — enter narration in Step 4 or use a pre-generated file.`)
+      return
+    }
     setGeneratingScene((prev) => ({ ...prev, [index]: true }))
     try {
       const res = await api.generateVoiceover(text, selectedVoiceId)
@@ -99,6 +104,7 @@ export default function GenerateVoiceoverStep() {
 
   async function handleGenerateAll() {
     if (!selectedVoiceId || !hasNarrations) return
+    logUIEvent('click:voiceover:generateAll', { voiceId: selectedVoiceId, sceneCount: effectiveNarrations.length })
 
     if (confirmCostly) {
       const totalChars = effectiveNarrations.reduce((sum, item) => sum + item.narration.length, 0)
@@ -120,7 +126,6 @@ export default function GenerateVoiceoverStep() {
     Object.values(audioObjects).forEach((a) => a.pause())
     setAudioObjects({})
     setPlayingIndex(null)
-    // Do NOT clear sceneAudioFilenames — preserve previously generated audio
     try {
       for (let i = 0; i < effectiveNarrations.length; i++) {
         if (stopRef.current) break
@@ -133,6 +138,7 @@ export default function GenerateVoiceoverStep() {
   }
 
   function handleStop() {
+    logUIEvent('click:voiceover:stop')
     stopRef.current = true
   }
 
@@ -175,6 +181,13 @@ export default function GenerateVoiceoverStep() {
     setPlayingIndex(index)
   }
 
+  function applyManualFilename(index: number) {
+    const name = (manualFilenameInput[index] ?? '').trim()
+    if (!name) return
+    updateSceneAudioFilename(index, name)
+    setManualFilenameInput((prev) => { const next = { ...prev }; delete next[index]; return next })
+  }
+
   function renderSceneRow(flatIndex: number, displayIndex?: number) {
     const item = effectiveNarrations[flatIndex]
     const filename = sceneAudioFilenames[flatIndex]
@@ -182,57 +195,85 @@ export default function GenerateVoiceoverStep() {
     const isPlaying = playingIndex === flatIndex
     const isDone = Boolean(filename)
     const label = (displayIndex ?? flatIndex) + 1
+    const hasNarrationText = Boolean(item?.narration?.trim())
+    const manualInput = manualFilenameInput[flatIndex] ?? ''
+    const showManualInput = !isDone && !isGenerating
 
     return (
-      <div
-        key={flatIndex}
-        className={`flex items-center gap-3 px-4 py-3 rounded-xl border-2 transition-all ${
-          isDone ? 'border-emerald-100 bg-emerald-50' : 'border-slate-100 bg-slate-50'
-        }`}
-      >
-        <span className="w-7 h-7 shrink-0 rounded-lg bg-slate-200 text-slate-600 text-[11px] font-black flex items-center justify-center">
-          {label}
-        </span>
-        <p className="flex-1 text-xs text-slate-600 font-medium line-clamp-1">
-          {item.narration}
-        </p>
-        {isGenerating ? (
-          <Loader2 size={16} className="shrink-0 text-slate-400 animate-spin" />
-        ) : isDone ? (
-          <>
-            <button
-              onClick={() => togglePlay(flatIndex, filename)}
-              className="w-8 h-8 rounded-lg bg-emerald-500 text-white flex items-center justify-center hover:bg-emerald-600 transition-all shrink-0"
-              title={isPlaying ? 'Pause' : 'Play'}
-            >
-              {isPlaying ? <Pause size={14} /> : <Play size={14} />}
-            </button>
+      <div key={flatIndex} className="space-y-1">
+        <div
+          className={`flex items-center gap-3 px-4 py-3 rounded-xl border-2 transition-all ${
+            isDone ? 'border-emerald-100 bg-emerald-50' : 'border-slate-100 bg-slate-50'
+          }`}
+        >
+          <span className="w-7 h-7 shrink-0 rounded-lg bg-slate-200 text-slate-600 text-[11px] font-black flex items-center justify-center">
+            {label}
+          </span>
+          <p className="flex-1 text-xs text-slate-600 font-medium line-clamp-1">
+            {item.narration || <span className="italic text-slate-400">No narration text</span>}
+          </p>
+          {isGenerating ? (
+            <Loader2 size={16} className="shrink-0 text-slate-400 animate-spin" />
+          ) : isDone ? (
+            <>
+              <button
+                onClick={() => togglePlay(flatIndex, filename)}
+                className="w-8 h-8 rounded-lg bg-emerald-500 text-white flex items-center justify-center hover:bg-emerald-600 transition-all shrink-0"
+                title={isPlaying ? 'Pause' : 'Play'}
+              >
+                {isPlaying ? <Pause size={14} /> : <Play size={14} />}
+              </button>
+              <button
+                onClick={() => generateScene(flatIndex)}
+                disabled={generatingAll || !hasNarrationText}
+                className="p-1.5 rounded-lg text-emerald-500 hover:text-emerald-700 hover:bg-emerald-100 transition-all shrink-0 disabled:opacity-30"
+                title="Regenerate this scene"
+              >
+                <RefreshCw size={13} />
+              </button>
+              <button
+                onClick={() => resetScene(flatIndex)}
+                disabled={generatingAll}
+                className="p-1.5 rounded-lg text-slate-400 hover:text-red-500 hover:bg-red-50 transition-all shrink-0 disabled:opacity-30"
+                title="Clear this audio"
+              >
+                <X size={13} />
+              </button>
+              <Check size={14} className="text-emerald-500 shrink-0" strokeWidth={3} />
+            </>
+          ) : (
             <button
               onClick={() => generateScene(flatIndex)}
-              disabled={generatingAll}
-              className="p-1.5 rounded-lg text-emerald-500 hover:text-emerald-700 hover:bg-emerald-100 transition-all shrink-0 disabled:opacity-30"
-              title="Regenerate this scene"
+              disabled={generatingAll || !selectedVoiceId || !hasNarrationText}
+              className="px-3 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-widest bg-slate-200 text-slate-600 hover:bg-slate-300 transition-all disabled:opacity-30 shrink-0"
+              title={!hasNarrationText ? 'No narration text — use manual filename below' : ''}
             >
-              <RefreshCw size={13} />
+              Generate
             </button>
-            <button
-              onClick={() => resetScene(flatIndex)}
-              disabled={generatingAll}
-              className="p-1.5 rounded-lg text-slate-400 hover:text-red-500 hover:bg-red-50 transition-all shrink-0 disabled:opacity-30"
-              title="Clear this audio — go back to Step 4 to fix the narration text, then regenerate"
-            >
-              <X size={13} />
-            </button>
-            <Check size={14} className="text-emerald-500 shrink-0" strokeWidth={3} />
-          </>
-        ) : (
-          <button
-            onClick={() => generateScene(flatIndex)}
-            disabled={generatingAll || !selectedVoiceId}
-            className="px-3 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-widest bg-slate-200 text-slate-600 hover:bg-slate-300 transition-all disabled:opacity-30 shrink-0"
-          >
-            Generate
-          </button>
+          )}
+        </div>
+
+        {/* Pre-generated filename input */}
+        {showManualInput && (
+          <div className="flex items-center gap-2 px-2">
+            <FolderOpen size={12} className="shrink-0 text-slate-300" />
+            <input
+              type="text"
+              value={manualInput}
+              onChange={(e) => setManualFilenameInput((prev) => ({ ...prev, [flatIndex]: e.target.value }))}
+              onKeyDown={(e) => e.key === 'Enter' && applyManualFilename(flatIndex)}
+              placeholder="Or enter pre-generated filename (e.g. scene_001.mp3)"
+              className="flex-1 px-3 py-1.5 rounded-lg text-[11px] font-medium bg-slate-50 border border-slate-100 text-slate-700 outline-none focus:border-violet-300 focus:ring-2 focus:ring-violet-50 transition-all placeholder:text-slate-300"
+            />
+            {manualInput.trim() && (
+              <button
+                onClick={() => applyManualFilename(flatIndex)}
+                className="px-3 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-widest bg-violet-100 text-violet-700 hover:bg-violet-200 transition-all shrink-0"
+              >
+                Use
+              </button>
+            )}
+          </div>
         )}
       </div>
     )
@@ -244,11 +285,11 @@ export default function GenerateVoiceoverStep() {
   return (
     <StepCard
       title="5. Generate Voiceover"
-      subtitle="Pick an ElevenLabs voice and generate per-scene narration audio."
+      subtitle="Pick an ElevenLabs voice and generate per-scene narration audio, or import pre-generated files."
     >
       {!hasNarrations && (
         <p className="text-sm text-slate-400 font-medium">
-          Complete Step 4 (Narration &amp; Prompts) first.
+          Complete Step 4 (Narration &amp; Prompts) first, or go back and add scenes.
         </p>
       )}
 
@@ -334,7 +375,7 @@ export default function GenerateVoiceoverStep() {
           </div>
 
           {/* Generate All + Stop buttons */}
-          <div className="flex gap-3 mb-6">
+          <div className="flex gap-3 mb-4">
             <button
               onClick={handleGenerateAll}
               disabled={busy || !selectedVoiceId}
@@ -352,18 +393,17 @@ export default function GenerateVoiceoverStep() {
               <button
                 onClick={handleStop}
                 className="flex items-center justify-center gap-2 px-5 py-4 rounded-2xl text-sm font-black uppercase tracking-[0.15em] text-white bg-red-500 hover:bg-red-600 transition-all shadow-lg shadow-red-200"
-                title="Stop generation"
               >
                 <Square size={16} fill="currentColor" />
                 Stop
               </button>
             )}
-            {!generatingAll && sceneAudioFilenames.some(Boolean) && (
+            {!generatingAll && anyGenerated && (
               <button
                 onClick={resetAllScenes}
                 disabled={busy}
                 className="flex items-center justify-center gap-2 px-5 py-4 rounded-2xl text-sm font-black uppercase tracking-[0.15em] text-slate-600 bg-slate-100 hover:bg-slate-200 transition-all disabled:opacity-30"
-                title="Clear all generated audio so you can fix narration text and regenerate"
+                title="Clear all generated audio"
               >
                 <RotateCcw size={16} />
                 Reset All
@@ -448,15 +488,29 @@ export default function GenerateVoiceoverStep() {
             </div>
           )}
 
-          {allGenerated && (
+          {/* Continue buttons */}
+          <div className="mt-6 space-y-2">
+            {allGenerated && (
+              <button
+                onClick={() => setActiveStep(6)}
+                className="w-full flex items-center justify-center gap-2 px-6 py-4 rounded-2xl text-sm font-black text-emerald-700 bg-emerald-50 border-2 border-emerald-200 hover:bg-emerald-100 transition-all"
+              >
+                All Done — Continue to Pick Story
+                <ArrowRight size={16} />
+              </button>
+            )}
             <button
               onClick={() => setActiveStep(6)}
-              className="mt-6 w-full flex items-center justify-center gap-2 px-6 py-4 rounded-2xl text-sm font-black text-emerald-700 bg-emerald-50 border-2 border-emerald-200 hover:bg-emerald-100 transition-all"
+              className={`w-full flex items-center justify-center gap-2 px-6 py-3 rounded-2xl text-sm font-black transition-all ${
+                allGenerated
+                  ? 'text-slate-400 bg-slate-50 border-2 border-slate-100 hover:bg-slate-100'
+                  : 'text-violet-700 bg-violet-50 border-2 border-violet-100 hover:bg-violet-100'
+              }`}
             >
-              Continue to Pick Story
+              {allGenerated ? 'Or skip to' : 'Skip to'} Step 6 (Pick Story) without voiceover
               <ArrowRight size={16} />
             </button>
-          )}
+          </div>
         </>
       )}
     </StepCard>

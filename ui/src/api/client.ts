@@ -1,17 +1,64 @@
 const BASE = 'http://127.0.0.1:7477'
 export const REQUIRED_BRIDGE_VERSION = 2
 
+// ── UI event logger ──────────────────────────────────────────────────────────
+// Sends button clicks and UI state transitions to the bridge so they appear
+// in the session log file alongside subprocess output. Fire-and-forget.
+export function logUIEvent(action: string, detail?: unknown): void {
+  const ts = new Date().toLocaleTimeString('en-US', { hour12: false })
+  const detailStr = detail !== undefined
+    ? (typeof detail === 'string' ? detail : JSON.stringify(detail))
+    : ''
+  fetch(`${BASE}/ui/event`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ action, detail: detailStr, timestamp: ts }),
+  }).catch(() => {})  // never throw — logging must not break the UI
+}
+
+// ── API request wrapper ───────────────────────────────────────────────────────
 async function req<T>(method: string, path: string, body?: unknown): Promise<T> {
-  const res = await fetch(`${BASE}${path}`, {
-    method,
-    headers: body ? { 'Content-Type': 'application/json' } : {},
-    body: body ? JSON.stringify(body) : undefined,
-  })
+  const t0 = performance.now()
+  // Log all calls except high-frequency polling
+  const skipLog = path === '/run/stream' || path === '/output/watch' || path === '/health'
+  if (!skipLog) {
+    const bodyStr = body ? ` ${JSON.stringify(_redactBody(body))}` : ''
+    console.debug(`[api] → ${method} ${path}${bodyStr}`)
+  }
+
+  let res: Response
+  try {
+    res = await fetch(`${BASE}${path}`, {
+      method,
+      headers: body ? { 'Content-Type': 'application/json' } : {},
+      body: body ? JSON.stringify(body) : undefined,
+    })
+  } catch (err) {
+    console.error(`[api] ✗ ${method} ${path} — network error:`, err)
+    throw err
+  }
+
+  const ms = Math.round(performance.now() - t0)
   if (!res.ok) {
     const text = await res.text()
+    console.error(`[api] ✗ ${method} ${path} → ${res.status} (${ms}ms): ${text}`)
     throw new Error(`${method} ${path} → ${res.status}: ${text}`)
   }
+
+  if (!skipLog) {
+    console.debug(`[api] ✓ ${method} ${path} → ${res.status} (${ms}ms)`)
+  }
   return res.json() as Promise<T>
+}
+
+function _redactBody(body: unknown): unknown {
+  if (typeof body !== 'object' || body === null) return body
+  const REDACT = new Set(['deepseek_api_key', 'elevenlabs_api_key'])
+  return Object.fromEntries(
+    Object.entries(body as Record<string, unknown>).map(([k, v]) =>
+      [k, REDACT.has(k) && v ? '***' : v]
+    )
+  )
 }
 
 export interface ElevenLabsVoice {
