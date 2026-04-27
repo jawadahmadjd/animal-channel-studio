@@ -377,10 +377,13 @@ class PipelineUI:
         tk.Label(inner, text="Select from trending animal narrative concepts.",
                  bg=CARD, fg=MUTED, font=(MAIN_FONT, 9)).pack(anchor="w", pady=(0, 15))
         
-        combo = ttk.Combobox(inner, textvariable=self.idea_var,
+        self._idea_combo = ttk.Combobox(inner, textvariable=self.idea_var,
                              values=self._idea_labels, state="readonly",
                              font=(MAIN_FONT, 10), width=62)
-        combo.pack(fill="x", pady=(0, 5))
+        self._idea_combo.pack(fill="x", pady=(0, 5))
+        self._idea_combo.bind("<<ComboboxSelected>>", lambda _: None)
+        self._idea_combo.bind("<ButtonPress>", lambda _: self._refresh_ideas())
+        combo = self._idea_combo
 
         # Action Buttons for Step 2
         btn_grid = tk.Frame(inner, bg=CARD)
@@ -640,6 +643,20 @@ class PipelineUI:
                                        font=(mono, 9, "bold"))
 
     # ── Runtime helpers ───────────────────────────────────────────────────────
+
+    def _refresh_ideas(self):
+        fresh = _load_ideas()
+        if not fresh:
+            return
+        labels = [f"{i.index}.  {i.title}" for i in fresh]
+        if labels == self._idea_labels:
+            return
+        self.ideas = fresh
+        self._idea_labels = labels
+        self._idea_combo["values"] = labels
+        current = self.idea_var.get()
+        if current not in labels:
+            self.idea_var.set(labels[0])
 
     def _selected_index(self) -> str:
         m = re.match(r"^(\d+)", self.idea_var.get())

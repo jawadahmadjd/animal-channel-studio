@@ -8,6 +8,7 @@ import re
 import shutil
 import sys
 import time
+import zipfile
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
@@ -70,6 +71,8 @@ from flow_automation import (
     wait_for_submit_ready,
     list_clip_card_summaries,
     download_clips,
+    download_project_zip,
+    download_clips_via_edit_pages,
     click_visible_retry_buttons,
 )
 from generate_story import build_messages, call_deepseek, log_raw_response, validate_payload
@@ -926,7 +929,6 @@ def main() -> None:
                         scene_no = int(completed_job["scene_no"])
                         known_keys_at_submit = completed_job.get("known_card_keys_at_submit", set())
                         scene_state = scenes_by_no_state[scene_no]
-                        scene_dir = story_dir / f"scene_{scene_no:02d}"
 
                         # Wait a few seconds so all x4 generated clips finish rendering
                         _info(f"Scene {scene_no}: first clip ready — waiting 8s for all clips to finish...")
@@ -944,56 +946,17 @@ def main() -> None:
                         if not new_ready_cards:
                             new_ready_cards = [card]  # Fallback to the triggering card
 
-                        _info(f"Scene {scene_no}: downloading {len(new_ready_cards)} clip(s)...")
-                        all_files: list[Path] = []
+                        # Mark all ready cards as seen so we don't re-process them
                         for ready_card in new_ready_cards:
-                            ready_key = str(ready_card.get("card_key", ""))
-                            if ready_key in downloaded_card_keys:
-                                continue
-                            ready_index = int(ready_card.get("index", 0))
-                            print(
-                                f"  [Download] Scene {scene_no} from card index {ready_index} "
-                                f"(attempt {completed_job['attempt']}/{max_attempts})"
-                            )
-                            clip_files = download_clips(
-                                page, selectors_cfg, scene_dir, card_index=ready_index
-                            )
-                            if clip_files:
-                                all_files.extend(clip_files)
-                                downloaded_card_keys.add(ready_key)
-                                downloaded_cards.append(
-                                    {
-                                        "scene_no": scene_no,
-                                        "card_key": ready_key,
-                                        "files": [str(p) for p in clip_files],
-                                        "downloaded_at": utc_now(),
-                                    }
-                                )
+                            downloaded_card_keys.add(str(ready_card.get("card_key", "")))
 
-                        files = all_files
-                        if files:
-                            scene_state["status"] = "completed"
-                            scene_state["downloads"] = [str(p) for p in files]
-                            scene_state["error"] = ""
-                            scene_state["updated_at"] = utc_now()
-                            total_clips += len(files)
-                            _ok(
-                                f"Scene {scene_no} downloaded ({len(files)} clip(s))"
-                            )
-                        else:
-                            scene_state["status"] = "failed"
-                            scene_state["error"] = "Thumbnail ready but download failed."
-                            scene_state["updated_at"] = utc_now()
-                            if int(scene_state.get("attempts", 0)) < max_attempts:
-                                pending_scene_nos.append(scene_no)
-                                _warn(
-                                    f"Scene {scene_no} download failed; queued retry "
-                                    f"{int(scene_state.get('attempts', 0)) + 1}/{max_attempts}"
-                                )
-                            else:
-                                _warn(
-                                    f"Scene {scene_no} download failed and retries are exhausted."
-                                )
+                        clip_count = len(new_ready_cards)
+                        scene_state["status"] = "generated"
+                        scene_state["generated_clip_count"] = clip_count
+                        scene_state["downloads"] = []
+                        scene_state["error"] = ""
+                        scene_state["updated_at"] = utc_now()
+                        _ok(f"Scene {scene_no}: {clip_count} clip(s) generated — will download via project zip")
 
                         tracker["downloaded_card_keys"] = sorted(downloaded_card_keys)
                         tracker["failed_card_keys"] = sorted(failed_card_keys)
@@ -1033,6 +996,78 @@ def main() -> None:
                     save_json(run_path, run_state)
 
                 page.wait_for_timeout(500)
+
+        # ── Project zip download ───────────────────────────────────────────────
+        generated_scenes = [
+            s for s in run_state["scenes"] if s.get("status") == "generated"
+        ]
+        if not dry_run and generated_scenes:
+            _section("STEP 2b — Downloading clips")
+            _info("Waiting 30s for all clips to stabilise before downloading...")
+            page.wait_for_timeout(30000)
+
+            project_url = str(run_state.get("flow_project_url") or args.flow_url)
+            staging_dir = Path(args.downloads_dir) / "_staging_clips"
+            staging_dir.mkdir(parents=True, exist_ok=True)
+
+            # ── Attempt 1: project zip via toolbar kebab → Download Project ──
+            zip_path = download_project_zip(page, selectors_cfg, staging_dir)
+
+            if zip_path and zip_path.exists():
+                _info(f"Extracting project zip: {zip_path.name}")
+                extract_dir = staging_dir / "_zip_extract"
+                extract_dir.mkdir(parents=True, exist_ok=True)
+                with zipfile.ZipFile(zip_path, "r") as zf:
+                    zf.extractall(extract_dir)
+                all_clips = sorted(
+                    p for p in extract_dir.rglob("*")
+                    if p.suffix.lower() in {".mp4", ".mov", ".webm"}
+                )
+                _info(f"Found {len(all_clips)} clip(s) in zip")
+            else:
+                # ── Attempt 2: per-clip download via edit pages ───────────────
+                _warn("Zip download failed — falling back to per-clip edit-page download...")
+                all_clips = download_clips_via_edit_pages(page, project_url, staging_dir)
+                _info(f"Downloaded {len(all_clips)} clip(s) individually")
+
+            if all_clips:
+                # Distribute clips to scenes in scene_no order, using generated_clip_count
+                clip_cursor = 0
+                for scene_state in sorted(generated_scenes, key=lambda s: int(s["scene_no"])):
+                    scene_no = int(scene_state["scene_no"])
+                    clip_count = int(scene_state.get("generated_clip_count", 1))
+                    scene_clips = all_clips[clip_cursor : clip_cursor + clip_count]
+                    clip_cursor += clip_count
+
+                    scene_dir = Path(args.downloads_dir) / f"scene_{scene_no:02d}"
+                    scene_dir.mkdir(parents=True, exist_ok=True)
+
+                    saved: list[str] = []
+                    for clip_idx, src in enumerate(scene_clips, start=1):
+                        dest = scene_dir / f"clip_{clip_idx:02d}_{int(time.time())}.mp4"
+                        shutil.copy2(str(src), str(dest))
+                        saved.append(str(dest))
+
+                    if saved:
+                        scene_state["status"] = "completed"
+                        scene_state["downloads"] = saved
+                        scene_state["updated_at"] = utc_now()
+                        total_clips += len(saved)
+                        _ok(f"Scene {scene_no}: {len(saved)} clip(s) saved")
+                    else:
+                        scene_state["status"] = "failed"
+                        scene_state["error"] = "No clips assigned from download."
+                        scene_state["updated_at"] = utc_now()
+                        _warn(f"Scene {scene_no}: no clips found")
+
+                shutil.rmtree(staging_dir, ignore_errors=True)
+            else:
+                _warn("All download attempts failed — scenes marked as failed")
+                for scene_state in generated_scenes:
+                    scene_state["status"] = "failed"
+                    scene_state["error"] = "Both zip and per-clip downloads failed."
+                    scene_state["updated_at"] = utc_now()
+            save_json(run_path, run_state)
 
     finally:
         if browser_started:

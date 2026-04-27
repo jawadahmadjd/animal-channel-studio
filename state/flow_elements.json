@@ -382,6 +382,25 @@
       "selectors": [],
       "notes": "TODO_MISSING: Exact marker that means thumbnail/video is ready to download for this card.",
       "used_in": []
+    },
+    "project_kebab_menu_button": {
+      "selectors": [
+        "button:has(i.jeTKGG:has-text('more_vert'))",
+        "button:has(i.sc-e8425ea6-1:has-text('more_vert'))",
+        "button:has(i:has-text('more_vert'))"
+      ],
+      "notes": "The vertical three-dot menu button shown inside an open project (top toolbar area). HTML: <i class=\"sc-a39c2a59-0 jeTKGG google-symbols sc-e8425ea6-1 kJJDGi\" font-size=\"1.5rem\" color=\"currentColor\">more_vert</i>. Scoped to the larger icon (font-size 1.5rem / class jeTKGG) to distinguish from clip-level more_vert buttons which use smaller icons. Used to reveal the 'Download project' option.",
+      "used_in": []
+    },
+    "project_download_button": {
+      "selectors": [
+        "[role='menuitem']:has(i:has-text('download'))",
+        "[role='menuitem']:has-text('Download')",
+        "button:has(i.bKZWQQ:has-text('download'))",
+        "button:has(i:has-text('download'))"
+      ],
+      "notes": "The 'Download project' menu item that appears after clicking project_kebab_menu_button inside an open project. HTML: <i class=\"sc-a39c2a59-0 bKZWQQ google-symbols undefined\" font-size=\"1.25rem\" color=\"currentColor\">download</i>. Downloads the entire project as a zip containing all generated clips. Prefer [role='menuitem'] scoping to avoid matching clip-level download buttons.",
+      "used_in": []
     }
   }
 }

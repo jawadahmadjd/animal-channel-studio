@@ -1572,6 +1572,147 @@ def download_clips(page: Page, selectors_cfg: dict[str, Any], target_dir: Path, 
     return downloaded
 
 
+def download_project_zip(page: Page, selectors_cfg: dict[str, Any], save_dir: Path) -> "Path | None":
+    """
+    Click the toolbar kebab menu (the more_vert button adjacent to the help button
+    in the top-right of the project page) → 'Download Project', save the zip.
+    This is the correct kebab — NOT the one next to the project title.
+    """
+    save_dir.mkdir(parents=True, exist_ok=True)
+    _print(f"  [{_ts()}] DOWNLOAD opening toolbar menu (adjacent to help button)...")
+
+    # The toolbar kebab is the more_vert button that directly follows the help button.
+    # Selector: the more_vert button that is right-of (or after) the help button.
+    # We use Playwright's :right-of() layout selector as primary, with class fallback.
+    toolbar_kebab_sels = selector_list(selectors_cfg, "toolbar_kebab_menu_button") or [
+        "button.sc-b9918a95-1",                                          # stable class seen in DOM
+        "button:right-of(button:has(i:has-text('help'))):has(i:has-text('more_vert'))",
+        "button:has(i:has-text('more_vert')):right-of(button:has(i:has-text('help')))",
+    ]
+    # Also try: take the LAST more_vert button on the page (toolbar kebab appears after title kebab)
+    fallback_last_kebab = "button:has(i:has-text('more_vert'))"
+
+    done, sel = wait_for_any_selector(page, toolbar_kebab_sels, 5000)
+    if not done:
+        # Fall back to last more_vert button
+        count = page.locator(fallback_last_kebab).count()
+        if count >= 2:
+            _print(f"  [{_ts()}] INFO    Using last of {count} more_vert buttons (toolbar kebab)")
+            page.locator(fallback_last_kebab).last.click()
+        elif count == 1:
+            _print(f"  [{_ts()}] WARN    Only 1 more_vert found — trying it anyway")
+            page.locator(fallback_last_kebab).first.click()
+        else:
+            _print(f"  [{_ts()}] WARN    Toolbar kebab menu button not found")
+            return None
+    else:
+        page.locator(sel).first.click()
+    page.wait_for_timeout(2000)
+
+    # The menu should now contain "Download Project"
+    dl_sels = selector_list(selectors_cfg, "project_download_button") or [
+        "[role='menuitem']:has-text('Download Project')",
+        "[role='menuitem']:has(i:has-text('download'))",
+        "[role='menuitem']:has-text('Download')",
+    ]
+    done, dl_sel = wait_for_any_selector(page, dl_sels, 5000)
+    if not done:
+        try:
+            items = page.locator("[role='menuitem']").all()
+            texts = [item.inner_text().strip() for item in items[:10]]
+            _print(f"  [{_ts()}] DEBUG    Visible menu items: {texts}")
+        except Exception:
+            pass
+        _print(f"  [{_ts()}] WARN     'Download Project' menu item not found")
+        page.keyboard.press("Escape")
+        return None
+
+    _print(f"  [{_ts()}] CLICK   Download Project...")
+    try:
+        with page.expect_download(timeout=180000) as dl_info:
+            page.locator(dl_sel).first.click()
+        download = dl_info.value
+    except Exception as exc:
+        _print(f"  [{_ts()}] ERROR   Project download failed: {exc}")
+        return None
+
+    filename = download.suggested_filename or f"project_{int(time.time())}.zip"
+    zip_path = save_dir / filename
+    download.save_as(str(zip_path))
+    _print(f"  [{_ts()}] OK      Project zip saved: {zip_path.name}")
+    return zip_path
+
+
+def download_clips_via_edit_pages(
+    page: Page,
+    project_url: str,
+    save_dir: Path,
+    resolution: str = "720p",
+) -> list[Path]:
+    """
+    For each clip in the project, navigate to its /edit/<id> page,
+    click the Download dropdown, and save the chosen resolution.
+    Returns list of saved file paths in the order clips appear on the project page.
+    """
+    save_dir.mkdir(parents=True, exist_ok=True)
+    downloaded: list[Path] = []
+    base_url = "https://labs.google"
+
+    _print(f"  [{_ts()}] DOWNLOAD collecting clip edit links from project page...")
+    page.goto(project_url, wait_until="networkidle", timeout=60000)
+    page.wait_for_timeout(5000)
+
+    edit_hrefs: list[str] = page.evaluate(
+        "() => [...document.querySelectorAll('a[href*=\"/edit/\"]')]"
+        ".map(a => a.getAttribute('href')).filter(Boolean)"
+    )
+    _print(f"  [{_ts()}] Found {len(edit_hrefs)} clip(s) to download")
+
+    for i, href in enumerate(edit_hrefs):
+        edit_url = base_url + href
+        _print(f"\n  [{_ts()}] Clip {i+1}/{len(edit_hrefs)}: navigating to edit page...")
+        try:
+            page.goto(edit_url, wait_until="networkidle", timeout=60000)
+            page.wait_for_timeout(3000)
+
+            # Click the Download dropdown button
+            dl_btn_sel = "button[aria-haspopup='menu']:has(i:has-text('download'))"
+            done, _ = wait_for_any_selector(page, [dl_btn_sel], 10000)
+            if not done:
+                _print(f"  [{_ts()}] WARN     Download button not found for clip {i+1}")
+                continue
+
+            page.locator(dl_btn_sel).click()
+            page.wait_for_timeout(1500)
+
+            # Click the resolution option (e.g. "720p")
+            res_sel = f"[role='menuitem']:has-text('{resolution}')"
+            done2, _ = wait_for_any_selector(page, [res_sel], 5000)
+            if not done2:
+                _print(f"  [{_ts()}] WARN     '{resolution}' option not found for clip {i+1}")
+                page.keyboard.press("Escape")
+                continue
+
+            _print(f"  [{_ts()}] CLICK    {resolution} download...")
+            with page.expect_download(timeout=120000) as dl_info:
+                page.locator(res_sel).first.click()
+            download = dl_info.value
+            suggested = download.suggested_filename or f"clip_{i+1:02d}.mp4"
+            stem = Path(suggested).stem
+            suffix = Path(suggested).suffix or ".mp4"
+            filename = f"{i+1:02d}_{stem}{suffix}"
+            dest = save_dir / filename
+            download.save_as(str(dest))
+            _print(f"  [{_ts()}] OK       saved: {filename}  ({dest.stat().st_size:,} bytes)")
+            downloaded.append(dest)
+
+        except Exception as exc:
+            _print(f"  [{_ts()}] ERROR    clip {i+1}: {exc}")
+            page.keyboard.press("Escape")
+
+    return downloaded
+
+
 def _go_back(page: Page, selectors_cfg: dict[str, Any]):
     back_sels = selector_list(selectors_cfg, "back_button") or ["button:has-text('arrow_back')", "button:has-text('Back')"]
     _print("             ACTION  returning to grid...")
