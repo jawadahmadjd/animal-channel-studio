@@ -261,7 +261,7 @@ class PipelineUI:
         badge = tk.Frame(self._sidebar, bg=CARD, highlightbackground=BORDER, highlightthickness=1)
         badge.pack(fill="x", padx=16, pady=(0, 20))
         tk.Label(badge, text="Creator Studio", bg=CARD, fg=PRIMARY, font=(MAIN_FONT, 9, "bold")).pack(anchor="w", padx=12, pady=(10, 0))
-        tk.Label(badge, text="V1.2.4 Active", bg=CARD, fg=MUTED, font=(MAIN_FONT, 8)).pack(anchor="w", padx=12, pady=(0, 10))
+        tk.Label(badge, text="V1.3.0 Active", bg=CARD, fg=MUTED, font=(MAIN_FONT, 8)).pack(anchor="w", padx=12, pady=(0, 10))
 
         # Nav
         for icon, label in [("Pipeline", "Pipeline"), ("Status Logs", "Status Logs")]:

@@ -4,10 +4,11 @@ This repo now includes a root-level script named `push` that automates release p
 
 1. Runs a UI build check (`npm --prefix ui run build`) unless skipped.
 2. Bumps `ui/package.json` version (and `ui/package-lock.json`).
-3. Commits changes.
-4. Creates a Git tag like `v1.2.9`.
-5. Pushes branch + tag to GitHub.
-6. Your existing GitHub Action (`.github/workflows/release.yml`) detects the tag and publishes the release build for auto-update users.
+3. Syncs known local version labels (currently `scripts/ui_runner.py` badge text).
+4. Commits changes.
+5. Creates a Git tag like `v1.2.9`.
+6. Pushes branch + tag to GitHub.
+7. Your existing GitHub Action (`.github/workflows/release.yml`) detects the tag and publishes the release build for auto-update users.
 
 ## Quick Start
 
@@ -98,6 +99,7 @@ setx PUSH_DEFAULT_BUMP "minor"
 - `validate_semver(version)`: Validates explicit version format.
 - `get_package_version()`: Reads current app version from `ui/package.json`.
 - `bump_version(version, bump, preid)`: Executes npm version bump without auto-tag.
+- `sync_version_references(version)`: Updates known hardcoded version labels in local files.
 - `run_build_check(skip)`: Runs or skips pre-release UI build check.
 - `stage_files(stage_all)`: Stages either all changes or only version files.
 - `ensure_staged_changes()`: Prevents empty commits.

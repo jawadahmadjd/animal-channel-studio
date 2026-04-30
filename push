@@ -25,6 +25,7 @@ ROOT = Path(__file__).resolve().parent
 UI_DIR = ROOT / "ui"
 PACKAGE_JSON = UI_DIR / "package.json"
 PACKAGE_LOCK = UI_DIR / "package-lock.json"
+UI_RUNNER = ROOT / "scripts" / "ui_runner.py"
 SEMVER_RE = re.compile(r"^\d+\.\d+\.\d+(?:-[0-9A-Za-z.-]+)?$")
 
 
@@ -125,6 +126,27 @@ def bump_version(version: str | None, bump: str, preid: str | None) -> str:
     return new_version
 
 
+def sync_version_references(version: str) -> list[Path]:
+    changed: list[Path] = []
+    sync_rules: list[tuple[Path, re.Pattern[str], str]] = [
+        (
+            UI_RUNNER,
+            re.compile(r"V\d+\.\d+\.\d+(?:-[0-9A-Za-z.-]+)? Active"),
+            f"V{version} Active",
+        )
+    ]
+    for path, pattern, replacement in sync_rules:
+        if not path.exists():
+            continue
+        original = path.read_text(encoding="utf-8")
+        updated, count = pattern.subn(replacement, original, count=1)
+        if count > 0 and updated != original:
+            path.write_text(updated, encoding="utf-8")
+            changed.append(path)
+            print(f"[info] Synced version in {path.relative_to(ROOT)}")
+    return changed
+
+
 def run_build_check(skip: bool) -> None:
     if skip:
         print("[info] Skipping UI build check.")
@@ -140,6 +162,8 @@ def stage_files(stage_all: bool) -> None:
     run(["git", "add", str(PACKAGE_JSON)])
     if PACKAGE_LOCK.exists():
         run(["git", "add", str(PACKAGE_LOCK)])
+    if UI_RUNNER.exists():
+        run(["git", "add", str(UI_RUNNER)])
 
 
 def ensure_staged_changes() -> None:
@@ -252,6 +276,7 @@ def main() -> int:
 
     run_build_check(skip=not run_check)
     new_version = bump_version(args.version, args.bump, args.preid)
+    sync_version_references(new_version)
 
     tag = f"{args.tag_prefix}{new_version}"
     ensure_tag_absent(tag)
