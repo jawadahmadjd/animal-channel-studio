@@ -106,7 +106,9 @@
         "veo_prompt": "Final shot: the tortoise walking away from the camera into the vast desert. Slow motion, dust rising. The image gradually desaturates to black and white, then fades to white. Camera stays fixed as the tortoise shrinks to a dot and disappears. Haunting, peaceful, final."
       }
     ],
-    "saved_at": "2026-04-26T08:47:07.685418+00:00"
+    "saved_at": "2026-04-26T08:47:07.685418+00:00",
+    "metadata_hash": "34de261afa30",
+    "flow_prompt_hash": "3c1999bf88e0"
   },
   "story_1ccf8b7462": {
     "story_id": "story_1ccf8b7462",
@@ -165,7 +167,9 @@
         "veo_prompt": "Extreme close-up of penguin's eye reflecting faint light, tiny sparkle in the darkness, surrounding feathers in deep shadow, warm orange glint contrasting with cold blue, shallow depth of field, metaphorical visual of resilience, intimate and emotional tone."
       }
     ],
-    "saved_at": "2026-04-26T09:17:31.290944+00:00"
+    "saved_at": "2026-04-26T09:17:31.290944+00:00",
+    "metadata_hash": "7bcd66956971",
+    "flow_prompt_hash": "d522b5c8ec2b"
   },
   "story_1419478df1": {
     "story_id": "story_1419478df1",
@@ -219,7 +223,9 @@
         "veo_prompt": "Night scene, full moon, cheetah curled up under a thorn bush, shivering slightly. Cold blue tones, mist rising from the ground. In the distance, faint silhouettes of hyenas moving, their howls audible in the stillness. Cinematic, tense, lonely atmosphere."
       }
     ],
-    "saved_at": "2026-04-26T13:59:40.199449+00:00"
+    "saved_at": "2026-04-26T13:59:40.199449+00:00",
+    "metadata_hash": "69264f3c0d96",
+    "flow_prompt_hash": "a48778c722c0"
   },
   "story_e4b7dcbc8c": {
     "story_id": "story_e4b7dcbc8c",
@@ -273,7 +279,9 @@
         "veo_prompt": "Slow sunrise over a snowy field, warm golden light breaking through clouds, close-up of the sparrow opening its eyes, chest moving slightly, frost melting on its feathers, hopeful yet fragile mood, soft glow."
       }
     ],
-    "saved_at": "2026-04-26T13:59:43.319558+00:00"
+    "saved_at": "2026-04-26T13:59:43.319558+00:00",
+    "metadata_hash": "b574dfca7650",
+    "flow_prompt_hash": "726f562c64d6"
   },
   "story_d93921207f": {
     "story_id": "story_d93921207f",
@@ -332,6 +340,8 @@
         "veo_prompt": "Extreme long shot of the penguin walking away from the camera, becoming smaller against the infinite white. The blizzard intensifies, partially obscuring him. Slow fade to white. Final, resolute, lonely image."
       }
     ],
-    "saved_at": "2026-04-27T12:08:48.154394+00:00"
+    "saved_at": "2026-04-27T12:08:48.154394+00:00",
+    "metadata_hash": "a4e8ad9ba5b4",
+    "flow_prompt_hash": "565dbdf6716c"
   }
 }
