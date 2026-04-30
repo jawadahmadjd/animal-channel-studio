@@ -1,5 +1,5 @@
-import { useState } from 'react'
-import { Mic2, Loader2, ChevronDown, Save, CheckCircle, PenLine, Wand2, Plus, Trash2, ArrowRight, Video } from 'lucide-react'
+import { useState, type ClipboardEvent } from 'react'
+import { Mic2, Loader2, ChevronDown, Save, CheckCircle, PenLine, Wand2, Plus, Trash2, ArrowRight, Video, Copy } from 'lucide-react'
 import { useStore, type VoNarrationItem } from '../../store/useStore'
 import { api, logUIEvent } from '../../api/client'
 import StepCard from './StepCard'
@@ -18,6 +18,7 @@ export default function VoNarrationStep() {
     multiVoNarrations,
     setMultiVoNarrationsForIndex,
     updateMultiVoNarrationItem,
+    checkpointContentCreation,
   } = useStore()
 
   // Multi mode: either multiple generated scripts, or multiple approved ideas (no scripts needed)
@@ -67,6 +68,95 @@ export default function VoNarrationStep() {
   const [multiSaveError, setMultiSaveError] = useState<string[]>([])
   const [multiExpandedCards, setMultiExpandedCards] = useState<Set<number>>(new Set())
   const [multiExpandedRow, setMultiExpandedRow] = useState<Record<number, number | null>>({})
+  const [clipboardMessage, setClipboardMessage] = useState('')
+  const [clipboardError, setClipboardError] = useState('')
+
+  type ClipboardPayload = {
+    kind: 'animal-channel-step4'
+    version: 1
+    items: VoNarrationItem[]
+  }
+
+  function normalizeNarrationItem(item: Partial<VoNarrationItem>): VoNarrationItem {
+    return {
+      sentence: typeof item.sentence === 'string' ? item.sentence : '',
+      narration: typeof item.narration === 'string' ? item.narration : '',
+      veoPrompt: typeof item.veoPrompt === 'string' ? item.veoPrompt : '',
+    }
+  }
+
+  function itemsToPlainText(items: VoNarrationItem[]): string {
+    return items
+      .map((item, i) => [
+        `Scene ${i + 1}: ${item.sentence || ''}`.trim(),
+        `VO: ${item.narration || ''}`,
+        `VEO: ${item.veoPrompt || ''}`,
+      ].join('\n'))
+      .join('\n\n')
+  }
+
+  async function copyItemsToClipboard(items: VoNarrationItem[]) {
+    if (items.length === 0) return
+    try {
+      await navigator.clipboard.writeText(itemsToPlainText(items))
+      setClipboardError('')
+      setClipboardMessage(`Copied ${items.length} scene${items.length === 1 ? '' : 's'} to clipboard.`)
+      window.setTimeout(() => setClipboardMessage(''), 2200)
+    } catch {
+      setClipboardError('Clipboard write failed. Check browser clipboard permissions.')
+    }
+  }
+
+  function parseLabeledText(raw: string): VoNarrationItem[] {
+    const blocks = raw
+      .trim()
+      .split(/\n\s*\n+/)
+      .map((b) => b.trim())
+      .filter(Boolean)
+
+    const items: VoNarrationItem[] = []
+    for (const [idx, block] of blocks.entries()) {
+      const sceneMatch = block.match(/^\s*Scene\s*\d+\s*:?\s*(.*)$/im)
+      const sentence = sceneMatch?.[1]?.trim() || `Scene ${idx + 1}`
+      const voMatch = block.match(/(?:^|\n)\s*(?:VO|Narration)\s*:\s*([\s\S]*?)(?=\n\s*(?:VEO|Prompt)\s*:|$)/i)
+      const veoMatch = block.match(/(?:^|\n)\s*(?:VEO|Prompt)\s*:\s*([\s\S]*?)$/i)
+      const narration = voMatch?.[1]?.trim() || ''
+      const veoPrompt = veoMatch?.[1]?.trim() || ''
+      if (narration || veoPrompt || sceneMatch) items.push({ sentence, narration, veoPrompt })
+    }
+    return items
+  }
+
+  function parseClipboardPayload(raw: string): VoNarrationItem[] {
+    const trimmed = raw.trim()
+    if (!trimmed) throw new Error('Clipboard is empty.')
+    if (trimmed.startsWith('{')) {
+      const parsed = JSON.parse(trimmed) as Partial<ClipboardPayload> & { items?: Partial<VoNarrationItem>[] }
+      if (parsed?.kind !== 'animal-channel-step4' || parsed?.version !== 1 || !Array.isArray(parsed.items)) {
+        throw new Error('Clipboard data is not a valid Step 4 payload.')
+      }
+      const items = parsed.items.map(normalizeNarrationItem)
+      if (items.length === 0) throw new Error('Clipboard payload has no scenes.')
+      return items
+    }
+    const items = parseLabeledText(trimmed).map(normalizeNarrationItem)
+    if (items.length === 0) throw new Error('Paste format not recognized. Use Scene/VO/VEO blocks.')
+    return items
+  }
+
+  function handleManualPaste(e: ClipboardEvent<HTMLTextAreaElement>, onItems: (items: VoNarrationItem[]) => void) {
+    try {
+      const raw = e.clipboardData.getData('text')
+      const items = parseClipboardPayload(raw)
+      e.preventDefault()
+      onItems(items)
+      setClipboardError('')
+      setClipboardMessage(`Pasted ${items.length} scene${items.length === 1 ? '' : 's'} from clipboard.`)
+      window.setTimeout(() => setClipboardMessage(''), 2200)
+    } catch (err: unknown) {
+      setClipboardError(err instanceof Error ? err.message : 'Clipboard read failed.')
+    }
+  }
 
   function setAt<T>(arr: T[], index: number, value: T): T[] {
     const next = [...arr]
@@ -81,6 +171,7 @@ export default function VoNarrationStep() {
     setLoading(true)
     setError('')
     setSaved(false)
+    checkpointContentCreation()
     try {
       const res = await api.generateVoNarration(generatedScript.trim())
       setVoNarrations(res.items.map((item) => ({
@@ -152,6 +243,7 @@ export default function VoNarrationStep() {
     setMultiLoading((prev) => setAt(prev, index, true))
     setMultiError((prev) => setAt(prev, index, ''))
     setMultiSaved((prev) => setAt(prev, index, false))
+    checkpointContentCreation()
     try {
       const res = await api.generateVoNarration(entry.script.trim())
       setMultiVoNarrationsForIndex(index, res.items.map((item) => ({
@@ -256,6 +348,20 @@ export default function VoNarrationStep() {
           }`}
         >
           <PenLine size={13} /> Enter Manually
+        </button>
+      </div>
+    )
+  }
+
+  function renderCopyButton(items: VoNarrationItem[]) {
+    return (
+      <div className="mb-4 flex flex-wrap items-center gap-2">
+        <button
+          onClick={() => copyItemsToClipboard(items)}
+          disabled={items.length === 0}
+          className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-black text-slate-600 bg-slate-100 hover:bg-slate-200 transition-all disabled:opacity-40"
+        >
+          <Copy size={13} /> Copy All Scenes
         </button>
       </div>
     )
@@ -400,6 +506,16 @@ export default function VoNarrationStep() {
         subtitle="Generate or enter voiceover narration and VEO 3 prompts for each script, then save to the database."
       >
         {renderModeToggle()}
+        {clipboardMessage && (
+          <p className="mb-3 text-xs font-bold text-emerald-600 bg-emerald-50 px-3 py-2 rounded-lg border border-emerald-100">
+            {clipboardMessage}
+          </p>
+        )}
+        {clipboardError && (
+          <p className="mb-3 text-xs font-bold text-red-500 bg-red-50 px-3 py-2 rounded-lg border border-red-100">
+            {clipboardError}
+          </p>
+        )}
 
         {mode === 'manual' && (
           <div className="flex items-center gap-3 mb-4 px-4 py-2.5 rounded-xl bg-slate-50 border border-slate-100">
@@ -457,6 +573,7 @@ export default function VoNarrationStep() {
 
                 {isOpen && (
                   <div className="px-5 pb-5 pt-4 space-y-4">
+                    {renderCopyButton(narrations)}
                     {mode === 'generate' ? (
                       <>
                         <button
@@ -492,6 +609,15 @@ export default function VoNarrationStep() {
                     ) : (
                       /* Manual mode per card */
                       <div className="space-y-2">
+                        <textarea
+                          onPaste={(e) => handleManualPaste(e, (pasted) => {
+                            setManualMultiItems((prev) => setAt(prev, i, pasted))
+                            setMultiExpandedCards((prev) => { const next = new Set(prev); next.add(i); return next })
+                          })}
+                          placeholder="Ctrl+V here to paste Scene/VO/VEO blocks"
+                          className="w-full px-3 py-2.5 rounded-xl text-xs bg-white border border-dashed border-slate-300 text-slate-600 outline-none resize-none focus:border-violet-400 focus:ring-4 focus:ring-violet-50 transition-all leading-relaxed"
+                          rows={2}
+                        />
                         <label className="block text-xs font-bold uppercase tracking-widest text-slate-400">
                           {manualNarrations.length} scenes — click to edit
                         </label>
@@ -582,6 +708,17 @@ export default function VoNarrationStep() {
       subtitle="Auto-generate or manually enter voiceover narration lines and VEO 3 video prompts per scene."
     >
       {renderModeToggle()}
+      {clipboardMessage && (
+        <p className="mb-3 text-xs font-bold text-emerald-600 bg-emerald-50 px-3 py-2 rounded-lg border border-emerald-100">
+          {clipboardMessage}
+        </p>
+      )}
+      {clipboardError && (
+        <p className="mb-3 text-xs font-bold text-red-500 bg-red-50 px-3 py-2 rounded-lg border border-red-100">
+          {clipboardError}
+        </p>
+      )}
+      {renderCopyButton(mode === 'manual' ? manualItems : voNarrations)}
 
       {mode === 'generate' ? (
         <>
@@ -639,6 +776,12 @@ export default function VoNarrationStep() {
       ) : (
         /* Manual mode */
         <>
+          <textarea
+            onPaste={(e) => handleManualPaste(e, setManualItems)}
+            placeholder="Ctrl+V here to paste Scene/VO/VEO blocks"
+            className="mb-4 w-full px-3 py-2.5 rounded-xl text-xs bg-white border border-dashed border-slate-300 text-slate-600 outline-none resize-none focus:border-violet-400 focus:ring-4 focus:ring-violet-50 transition-all leading-relaxed"
+            rows={2}
+          />
           <div className="flex items-center gap-3 mb-4 px-4 py-2.5 rounded-xl bg-slate-50 border border-slate-100">
             <label className="flex items-center gap-2 cursor-pointer select-none">
               <div

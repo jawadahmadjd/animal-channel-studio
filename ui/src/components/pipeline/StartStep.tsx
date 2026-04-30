@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Clapperboard, AlertTriangle, Loader2, RefreshCw, FolderOutput } from 'lucide-react'
+import { Clapperboard, AlertTriangle, Loader2, RefreshCw, FolderOutput, Pause } from 'lucide-react'
 import { useStore } from '../../store/useStore'
 import { api, subscribeToStream, classifyLogLine, parseSceneProgress, logUIEvent } from '../../api/client'
 import StepCard from './StepCard'
@@ -7,7 +7,7 @@ import StatusBadge from '../shared/StatusBadge'
 
 export default function StartStep() {
   const {
-    advanced, runState, pipelineRunning,
+    runState, pipelineRunning,
     setRunState, setStatusText, setActiveStep,
     appendLog, setCurrentScene, setTotalScenes,
     resetPipelineStages, updateStageFromLine,
@@ -24,10 +24,19 @@ export default function StartStep() {
     try {
       setRunState('running')
       appendLog({ text: `\n===== ${label} =====\n`, level: 'header', timestamp: ts() })
-      await startFn()
+      const res = await startFn() as { status?: string; message?: string } | undefined
+      if (res?.status === 'already_completed') {
+        setRunState('complete')
+        setStatusText('Already completed')
+        appendLog({ text: res.message || '[Already completed]\n', level: 'ok', timestamp: ts() })
+        return
+      }
       const unsub = subscribeToStream(
         (line) => appendLog({ text: line, level: classifyLogLine(line), timestamp: ts() }),
-        () => { setRunState('idle'); unsub() }
+        (success) => {
+          setRunState(success ? 'idle' : 'error')
+          unsub()
+        }
       )
     } catch {
       setRunState('error')
@@ -49,15 +58,7 @@ export default function StartStep() {
       // No saved state — proceed normally
     }
     await startAndStream('Resume Pipeline', () =>
-      api.runResume({
-        story_id: selectedStoryId,
-        wait_between_sec: advanced.waitBetweenSec,
-        wait_max_sec: advanced.waitMaxSec,
-        scene_max_retries: advanced.sceneMaxRetries,
-        timeout_sec: advanced.timeoutSec,
-        dry_run: advanced.dryRun,
-        headless: advanced.headless,
-      })
+      api.runResume({ story_id: selectedStoryId })
     )
   }
 
@@ -65,6 +66,24 @@ export default function StartStep() {
     if (!selectedStoryId) return
     logUIEvent('click:start:finalize', { story_id: selectedStoryId })
     await startAndStream('Finalize Story', () => api.runFinalize(selectedStoryId))
+  }
+
+  async function handlePause() {
+    if (!isRunning) return
+    logUIEvent('click:start:pause', { story_id: selectedStoryId })
+    try {
+      await api.runStop()
+      setRunState('stopped')
+      setStatusText('Paused. Use Resume to continue.')
+      appendLog({
+        text: '\n[Paused by user - use Resume to continue saved scenes]\n',
+        level: 'warn',
+        timestamp: ts(),
+      })
+    } catch {
+      setRunState('error')
+      setStatusText('Pause failed')
+    }
   }
 
   function showAlreadyRunningToast() {
@@ -80,7 +99,7 @@ export default function StartStep() {
     }
 
     if (!selectedStoryId) { alert('Please select a story first.'); return }
-    logUIEvent('click:start:generate', { story_id: selectedStoryId, ...advanced })
+    logUIEvent('click:start:generate', { story_id: selectedStoryId })
 
     // H6: check auth before starting
     setAuthWarning('')
@@ -105,15 +124,19 @@ export default function StartStep() {
       resetPipelineStages()
       appendLog({ text: '\n===== Generate with Flow =====\n', level: 'header', timestamp: ts() })
 
-      await api.runFlowOnly({
+      const runRes = await api.runFlowOnly({
         story_id: selectedStoryId,
-        wait_between_sec: advanced.waitBetweenSec,
-        wait_max_sec: advanced.waitMaxSec,
-        scene_max_retries: advanced.sceneMaxRetries,
-        timeout_sec: advanced.timeoutSec,
-        dry_run: advanced.dryRun,
-        headless: advanced.headless,
       })
+      if ((runRes as { status?: string; message?: string })?.status === 'already_completed') {
+        setRunState('complete')
+        setStatusText('Already completed')
+        appendLog({
+          text: (runRes as { message?: string }).message || '[Already completed]\n',
+          level: 'ok',
+          timestamp: ts(),
+        })
+        return
+      }
 
       const unsub = subscribeToStream(
         (line) => {
@@ -123,9 +146,14 @@ export default function StartStep() {
           if (prog) { setCurrentScene(prog.current); setTotalScenes(prog.total) }
           updateStageFromLine(line)
         },
-        () => {
-          setRunState('complete')
-          setStatusText('Completed successfully ✓')
+        (success) => {
+          if (success) {
+            setRunState('complete')
+            setStatusText('Completed successfully ✓')
+          } else {
+            setRunState('error')
+            setStatusText('Flow failed to start')
+          }
           unsub()
         }
       )
@@ -145,11 +173,12 @@ export default function StartStep() {
       )}
       {alreadyRunningToast && (
         <div className="mb-4 px-4 py-3 rounded-xl bg-amber-50 border border-amber-100 text-xs font-bold text-amber-700 text-center">
-          A pipeline is already running. Stop it first.
+          A pipeline is already running. Pause it first.
         </div>
       )}
       <button
         onClick={handleStart}
+        disabled={isRunning}
         className="w-full flex items-center justify-center gap-4 py-6 rounded-2xl text-lg font-black uppercase tracking-[0.2em] text-white mb-6 transition-all bg-slate-900 hover:bg-slate-800 hover:shadow-2xl hover:shadow-slate-200 hover:scale-[1.02] active:scale-[0.98] disabled:opacity-20 disabled:shadow-none"
       >
         {isRunning ? (
@@ -164,6 +193,16 @@ export default function StartStep() {
       </div>
 
       {/* Resume / Finalize — story must be selected in Step 6 */}
+      <button
+        onClick={handlePause}
+        disabled={!isRunning}
+        title="Pause the current run. Resume will continue from saved scene progress."
+        className="mb-6 w-full flex items-center justify-center gap-2 py-3 rounded-xl text-xs font-black uppercase tracking-widest text-amber-700 bg-amber-50 border-2 border-amber-100 hover:bg-amber-100 transition-all disabled:opacity-25"
+      >
+        <Pause size={14} fill="currentColor" />
+        Pause Run
+      </button>
+
       {selectedStoryId && (
         <div className="flex gap-3">
           <button

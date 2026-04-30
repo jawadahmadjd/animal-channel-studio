@@ -1,12 +1,12 @@
 import { useEffect, useState } from 'react'
-import { Save, Zap, Film, Check, CheckCircle } from 'lucide-react'
+import { Save, Zap, Film, Image as ImageIcon, Check, CheckCircle } from 'lucide-react'
 import { useStore } from '../../store/useStore'
 import { api, logUIEvent } from '../../api/client'
 import StepCard from './StepCard'
 
 const VIDEO_ASPECTS = ['9:16', '16:9']
 const IMAGE_ASPECTS = ['16:9', '4:3', '1:1', '3:4', '9:16']
-const CLIP_COUNTS   = ['x1', 'x2', 'x3', 'x4']
+const CLIP_COUNTS   = ['1x', 'x2', 'x3', 'x4']
 const DURATIONS     = ['4s', '6s', '8s']
 const VIDEO_MODELS  = [
   'Veo 3.1 - Fast',
@@ -14,6 +14,11 @@ const VIDEO_MODELS  = [
   'Veo 3.1 - Lite',
   'Veo 3.1 - Lite [Lower Priority]',
   'Veo 3.1 - Fast [Lower Priority]',
+]
+const IMAGE_MODELS = [
+  'Nano Banana Pro',
+  'Nano Banana 2',
+  'Imagen 4',
 ]
 
 export default function SettingsStep() {
@@ -24,13 +29,14 @@ export default function SettingsStep() {
   useEffect(() => {
     api.getSettings().then((s) => {
       const mode = (s.mode === 'Image' || s.mode === 'Video') ? s.mode : 'Video'
+      const models = mode === 'Video' ? VIDEO_MODELS : IMAGE_MODELS
       setSettings({
         mode,
         sub_type: (s.sub_type === 'Ingredients') ? 'Ingredients' : 'Frames',
-        aspect_ratio: s.aspect_ratio || '9:16',
-        clip_count: CLIP_COUNTS.includes(s.clip_count) ? s.clip_count : 'x4',
+        aspect_ratio: validAspect(mode, s.aspect_ratio),
+        clip_count: validClipCount(s.clip_count),
         duration: DURATIONS.includes(s.duration) ? s.duration : '8s',
-        model: s.model || 'Veo 3.1 - Fast',
+        model: models.includes(s.model) ? s.model : defaultModel(mode),
       })
     }).catch(() => {})
   }, [setSettings])
@@ -39,7 +45,9 @@ export default function SettingsStep() {
   function handleModeChange(mode: 'Image' | 'Video') {
     const aspects = mode === 'Video' ? VIDEO_ASPECTS : IMAGE_ASPECTS
     const aspect_ratio = aspects.includes(settings.aspect_ratio) ? settings.aspect_ratio : aspects[0]
-    setSettings({ mode, aspect_ratio })
+    const models = mode === 'Video' ? VIDEO_MODELS : IMAGE_MODELS
+    const model = models.includes(settings.model) ? settings.model : defaultModel(mode)
+    setSettings({ mode, aspect_ratio, model })
   }
 
   async function handleSave() {
@@ -113,14 +121,38 @@ export default function SettingsStep() {
             className="w-full px-3 py-2 rounded-lg text-sm"
             style={{ background: 'var(--glass-bg)', border: '1px solid var(--border)', color: 'var(--text)', outline: 'none' }}
           >
-            {VIDEO_MODELS.map((m) => (
+            {(isVideo ? VIDEO_MODELS : IMAGE_MODELS).map((m) => (
               <option key={m} value={m}>{m}</option>
             ))}
           </select>
         </div>
       </div>
 
-      {/* QUICK SELECT — Fast / Quality shortcut (Video only) */}
+      {!isVideo && (
+        <>
+          <label className="block text-xs font-bold uppercase tracking-widest mb-3" style={{ color: 'var(--muted)' }}>
+            Quick Select
+          </label>
+          <div className="flex gap-3 mb-6">
+            <ModelCard
+              icon={<ImageIcon size={20} />}
+              name="Pro"
+              desc="Nano Banana Pro"
+              selected={settings.model === 'Nano Banana Pro'}
+              onClick={() => setSettings({ model: 'Nano Banana Pro' })}
+            />
+            <ModelCard
+              icon={<Zap size={20} />}
+              name="Nano 2"
+              desc="Nano Banana 2"
+              selected={settings.model === 'Nano Banana 2'}
+              onClick={() => setSettings({ model: 'Nano Banana 2' })}
+            />
+          </div>
+        </>
+      )}
+
+      {/* QUICK SELECT - Fast / Quality shortcut (Video only) */}
       {isVideo && (
         <>
           <label className="block text-xs font-bold uppercase tracking-widest mb-3" style={{ color: 'var(--muted)' }}>
@@ -143,33 +175,30 @@ export default function SettingsStep() {
             />
           </div>
 
-          {/* CLIPS PER SCENE — discrete tabs */}
-          <div className="grid grid-cols-2 gap-4 mb-6">
-            <div>
-              <label className="block text-xs font-bold uppercase tracking-widest mb-2" style={{ color: 'var(--muted)' }}>
-                Clips per Scene
-              </label>
-              <SegmentedTabs
-                options={CLIP_COUNTS}
-                value={settings.clip_count}
-                onChange={(v) => setSettings({ clip_count: v })}
-              />
-            </div>
-
-            {/* DURATION — discrete tabs */}
-            <div>
-              <label className="block text-xs font-bold uppercase tracking-widest mb-2" style={{ color: 'var(--muted)' }}>
-                Duration
-              </label>
-              <SegmentedTabs
-                options={DURATIONS}
-                value={settings.duration}
-                onChange={(v) => setSettings({ duration: v })}
-              />
-            </div>
+          {/* DURATION - discrete tabs */}
+          <div className="mb-6">
+            <label className="block text-xs font-bold uppercase tracking-widest mb-2" style={{ color: 'var(--muted)' }}>
+              Duration
+            </label>
+            <SegmentedTabs
+              options={DURATIONS}
+              value={settings.duration}
+              onChange={(v) => setSettings({ duration: v })}
+            />
           </div>
         </>
       )}
+
+      <div className="mb-6">
+        <label className="block text-xs font-bold uppercase tracking-widest mb-2" style={{ color: 'var(--muted)' }}>
+          {isVideo ? 'Clips per Scene' : 'Images per Prompt'}
+        </label>
+        <SegmentedTabs
+          options={CLIP_COUNTS}
+          value={settings.clip_count}
+          onChange={(v) => setSettings({ clip_count: v })}
+        />
+      </div>
 
       {/* SAVE */}
       <div className="flex items-center gap-4">
@@ -250,6 +279,20 @@ function ModelCard({
       <span className="text-[10px] mt-1 font-bold opacity-60 text-center">{desc}</span>
     </button>
   )
+}
+
+function defaultModel(mode: 'Image' | 'Video') {
+  return mode === 'Video' ? VIDEO_MODELS[0] : IMAGE_MODELS[0]
+}
+
+function validAspect(mode: 'Image' | 'Video', value: string) {
+  const aspects = mode === 'Video' ? VIDEO_ASPECTS : IMAGE_ASPECTS
+  return aspects.includes(value) ? value : aspects[0]
+}
+
+function validClipCount(value: string) {
+  const normalized = value === 'x1' ? '1x' : value
+  return CLIP_COUNTS.includes(normalized) ? normalized : 'x4'
 }
 
 function ts() {

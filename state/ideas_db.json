@@ -1,0 +1,337 @@
+{
+  "story_057e0ea6e1": {
+    "story_id": "story_057e0ea6e1",
+    "title": "Desert Tortoise: 50 Years of Solitude",
+    "description": "A desert tortoise trudges through the barren sand, searching in vain for a mate for decades.",
+    "script": "The sun sears the cracked earth, and a shelled silhouette inches forward across the endless Mojave. Each step is a labor against the weight of solitude. For half a century, this desert tortoise has wandered the same dry washes. It remembers the scent of rain from a decade ago, but not the touch of another shell. Its home burrow is empty, dug deep into the gravelly slope as a fortress against loneliness. The tortoise stops, lifting its wrinkled head to taste the air for a familiar pheromone. There is only the bitter dust of isolation. It has outlived its siblings, its parents, and the last tortoise it ever saw. Each spring, it digs a shallow nest, but no eggs ever come to fill it. The seasons blur into one long heatstroke of yearning. Once, it heard a distant scrape—a rival male—but the sound faded into the wind. Now, the only company is the shadow of a vulture circling overhead. The tortoise's legs are worn thin from decades of searching. Its shell bears the scars of fires and droughts, a map of survival without love. It pauses by a dried-up water hole, hoping for a miracle that never arrives. The night comes cold and silent, and the tortoise retreats into its burrow alone. It dreams of a mate's low grunt, but wakes to the howl of a coyote. Fifty years of patience, fifty years of silence. The desert remembers no promises, only the slow march of an ancient heart. The tortoise will keep walking until its legs give out, a ghost in a land of emptiness.",
+    "vo_narrations": [
+      {
+        "sentence": "The sun sears the cracked earth, and a shelled silhouette inches forward across the endless Mojave.",
+        "narration": "The sun beats down on the cracked earth as a shelled silhouette slowly moves across the vast Mojave.",
+        "veo_prompt": "Cinematic wide shot of a desert tortoise crawling across cracked, sun-baked earth in the Mojave Desert. Harsh midday sunlight, deep shadows, heat shimmer in the air. Camera slowly tracks forward at ground level, capturing the tortoise's deliberate movement. Warm, desaturated color palette, dust particles floating in the air."
+      },
+      {
+        "sentence": "Each step is a labor against the weight of solitude.",
+        "narration": "Every step is a struggle against the heavy weight of being alone.",
+        "veo_prompt": "Close-up low angle shot of a desert tortoise's front leg lifting and placing down on cracked dirt. Slow motion, dust rising with each step. Soft, melancholic lighting, shallow depth of field focusing on the weathered claws. Camera stays low to the ground, emphasizing effort."
+      },
+      {
+        "sentence": "For half a century, this desert tortoise has wandered the same dry washes.",
+        "narration": "For fifty years, this tortoise has roamed these same dry riverbeds.",
+        "veo_prompt": "Aerial drone shot slowly descending over a dry desert wash with sparse creosote bushes. A lone tortoise is a tiny speck moving along the sandy bottom. Golden hour light, long shadows. Camera circles gently to show the vast, empty landscape."
+      },
+      {
+        "sentence": "It remembers the scent of rain from a decade ago, but not the touch of another shell.",
+        "narration": "It can still recall the smell of rain from ten years ago, but it doesn't remember what it feels like to touch another tortoise.",
+        "veo_prompt": "Extreme close-up of a tortoise's face, nostrils flaring as it samples the dry air. Soft, diffused light, eyes half-closed in memory. Slow pan across its weathered shell, focusing on the smooth, worn scutes. Warm amber tones, a sense of longing."
+      },
+      {
+        "sentence": "Its home burrow is empty, dug deep into the gravelly slope as a fortress against loneliness.",
+        "narration": "Its burrow, dug deep into a gravelly hillside, sits empty—a fortress built against loneliness.",
+        "veo_prompt": "Low angle shot looking into a dark burrow entrance in a gravelly slope. The tortoise's head appears at the entrance, silhouetted against the bright desert outside. Camera slowly pushes in, revealing the empty darkness inside. Contrast of bright exterior and dark interior."
+      },
+      {
+        "sentence": "The tortoise stops, lifting its wrinkled head to taste the air for a familiar pheromone.",
+        "narration": "The tortoise stops and lifts its wrinkled head, tasting the air for a familiar scent.",
+        "veo_prompt": "Medium shot of a tortoise raising its head high, neck extended, mouth slightly open. Slow motion, tongue flicking out to sample the air. Backlit by late afternoon sun, highlighting the texture of its skin. Camera focuses on the nostrils and tongue."
+      },
+      {
+        "sentence": "There is only the bitter dust of isolation.",
+        "narration": "All it finds is the bitter taste of dust and isolation.",
+        "veo_prompt": "Close-up of a tortoise's face, then a slow dissolve to a cloud of dust blowing across the empty desert. Desaturated colors, harsh wind. Camera pulls back to reveal the tortoise alone in the frame, surrounded by nothing but barren land."
+      },
+      {
+        "sentence": "It has outlived its siblings, its parents, and the last tortoise it ever saw.",
+        "narration": "It has outlived its brothers and sisters, its parents, and the last tortoise it ever laid eyes on.",
+        "veo_prompt": "Montage of fading images: young tortoises hatching, an older tortoise walking away, then a single tortoise alone. Each image dissolves into the next, ending with the current tortoise standing still. Soft, dreamlike focus, sepia tones. Camera slowly zooms in on the tortoise's eye."
+      },
+      {
+        "sentence": "Each spring, it digs a shallow nest, but no eggs ever come to fill it.",
+        "narration": "Every spring, it digs a shallow nest, but no eggs ever fill it.",
+        "veo_prompt": "Close-up of a tortoise's back legs scraping at the dirt, digging a shallow depression. Spring wildflowers bloom in the background, but the nest remains empty. Camera stays on the empty hole, then slowly tilts up to the tortoise's face. Bright but sad lighting."
+      },
+      {
+        "sentence": "The seasons blur into one long heatstroke of yearning.",
+        "narration": "The seasons blur together into one endless, burning ache of longing.",
+        "veo_prompt": "Time-lapse of the same desert landscape cycling through seasons—spring blooms, summer heat, autumn dusk, winter frost—all blending into each other. The tortoise remains in the center, unmoving. Camera stays fixed, creating a hypnotic blur of colors."
+      },
+      {
+        "sentence": "Once, it heard a distant scrape—a rival male—but the sound faded into the wind.",
+        "narration": "Once, it heard a distant scraping sound—a rival male—but it faded away on the wind.",
+        "veo_prompt": "Wide shot of the tortoise turning its head toward a sound. Dust rises in the distance, but nothing is there. Camera pans slowly to the empty horizon, wind blowing sand. Late afternoon light, long shadows. A sense of missed connection."
+      },
+      {
+        "sentence": "Now, the only company is the shadow of a vulture circling overhead.",
+        "narration": "Now, its only companion is the shadow of a vulture circling high above.",
+        "veo_prompt": "Low angle shot looking up at a vulture circling in a bright blue sky. The tortoise is in the foreground, small and vulnerable. Camera slowly tilts down to show the vulture's shadow passing over the tortoise. High contrast, stark lighting."
+      },
+      {
+        "sentence": "The tortoise's legs are worn thin from decades of searching.",
+        "narration": "Its legs have grown thin and worn from decades of searching.",
+        "veo_prompt": "Extreme close-up of a tortoise's front leg, showing wrinkled, weathered skin and worn claws. Slow pan up the leg to the shell. Harsh light emphasizes every crack and crease. Camera holds on the leg as it takes a slow step."
+      },
+      {
+        "sentence": "Its shell bears the scars of fires and droughts, a map of survival without love.",
+        "narration": "Its shell is covered in the scars of fires and droughts—a map of survival, but without love.",
+        "veo_prompt": "Close-up rotating shot around the tortoise's shell, revealing burn marks, cracks, and faded scutes. Each scar tells a story. Soft, warm light, then a shadow passes over. Camera moves slowly, reverently, as if reading a map."
+      },
+      {
+        "sentence": "It pauses by a dried-up water hole, hoping for a miracle that never arrives.",
+        "narration": "It stops by a dried-up water hole, hoping for a miracle that never comes.",
+        "veo_prompt": "Medium shot of the tortoise standing at the edge of a cracked, dry water hole. Its head hangs low. Camera slowly zooms in on the empty basin, then back to the tortoise's reflection in a tiny puddle. Desolate, muted colors."
+      },
+      {
+        "sentence": "The night comes cold and silent, and the tortoise retreats into its burrow alone.",
+        "narration": "Night falls, cold and silent, and the tortoise retreats into its burrow—alone.",
+        "veo_prompt": "Wide shot of the desert at dusk, the tortoise slowly disappearing into its burrow. Stars begin to appear in the darkening sky. Camera stays outside, looking into the dark hole. Cool blue tones, a single cricket chirps."
+      },
+      {
+        "sentence": "It dreams of a mate's low grunt, but wakes to the howl of a coyote.",
+        "narration": "It dreams of a mate's low grunt, but wakes to the howl of a coyote.",
+        "veo_prompt": "Inside the burrow, the tortoise's head rests on the ground. Dream sequence: soft focus, warm light, a female tortoise appears briefly. Then a harsh cut to the burrow's entrance, a coyote's silhouette against the moon. Cold, stark lighting."
+      },
+      {
+        "sentence": "Fifty years of patience, fifty years of silence.",
+        "narration": "Fifty years of patience. Fifty years of silence.",
+        "veo_prompt": "Static wide shot of the tortoise sitting alone in the desert at twilight. The camera holds for a long moment. Stars begin to appear. Slow, meditative pace. Deep, rich colors fading to night."
+      },
+      {
+        "sentence": "The desert remembers no promises, only the slow march of an ancient heart.",
+        "narration": "The desert doesn't remember promises—only the slow march of an ancient heart.",
+        "veo_prompt": "Aerial shot slowly pulling back from the tortoise, revealing the endless desert. The tortoise becomes a tiny speck. Golden hour light, then a time-lapse of stars moving overhead. Epic, lonely scale. Camera continues to rise until the tortoise is lost in the landscape."
+      },
+      {
+        "sentence": "The tortoise will keep walking until its legs give out, a ghost in a land of emptiness.",
+        "narration": "The tortoise will keep walking until its legs give out—a ghost in a land of emptiness.",
+        "veo_prompt": "Final shot: the tortoise walking away from the camera into the vast desert. Slow motion, dust rising. The image gradually desaturates to black and white, then fades to white. Camera stays fixed as the tortoise shrinks to a dot and disappears. Haunting, peaceful, final."
+      }
+    ],
+    "saved_at": "2026-04-26T08:47:07.685418+00:00"
+  },
+  "story_1ccf8b7462": {
+    "story_id": "story_1ccf8b7462",
+    "title": "Penguin Left Behind",
+    "description": "A penguin separated from its colony shivers on an icy shore, watching the horizon for family.",
+    "script": "The lone penguin stands motionless on the frozen shore. Shivers ripple through its dense feathers. The vast, empty horizon offers no familiar shapes. A bitter wind howls, scouring the ice. Its stomach growls with a hollow ache. The colony's distant calls are swallowed by the storm. Night descends, a crushing blanket of cold and silence. It tucks its beak, a solitary statue against the endless white. Dawn brings only more empty light. Hope is a fragile ember flickering in the dark.",
+    "vo_narrations": [
+      {
+        "sentence": "The lone penguin stands motionless on the frozen shore.",
+        "narration": "A single penguin stands perfectly still on the icy shore.",
+        "veo_prompt": "Cinematic wide shot of a lone emperor penguin standing motionless on a frozen Antarctic shore, soft diffused daylight, gentle snowflakes falling, the penguin's dark silhouette contrasting with white ice, slow camera push in, mood of solitude and stillness, hyperrealistic detail in feathers and ice texture."
+      },
+      {
+        "sentence": "Shivers ripple through its dense feathers.",
+        "narration": "Tiny shivers run through its thick, dense feathers.",
+        "veo_prompt": "Extreme close-up of a penguin's chest and neck feathers, subtle shivering movement visible, soft backlighting catching frost on feather tips, shallow depth of field with blurred icy background, slow motion, natural sound of wind, warm amber tones from low sun, intimate and vulnerable mood."
+      },
+      {
+        "sentence": "The vast, empty horizon offers no familiar shapes.",
+        "narration": "The horizon stretches endlessly, empty and featureless.",
+        "veo_prompt": "Panoramic landscape shot of a flat, white Antarctic horizon with no landmarks, low-angle camera looking across ice sheet, overcast sky merging with snow, cold blue-gray color palette, slow horizontal pan, sense of isolation and emptiness, wind-blown snow streaks."
+      },
+      {
+        "sentence": "A bitter wind howls, scouring the ice.",
+        "narration": "A bitter wind howls across the ice, scouring everything in its path.",
+        "veo_prompt": "Dynamic shot of wind-driven snow blowing across the icy surface, low camera angle showing snow particles racing past, harsh whiteout conditions, sound of howling wind implied visually, fast shutter effect for snow streaks, cold desaturated tones, raw and hostile atmosphere."
+      },
+      {
+        "sentence": "Its stomach growls with a hollow ache.",
+        "narration": "Its stomach growls with a deep, hollow ache.",
+        "veo_prompt": "Close-up of penguin's belly area, slight movement as it breathes, soft focus on the beak and eye, subtle internal sound implied, dim light with blue shadows, vulnerable posture, shallow depth of field highlighting the penguin's thin frame, empathetic mood."
+      },
+      {
+        "sentence": "The colony's distant calls are swallowed by the storm.",
+        "narration": "The distant calls of the colony are swallowed up by the storm.",
+        "veo_prompt": "Wide shot of a blizzard obscuring the horizon, penguin alone in foreground, faint blur of distant colony shapes barely visible through snow, wind whipping snow into lens, muffled sound design, cold blue-white palette, sense of disconnection and loss."
+      },
+      {
+        "sentence": "Night descends, a crushing blanket of cold and silence.",
+        "narration": "Night falls, a crushing blanket of cold and silence.",
+        "veo_prompt": "Transition shot from twilight to deep blue night, penguin silhouette against darkening sky, stars beginning to appear, frost forming on ice, slow fade to near-black, cold moonlight on snow, complete stillness, atmospheric and oppressive silence."
+      },
+      {
+        "sentence": "It tucks its beak, a solitary statue against the endless white.",
+        "narration": "It tucks its beak, becoming a solitary statue against the endless white.",
+        "veo_prompt": "Static medium shot of penguin with beak tucked into feathers, standing alone on vast white plain, night sky with faint aurora borealis in background, long exposure effect, snow gently accumulating on its back, timeless and stoic composition, cold blue and green hues."
+      },
+      {
+        "sentence": "Dawn brings only more empty light.",
+        "narration": "Dawn arrives, but it brings only more empty light.",
+        "veo_prompt": "Slow sunrise over icy horizon, pale golden light spreading across empty landscape, penguin still standing in same spot, frost on its feathers, camera slowly rising from low angle, melancholic mood, soft pastel colors, sense of enduring emptiness."
+      },
+      {
+        "sentence": "Hope is a fragile ember flickering in the dark.",
+        "narration": "Hope is a fragile ember, flickering in the dark.",
+        "veo_prompt": "Extreme close-up of penguin's eye reflecting faint light, tiny sparkle in the darkness, surrounding feathers in deep shadow, warm orange glint contrasting with cold blue, shallow depth of field, metaphorical visual of resilience, intimate and emotional tone."
+      }
+    ],
+    "saved_at": "2026-04-26T09:17:31.290944+00:00"
+  },
+  "story_1419478df1": {
+    "story_id": "story_1419478df1",
+    "title": "The Injured Cheetah",
+    "description": "A cheetah with a broken leg faces the harsh reality of hunting alone.",
+    "script": "A cheetah with a shattered hind leg drags itself across the scorching savanna. Pain pulses through its body with every agonizing step. Hunger gnaws at its belly, a constant, desperate companion. It spots a herd of gazelles, but the wound makes a swift chase impossible. The predator crouches low, waiting for a weaker target, but none appear. Dust swirls as the sun bleeds into the horizon. Alone, it licks the swollen joint, smelling its own blood. Each failed hunt tightens the noose of survival. The night brings cold and the distant howl of hyenas.",
+    "vo_narrations": [
+      {
+        "sentence": "A cheetah with a shattered hind leg drags itself across the scorching savanna.",
+        "narration": "A cheetah, its hind leg shattered, drags itself across the blazing savanna.",
+        "veo_prompt": "Cinematic wide shot, golden hour light, a cheetah with a visibly injured hind leg limping slowly across a dry, sun-scorched savanna. Dust rises from its paw steps, tall grass sways gently, intense heat haze in the background. Camera tracks low and slowly, capturing the animal's struggle and pain."
+      },
+      {
+        "sentence": "Pain pulses through its body with every agonizing step.",
+        "narration": "With every agonizing step, pain pulses through its entire body.",
+        "veo_prompt": "Close-up shot of the cheetah's face, tears of pain visible, sweat on its fur, eyes squinting in agony. Slow motion, shallow depth of field, blurred savanna background. Golden light catches its expression, emphasizing suffering."
+      },
+      {
+        "sentence": "Hunger gnaws at its belly, a constant, desperate companion.",
+        "narration": "Hunger gnaws at its belly—a constant, desperate companion.",
+        "veo_prompt": "Medium shot, cheetah lying on its side, ribs visible, stomach hollow. Camera pans slowly from its head to its thin midsection. Dry grass around, late afternoon shadows, mood of desperation and fatigue."
+      },
+      {
+        "sentence": "It spots a herd of gazelles, but the wound makes a swift chase impossible.",
+        "narration": "It spots a herd of gazelles in the distance, but that injured leg makes a swift chase impossible.",
+        "veo_prompt": "Over-the-shoulder shot from behind the cheetah, its point of view showing a herd of gazelles grazing peacefully in the distance. The cheetah's head turns slightly, ears forward, then looks down at its injured leg. Warm golden light, dust motes in air, contrast between vitality and injury."
+      },
+      {
+        "sentence": "The predator crouches low, waiting for a weaker target, but none appear.",
+        "narration": "The predator crouches low in the grass, waiting for a weaker target to stray from the herd. But none appear.",
+        "veo_prompt": "Low-angle shot, cheetah crouched in tall grass, body tense, eyes scanning the herd. Camera slowly zooms in on its face, then cuts to the gazelles grazing, no weak or young ones separated. Late afternoon, long shadows, tension in stillness."
+      },
+      {
+        "sentence": "Dust swirls as the sun bleeds into the horizon.",
+        "narration": "Dust swirls in the air as the sun bleeds into the horizon.",
+        "veo_prompt": "Wide cinematic shot, sunset, sun setting behind the savanna, casting orange and red hues. Dust devils spin gently in the distance, silhouette of the cheetah lying alone under an acacia tree. Epic, melancholic mood, wind rustling grass."
+      },
+      {
+        "sentence": "Alone, it licks the swollen joint, smelling its own blood.",
+        "narration": "Alone, it licks the swollen joint, tasting its own blood.",
+        "veo_prompt": "Close-up macro shot, cheetah's tongue gently licking a swollen, bloody hind leg joint. Dried blood on fur, flies buzzing around. Camera stays tight, low light, twilight colors, raw and intimate detail of injury."
+      },
+      {
+        "sentence": "Each failed hunt tightens the noose of survival.",
+        "narration": "Each failed hunt tightens the noose of survival around its neck.",
+        "veo_prompt": "Montage sequence: three quick cuts showing the cheetah attempting to stalk prey but failing—first a gazelle bolts, then a warthog escapes, then a bird flies away. Each cut shows the cheetah's exhaustion increasing. Desaturated colors, slow motion, dust and fading light."
+      },
+      {
+        "sentence": "The night brings cold and the distant howl of hyenas.",
+        "narration": "Night brings cold, and the distant howl of hyenas echoes across the plain.",
+        "veo_prompt": "Night scene, full moon, cheetah curled up under a thorn bush, shivering slightly. Cold blue tones, mist rising from the ground. In the distance, faint silhouettes of hyenas moving, their howls audible in the stillness. Cinematic, tense, lonely atmosphere."
+      }
+    ],
+    "saved_at": "2026-04-26T13:59:40.199449+00:00"
+  },
+  "story_e4b7dcbc8c": {
+    "story_id": "story_e4b7dcbc8c",
+    "title": "Stray Bird in Winter",
+    "description": "A migratory bird separated from its flock faces the freezing cold alone.",
+    "script": "A lone sparrow shivers on a frosted wire. Its flock vanished south weeks ago. Hunger gnaws as it pecks at frozen soil. A hawk's shadow sends it darting into thorny brush. Snow buries every seed beneath a white grave. No wing beats break the silent, bitter dusk. Its exhausted body fights the creeping numbness. A single star mocks its isolation in the vast, dark sky. Dawn reveals a fragile heartbeat still defying the cold.",
+    "vo_narrations": [
+      {
+        "sentence": "A lone sparrow shivers on a frosted wire.",
+        "narration": "A single sparrow trembles on a wire glazed with frost.",
+        "veo_prompt": "Cinematic close-up of a small brown sparrow perched on a frost-covered wire, its feathers ruffled, shivering in the cold, breath visible in the frigid air, soft overcast winter light, mood of isolation and survival, shallow depth of field."
+      },
+      {
+        "sentence": "Its flock vanished south weeks ago.",
+        "narration": "Its flock flew south weeks ago, leaving it behind.",
+        "veo_prompt": "Wide shot of an empty gray winter sky, no birds in sight, a single bare tree branch in the foreground, cold blue tones, slow pan to emphasize emptiness, melancholic atmosphere."
+      },
+      {
+        "sentence": "Hunger gnaws as it pecks at frozen soil.",
+        "narration": "Hunger drives it to peck at the frozen ground.",
+        "veo_prompt": "Low-angle close-up of a sparrow's beak pecking at hard, icy soil, tiny ice crystals scattering, desperate movements, overcast lighting, shallow depth of field focusing on beak and ground, texture of frost and dirt."
+      },
+      {
+        "sentence": "A hawk's shadow sends it darting into thorny brush.",
+        "narration": "A hawk's shadow passes, and the sparrow darts into a thorny bush.",
+        "veo_prompt": "Dynamic shot: a large hawk's shadow glides over the snow, then a sparrow bursts into flight, diving into a dense, thorny thicket, branches shaking, fast motion, high contrast between dark shadow and white snow, sense of urgency."
+      },
+      {
+        "sentence": "Snow buries every seed beneath a white grave.",
+        "narration": "Snow has buried every seed under a white blanket.",
+        "veo_prompt": "Close-up of snow-covered ground, tiny seeds barely visible beneath a layer of fresh snow, slow zoom out to show an endless white expanse, soft diffused light, somber mood, minimalistic composition."
+      },
+      {
+        "sentence": "No wing beats break the silent, bitter dusk.",
+        "narration": "The bitter dusk is silent, with no wing beats in the air.",
+        "veo_prompt": "Wide shot of a snow-covered landscape at twilight, deep blue and purple sky, no birds visible, complete stillness, faint wind blowing snow, long shadow of a lone tree, serene yet harsh atmosphere."
+      },
+      {
+        "sentence": "Its exhausted body fights the creeping numbness.",
+        "narration": "The little bird's tired body struggles against the creeping cold.",
+        "veo_prompt": "Close-up of the sparrow huddled on a branch, eyes half-closed, feathers slightly fluffed, tiny breaths visible, snowflakes landing on its back, dim ambient light, shallow focus, emotional vulnerability."
+      },
+      {
+        "sentence": "A single star mocks its isolation in the vast, dark sky.",
+        "narration": "A lone star in the vast dark sky seems to mock its solitude.",
+        "veo_prompt": "Extreme wide shot: a tiny sparrow silhouette on a wire under a vast, star-filled night sky, one bright star directly above, cold blue-black tones, sense of scale and loneliness, cinematic composition."
+      },
+      {
+        "sentence": "Dawn reveals a fragile heartbeat still defying the cold.",
+        "narration": "At dawn, a fragile heartbeat still defies the bitter cold.",
+        "veo_prompt": "Slow sunrise over a snowy field, warm golden light breaking through clouds, close-up of the sparrow opening its eyes, chest moving slightly, frost melting on its feathers, hopeful yet fragile mood, soft glow."
+      }
+    ],
+    "saved_at": "2026-04-26T13:59:43.319558+00:00"
+  },
+  "story_d93921207f": {
+    "story_id": "story_d93921207f",
+    "title": "The Long Walk",
+    "description": "A penguin trudges miles across the ice, enduring the hardship of a journey with no destination.",
+    "script": "The wind screams across the endless white, biting through his downy feathers. He places one webbed foot before the other, a slow, determined march. Ahead, only more ice, a shimmering horizon that never comes closer. Behind, his tracks vanish, erased by the relentless blizzard. The cold seeps into his bones, a deep, aching loneliness. He does not know why he walks, only that he must. The sun hangs low, a pale ghost in the grey sky. He stops, peers into the emptiness, and sees nothing. A single, sharp cry is swallowed by the silence. He continues, step by step, into the void.",
+    "vo_narrations": [
+      {
+        "sentence": "The wind screams across the endless white, biting through his downy feathers.",
+        "narration": "The wind screams across this endless white, biting right through his downy feathers.",
+        "veo_prompt": "Cinematic shot of a lone penguin in a vast, featureless white tundra. Extreme wide angle, low camera, wind whipping snow across the frame. The penguin's feathers ruffle violently. Harsh, cold lighting, pale blue sky. Moody, desolate atmosphere."
+      },
+      {
+        "sentence": "He places one webbed foot before the other, a slow, determined march.",
+        "narration": "He places one webbed foot in front of the other, a slow, determined march.",
+        "veo_prompt": "Close-up tracking shot from behind, low angle, following a penguin's webbed feet stepping deliberately into deep snow. Focus on the texture of the snow and the slow, rhythmic movement. Overcast, diffused light. Sense of endurance and solitude."
+      },
+      {
+        "sentence": "Ahead, only more ice, a shimmering horizon that never comes closer.",
+        "narration": "Ahead, there's only more ice—a shimmering horizon that never seems to get any closer.",
+        "veo_prompt": "Extreme long shot from the penguin's eye level, looking across a flat, icy plain. The horizon shimmers with mirage-like heat haze over the ice. Pale, cold light, no other features. Sense of infinite space and futility."
+      },
+      {
+        "sentence": "Behind, his tracks vanish, erased by the relentless blizzard.",
+        "narration": "Behind him, his tracks vanish, erased by the relentless blizzard.",
+        "veo_prompt": "Reverse tracking shot, looking back at the penguin's footprints in the snow. The wind blows snow over them, slowly filling them in. Wide shot, snow swirling, low contrast. Feeling of being swallowed by the environment."
+      },
+      {
+        "sentence": "The cold seeps into his bones, a deep, aching loneliness.",
+        "narration": "The cold seeps into his bones—a deep, aching loneliness.",
+        "veo_prompt": "Medium shot of the penguin's face, eyes half-closed, feathers frosted with ice. Slow motion, shallow depth of field. Soft, blue-grey light. Expression of exhaustion and isolation. Snowflakes drifting in the air."
+      },
+      {
+        "sentence": "He does not know why he walks, only that he must.",
+        "narration": "He doesn't know why he walks. Only that he must.",
+        "veo_prompt": "Wide shot of the penguin continuing to walk, body leaning forward against the wind. Camera pans slowly with him. Stark white background, no landmarks. Melancholic, determined mood."
+      },
+      {
+        "sentence": "The sun hangs low, a pale ghost in the grey sky.",
+        "narration": "The sun hangs low, a pale ghost in the grey sky.",
+        "veo_prompt": "Wide shot of the sun barely visible through thick clouds, a faint white disc. The landscape is flat and white. Low contrast, muted colors. Cinematic, bleak atmosphere."
+      },
+      {
+        "sentence": "He stops, peers into the emptiness, and sees nothing.",
+        "narration": "He stops. He peers into the emptiness and sees nothing.",
+        "veo_prompt": "Frontal medium shot of the penguin standing still, head slightly turned, scanning the horizon. Eyes squinting against the wind. Snow blowing across the frame. Empty, white background. Sense of searching and failure."
+      },
+      {
+        "sentence": "A single, sharp cry is swallowed by the silence.",
+        "narration": "A single, sharp cry is swallowed by the silence.",
+        "veo_prompt": "Close-up of the penguin's beak opening, emitting a cry. Snowflakes in the air. The sound is visually represented by a slight vibration. The cry fades into the vast white. Emotional, haunting."
+      },
+      {
+        "sentence": "He continues, step by step, into the void.",
+        "narration": "He continues, step by step, into the void.",
+        "veo_prompt": "Extreme long shot of the penguin walking away from the camera, becoming smaller against the infinite white. The blizzard intensifies, partially obscuring him. Slow fade to white. Final, resolute, lonely image."
+      }
+    ],
+    "saved_at": "2026-04-27T12:08:48.154394+00:00"
+  }
+}

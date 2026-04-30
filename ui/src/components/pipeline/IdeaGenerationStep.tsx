@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Sparkles, ArrowRight, Loader2, RotateCcw, CheckSquare, Square, PenLine, Wand2 } from 'lucide-react'
+import { Sparkles, ArrowRight, Loader2, RotateCcw, CheckSquare, Square, PenLine, Wand2, Undo2, Redo2 } from 'lucide-react'
 import { useStore, type GeneratedIdea } from '../../store/useStore'
 import { api, logUIEvent } from '../../api/client'
 import StepCard from './StepCard'
@@ -11,21 +11,26 @@ export default function IdeaGenerationStep() {
     generatedIdeas, setGeneratedIdeas,
     selectedIdeaIds, toggleIdeaSelected,
     setApprovedIdeas, setScriptInput, setActiveStep,
+    setMultiScripts,
     resetContentCreation,
+    undoContentCreation, redoContentCreation,
+    contentUndoStack, contentRedoStack,
   } = useStore()
 
   const [mode, setMode] = useState<'generate' | 'manual'>('generate')
+  const [ideaCount, setIdeaCount] = useState('10')
   const [manualText, setManualText] = useState('')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
 
   async function handleGenerate() {
-    if (!ideaNiche.trim() || !ideaContentType.trim()) return
-    logUIEvent('click:idea:generate', { niche: ideaNiche.trim(), contentType: ideaContentType.trim() })
+    const count = Number(ideaCount)
+    if (!ideaNiche.trim() || !ideaContentType.trim() || !isIdeaCountValid(count)) return
+    logUIEvent('click:idea:generate', { niche: ideaNiche.trim(), contentType: ideaContentType.trim(), count })
     setLoading(true)
     setError('')
     try {
-      const res = await api.generateIdea(ideaNiche.trim(), ideaContentType.trim())
+      const res = await api.generateIdea(ideaNiche.trim(), ideaContentType.trim(), count)
       setGeneratedIdeas(res.ideas)
     } catch (e: unknown) {
       setError(e instanceof Error ? e.message : 'Failed to generate ideas')
@@ -40,6 +45,7 @@ export default function IdeaGenerationStep() {
     logUIEvent('click:idea:proceed', { count: selected.length, titles: selected.map(i => i.title) })
     setApprovedIdeas(selected)
     setScriptInput(selected.map((idea) => `${idea.title}: ${idea.description}`).join('\n\n'))
+    setMultiScripts([])
     setActiveStep(3)
   }
 
@@ -61,25 +67,49 @@ export default function IdeaGenerationStep() {
     logUIEvent('click:idea:manual', { count: ideas.length })
     setApprovedIdeas(ideas)
     setScriptInput(ideas.map(idea => idea.description ? `${idea.title}: ${idea.description}` : idea.title).join('\n\n'))
+    setMultiScripts([])
     setActiveStep(3)
   }
 
   const canProceed = selectedIdeaIds.size > 0
   const manualIdeas = parseManualIdeas()
+  const parsedIdeaCount = Number(ideaCount)
+  const validIdeaCount = isIdeaCountValid(parsedIdeaCount)
+  const generateButtonText = validIdeaCount
+    ? `Generate ${parsedIdeaCount} Idea${parsedIdeaCount !== 1 ? 's' : ''}`
+    : 'Generate Ideas'
 
   return (
     <StepCard
       title="2. Idea Generation"
-      subtitle="Enter your niche and content type to get 10 tailored video ideas, or type your own."
+      subtitle="Enter your niche, content type, and how many tailored video ideas you want, or type your own."
       headerAction={
-        <button
-          onClick={resetContentCreation}
-          title="Reset all content creation steps"
-          className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-widest text-slate-400 hover:text-red-500 hover:bg-red-50 transition-all"
-        >
-          <RotateCcw size={11} strokeWidth={3} />
-          Reset All
-        </button>
+        <div className="flex items-center gap-1.5">
+          <button
+            onClick={undoContentCreation}
+            disabled={contentUndoStack.length === 0}
+            title="Undo last content change"
+            className="p-2 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-all disabled:opacity-25"
+          >
+            <Undo2 size={14} strokeWidth={2.5} />
+          </button>
+          <button
+            onClick={redoContentCreation}
+            disabled={contentRedoStack.length === 0}
+            title="Redo last undone content change"
+            className="p-2 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-all disabled:opacity-25"
+          >
+            <Redo2 size={14} strokeWidth={2.5} />
+          </button>
+          <button
+            onClick={resetContentCreation}
+            title="Reset all content creation steps"
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-widest text-slate-400 hover:text-red-500 hover:bg-red-50 transition-all"
+          >
+            <RotateCcw size={11} strokeWidth={3} />
+            Reset All
+          </button>
+        </div>
       }
     >
       {/* Mode toggle */}
@@ -132,13 +162,40 @@ export default function IdeaGenerationStep() {
             className="w-full px-4 py-3 rounded-xl text-sm font-medium bg-slate-50 border border-slate-100 text-slate-900 outline-none focus:border-emerald-400 focus:ring-4 focus:ring-emerald-50 transition-all placeholder:text-slate-300"
           />
 
+          {/* Idea count input */}
+          <label className="block text-xs font-bold uppercase tracking-widest mt-4 mb-2 text-slate-400">
+            Number of Ideas
+          </label>
+          <input
+            type="number"
+            min={1}
+            max={50}
+            step={1}
+            value={ideaCount}
+            onChange={(e) => setIdeaCount(e.target.value)}
+            onBlur={() => {
+              if (!ideaCount.trim()) {
+                setIdeaCount('10')
+              } else if (Number.isFinite(parsedIdeaCount)) {
+                setIdeaCount(String(Math.max(1, Math.min(50, parsedIdeaCount))))
+              }
+            }}
+            placeholder="10"
+            className="w-full px-4 py-3 rounded-xl text-sm font-medium bg-slate-50 border border-slate-100 text-slate-900 outline-none focus:border-emerald-400 focus:ring-4 focus:ring-emerald-50 transition-all placeholder:text-slate-300"
+          />
+          {!validIdeaCount && (
+            <p className="mt-2 text-[11px] font-bold text-red-500">
+              Enter a number from 1 to 50.
+            </p>
+          )}
+
           <button
             onClick={handleGenerate}
-            disabled={loading || !ideaNiche.trim() || !ideaContentType.trim()}
+            disabled={loading || !ideaNiche.trim() || !ideaContentType.trim() || !validIdeaCount}
             className="mt-4 flex items-center gap-2 px-6 py-3 rounded-xl text-sm font-black text-white bg-slate-900 hover:bg-slate-800 transition-all shadow-lg shadow-slate-200 disabled:opacity-30"
           >
             {loading ? <Loader2 size={16} className="animate-spin" /> : <Sparkles size={16} />}
-            {loading ? 'Generating…' : 'Generate 10 Ideas'}
+            {loading ? 'Generating…' : generateButtonText}
           </button>
 
           {error && (
@@ -245,4 +302,8 @@ export default function IdeaGenerationStep() {
       )}
     </StepCard>
   )
+}
+
+function isIdeaCountValid(count: number): boolean {
+  return Number.isInteger(count) && count >= 1 && count <= 50
 }

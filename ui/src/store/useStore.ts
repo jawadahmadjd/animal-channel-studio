@@ -80,14 +80,26 @@ export interface Settings {
   model: string
 }
 
-export interface AdvancedOptions {
-  waitBetweenSec: number
-  waitMaxSec: number
-  sceneMaxRetries: number
-  timeoutSec: number
-  dryRun: boolean
-  headless: boolean
-  singleScene: number
+interface ContentSnapshot {
+  ideaInput: string
+  ideaNiche: string
+  ideaContentType: string
+  generatedIdeas: GeneratedIdea[]
+  selectedIdeaIds: Set<number>
+  approvedIdeas: GeneratedIdea[]
+  activeApprovedIdeaIndex: number
+  scriptInput: string
+  generatedScript: string
+  voNarrations: VoNarrationItem[]
+  multiScripts: MultiScriptEntry[]
+  selectedMultiScriptIndices: Set<number>
+  multiVoNarrations: VoNarrationItem[][]
+  generatedAudioFilename: string
+  sceneAudioFilenames: string[]
+  audioStaleReason: string
+  selectedStoryId: string
+  selectedStoryTitle: string
+  activeStep: 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8
 }
 
 interface AppState {
@@ -105,7 +117,6 @@ interface AppState {
   setUpdateReady: (version: string) => void
   dismissUpdate: () => void
   settings: Settings
-  advanced: AdvancedOptions
   runState: 'idle' | 'running' | 'stopped' | 'complete' | 'error'
   pipelineRunning: boolean
   activeStep: 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8
@@ -133,13 +144,15 @@ interface AppState {
   selectedVoiceId: string
   generatedAudioFilename: string
   sceneAudioFilenames: string[]
+  audioStaleReason: string
   selectedStoryId: string
   selectedStoryTitle: string
+  contentUndoStack: ContentSnapshot[]
+  contentRedoStack: ContentSnapshot[]
 
   setActiveView: (view: 'pipeline' | 'logs' | 'settings') => void
   setIsAuthorized: (v: boolean) => void
   setSettings: (s: Partial<Settings>) => void
-  setAdvanced: (a: Partial<AdvancedOptions>) => void
   setRunState: (s: AppState['runState']) => void
   setActiveStep: (step: AppState['activeStep']) => void
   setCurrentScene: (n: number) => void
@@ -171,13 +184,18 @@ interface AppState {
   setGeneratedAudioFilename: (filename: string) => void
   setSceneAudioFilenames: (filenames: string[]) => void
   updateSceneAudioFilename: (index: number, filename: string) => void
+  clearAudioStale: () => void
   setSelectedStoryId: (id: string) => void
   setSelectedStoryTitle: (title: string) => void
   updateVoNarrationItem: (index: number, patch: Partial<VoNarrationItem>) => void
+  checkpointContentCreation: () => void
+  undoContentCreation: () => void
+  redoContentCreation: () => void
   resetContentCreation: () => void
 }
 
 let _logId = 0
+const CONTENT_HISTORY_LIMIT = 30
 
 // Module-level timing trackers (not reactive — no component reads these)
 let _stageStartMs: Partial<Record<StageId, number>> = {}
@@ -192,6 +210,94 @@ function buildDefaultStages(avgs: Partial<Record<StageId, number>> = {}): Pipeli
     actions: [],
     avgMs: avgs[id],
   }))
+}
+
+function cloneContentSnapshot(s: ContentSnapshot): ContentSnapshot {
+  return {
+    ...s,
+    generatedIdeas: s.generatedIdeas.map((i) => ({ ...i })),
+    selectedIdeaIds: new Set(s.selectedIdeaIds),
+    approvedIdeas: s.approvedIdeas.map((i) => ({ ...i })),
+    voNarrations: s.voNarrations.map((v) => ({ ...v })),
+    multiScripts: s.multiScripts.map((m) => ({ ...m })),
+    selectedMultiScriptIndices: new Set(s.selectedMultiScriptIndices),
+    multiVoNarrations: s.multiVoNarrations.map((items) => items.map((v) => ({ ...v }))),
+    sceneAudioFilenames: [...s.sceneAudioFilenames],
+  }
+}
+
+function takeContentSnapshot(s: AppState): ContentSnapshot {
+  return cloneContentSnapshot({
+    ideaInput: s.ideaInput,
+    ideaNiche: s.ideaNiche,
+    ideaContentType: s.ideaContentType,
+    generatedIdeas: s.generatedIdeas,
+    selectedIdeaIds: s.selectedIdeaIds,
+    approvedIdeas: s.approvedIdeas,
+    activeApprovedIdeaIndex: s.activeApprovedIdeaIndex,
+    scriptInput: s.scriptInput,
+    generatedScript: s.generatedScript,
+    voNarrations: s.voNarrations,
+    multiScripts: s.multiScripts,
+    selectedMultiScriptIndices: s.selectedMultiScriptIndices,
+    multiVoNarrations: s.multiVoNarrations,
+    generatedAudioFilename: s.generatedAudioFilename,
+    sceneAudioFilenames: s.sceneAudioFilenames,
+    audioStaleReason: s.audioStaleReason,
+    selectedStoryId: s.selectedStoryId,
+    selectedStoryTitle: s.selectedStoryTitle,
+    activeStep: s.activeStep,
+  })
+}
+
+function pushContentUndo(s: AppState): Pick<AppState, 'contentUndoStack' | 'contentRedoStack'> {
+  return {
+    contentUndoStack: [...s.contentUndoStack, takeContentSnapshot(s)].slice(-CONTENT_HISTORY_LIMIT),
+    contentRedoStack: [],
+  }
+}
+
+function clearAfterIdea() {
+  return {
+    approvedIdeas: [],
+    activeApprovedIdeaIndex: 0,
+    scriptInput: '',
+    generatedScript: '',
+    voNarrations: [],
+    multiScripts: [],
+    selectedMultiScriptIndices: new Set<number>(),
+    multiVoNarrations: [],
+    generatedAudioFilename: '',
+    sceneAudioFilenames: [],
+    audioStaleReason: '',
+    selectedStoryId: '',
+    selectedStoryTitle: '',
+  }
+}
+
+function clearAfterScript() {
+  return {
+    voNarrations: [],
+    multiVoNarrations: [],
+    generatedAudioFilename: '',
+    sceneAudioFilenames: [],
+    audioStaleReason: '',
+    selectedStoryId: '',
+    selectedStoryTitle: '',
+  }
+}
+
+function clearAfterPrompts() {
+  return {
+    selectedStoryId: '',
+    selectedStoryTitle: '',
+  }
+}
+
+function audioStalePatch(s: AppState, reason: string) {
+  return {
+    audioStaleReason: s.sceneAudioFilenames.some(Boolean) ? reason : '',
+  }
 }
 
 export const useStore = create<AppState>()(
@@ -217,15 +323,6 @@ export const useStore = create<AppState>()(
     clip_count: 'x4',
     duration: '8s',
     model: 'Veo 3.1 - Fast',
-  },
-  advanced: {
-    waitBetweenSec: 8,
-    waitMaxSec: 15,
-    sceneMaxRetries: 2,
-    timeoutSec: 300,
-    dryRun: false,
-    headless: false,
-    singleScene: 1,
   },
   runState: 'idle',
   pipelineRunning: false,
@@ -253,13 +350,15 @@ export const useStore = create<AppState>()(
   selectedVoiceId: '',
   generatedAudioFilename: '',
   sceneAudioFilenames: [],
+  audioStaleReason: '',
   selectedStoryId: '',
   selectedStoryTitle: '',
+  contentUndoStack: [],
+  contentRedoStack: [],
 
   setActiveView: (activeView) => set({ activeView }),
   setIsAuthorized: (isAuthorized) => set({ isAuthorized }),
   setSettings: (s) => set((st) => ({ settings: { ...st.settings, ...s } })),
-  setAdvanced: (a) => set((st) => ({ advanced: { ...st.advanced, ...a } })),
   setRunState: (runState) => set({ runState, pipelineRunning: runState === 'running' }),
   setActiveStep: (activeStep) => set({ activeStep }),
   setCurrentScene: (currentScene) => set({ currentScene }),
@@ -272,7 +371,12 @@ export const useStore = create<AppState>()(
   setIdeaInput: (ideaInput) => set({ ideaInput }),
   setIdeaNiche: (ideaNiche) => set({ ideaNiche }),
   setIdeaContentType: (ideaContentType) => set({ ideaContentType }),
-  setGeneratedIdeas: (generatedIdeas) => set({ generatedIdeas, selectedIdeaIds: new Set() }),
+  setGeneratedIdeas: (generatedIdeas) => set((st) => ({
+    ...pushContentUndo(st),
+    ...clearAfterIdea(),
+    generatedIdeas,
+    selectedIdeaIds: new Set(),
+  })),
   toggleIdeaSelected: (index) => set((st) => {
     const next = new Set(st.selectedIdeaIds)
     if (next.has(index)) next.delete(index)
@@ -280,12 +384,31 @@ export const useStore = create<AppState>()(
     return { selectedIdeaIds: next }
   }),
   clearSelectedIdeas: () => set({ selectedIdeaIds: new Set() }),
-  setApprovedIdeas: (approvedIdeas) => set({ approvedIdeas }),
+  setApprovedIdeas: (approvedIdeas) => set((st) => ({
+    ...pushContentUndo(st),
+    ...clearAfterIdea(),
+    generatedIdeas: st.generatedIdeas,
+    selectedIdeaIds: st.selectedIdeaIds,
+    approvedIdeas,
+  })),
   setActiveApprovedIdeaIndex: (activeApprovedIdeaIndex) => set({ activeApprovedIdeaIndex }),
   setScriptInput: (scriptInput) => set({ scriptInput }),
-  setGeneratedScript: (generatedScript) => set({ generatedScript }),
-  setVoNarrations: (voNarrations) => set({ voNarrations }),
-  setMultiScripts: (multiScripts) => set({ multiScripts, multiVoNarrations: multiScripts.map(() => []), selectedMultiScriptIndices: new Set() }),
+  setGeneratedScript: (generatedScript) => set((st) => ({
+    generatedScript,
+    ...(generatedScript !== st.generatedScript ? clearAfterScript() : {}),
+  })),
+  setVoNarrations: (voNarrations) => set((st) => ({
+    ...clearAfterPrompts(),
+    ...audioStalePatch(st, 'Narration or VEO prompts changed. Regenerate voiceovers.'),
+    voNarrations,
+    multiVoNarrations: st.multiVoNarrations,
+  })),
+  setMultiScripts: (multiScripts) => set((st) => ({
+    ...clearAfterScript(),
+    multiScripts,
+    multiVoNarrations: multiScripts.map(() => []),
+    selectedMultiScriptIndices: new Set(),
+  })),
   toggleMultiScriptSelected: (index) => set((st) => {
     const next = new Set(st.selectedMultiScriptIndices)
     if (next.has(index)) next.delete(index)
@@ -296,34 +419,68 @@ export const useStore = create<AppState>()(
     set((st) => {
       const next = [...st.multiVoNarrations]
       next[index] = items
-      return { multiVoNarrations: next }
+      return {
+        ...clearAfterPrompts(),
+        ...audioStalePatch(st, 'Narration or VEO prompts changed. Regenerate voiceovers.'),
+        multiVoNarrations: next,
+      }
     }),
   updateMultiVoNarrationItem: (scriptIdx, itemIdx, patch) =>
     set((st) => {
       const next = st.multiVoNarrations.map((arr, si) =>
         si === scriptIdx ? arr.map((item, ii) => (ii === itemIdx ? { ...item, ...patch } : item)) : arr
       )
-      return { multiVoNarrations: next }
+      return {
+        ...clearAfterPrompts(),
+        ...audioStalePatch(st, 'Narration or VEO prompts changed. Regenerate voiceovers.'),
+        multiVoNarrations: next,
+      }
     }),
   setElevenLabsVoices: (elevenlabsVoices) => set({ elevenlabsVoices }),
   setSelectedVoiceId: (selectedVoiceId) => set({ selectedVoiceId }),
-  setGeneratedAudioFilename: (generatedAudioFilename) => set({ generatedAudioFilename }),
-  setSceneAudioFilenames: (sceneAudioFilenames) => set({ sceneAudioFilenames }),
+  setGeneratedAudioFilename: (generatedAudioFilename) => set({ generatedAudioFilename, audioStaleReason: '' }),
+  setSceneAudioFilenames: (sceneAudioFilenames) => set({ sceneAudioFilenames, audioStaleReason: '' }),
   updateSceneAudioFilename: (index, filename) =>
     set((st) => {
       const updated = [...st.sceneAudioFilenames]
       while (updated.length <= index) updated.push('')
       updated[index] = filename
-      return { sceneAudioFilenames: updated }
+      return { sceneAudioFilenames: updated, audioStaleReason: '' }
     }),
+  clearAudioStale: () => set({ audioStaleReason: '' }),
   setSelectedStoryId: (selectedStoryId) => set({ selectedStoryId }),
   setSelectedStoryTitle: (selectedStoryTitle) => set({ selectedStoryTitle }),
   updateVoNarrationItem: (index, patch) =>
     set((st) => ({
+      ...clearAfterPrompts(),
+      ...audioStalePatch(st, 'Narration or VEO prompts changed. Regenerate voiceovers.'),
       voNarrations: st.voNarrations.map((item, i) => (i === index ? { ...item, ...patch } : item)),
     })),
+  checkpointContentCreation: () =>
+    set((st) => pushContentUndo(st)),
+  undoContentCreation: () =>
+    set((st) => {
+      const previous = st.contentUndoStack.at(-1)
+      if (!previous) return {}
+      return {
+        ...cloneContentSnapshot(previous),
+        contentUndoStack: st.contentUndoStack.slice(0, -1),
+        contentRedoStack: [...st.contentRedoStack, takeContentSnapshot(st)].slice(-CONTENT_HISTORY_LIMIT),
+      }
+    }),
+  redoContentCreation: () =>
+    set((st) => {
+      const next = st.contentRedoStack.at(-1)
+      if (!next) return {}
+      return {
+        ...cloneContentSnapshot(next),
+        contentUndoStack: [...st.contentUndoStack, takeContentSnapshot(st)].slice(-CONTENT_HISTORY_LIMIT),
+        contentRedoStack: st.contentRedoStack.slice(0, -1),
+      }
+    }),
   resetContentCreation: () =>
-    set({
+    set((st) => ({
+      ...pushContentUndo(st),
       ideaInput: '',
       ideaNiche: '',
       ideaContentType: '',
@@ -339,10 +496,11 @@ export const useStore = create<AppState>()(
       multiVoNarrations: [],
       generatedAudioFilename: '',
       sceneAudioFilenames: [],
+      audioStaleReason: '',
       selectedStoryId: '',
       selectedStoryTitle: '',
       activeStep: 2,
-    }),
+    })),
 
   resetPipelineStages: () => {
     _stageStartMs = {}
@@ -474,7 +632,6 @@ export const useStore = create<AppState>()(
       partialize: (state) => ({
         activeStep: state.activeStep,
         settings: state.settings,
-        advanced: state.advanced,
         ideaInput: state.ideaInput,
         ideaNiche: state.ideaNiche,
         ideaContentType: state.ideaContentType,
@@ -492,6 +649,7 @@ export const useStore = create<AppState>()(
         selectedVoiceId: state.selectedVoiceId,
         generatedAudioFilename: state.generatedAudioFilename,
         sceneAudioFilenames: state.sceneAudioFilenames,
+        audioStaleReason: state.audioStaleReason,
         selectedStoryId: state.selectedStoryId,
         selectedStoryTitle: state.selectedStoryTitle,
       }),

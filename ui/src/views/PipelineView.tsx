@@ -1,4 +1,4 @@
-import { useRef } from 'react'
+import { useRef, useEffect } from 'react'
 import Header from '../components/layout/Header'
 import ProgressStepper from '../components/shared/ProgressStepper'
 import LoginStep from '../components/pipeline/LoginStep'
@@ -11,12 +11,24 @@ import SettingsStep from '../components/pipeline/SettingsStep'
 import StartStep from '../components/pipeline/StartStep'
 import VideoPreview from '../components/monitor/VideoPreview'
 import PipelineActivity from '../components/monitor/PipelineActivity'
+import { useStore } from '../store/useStore'
 
 interface Props {
   scrollRef: React.RefObject<HTMLDivElement>
 }
 
 export default function PipelineView({ scrollRef }: Props) {
+  const { activeStep } = useStore()
+
+  useEffect(() => {
+    const el = document.getElementById(`pipeline-step-${activeStep}`)
+    if (el && scrollRef.current) {
+      const container = scrollRef.current
+      const top = el.offsetTop - container.offsetTop - 32
+      container.scrollTo({ top: Math.max(0, top), behavior: 'smooth' })
+    }
+  }, [activeStep])
+
   return (
     <div className="flex flex-col h-full bg-slate-50">
       <Header title="Video Pipeline" />
@@ -31,14 +43,14 @@ export default function PipelineView({ scrollRef }: Props) {
         >
           <ProgressStepper />
           <div className="space-y-8">
-            <LoginStep />
-            <IdeaGenerationStep />
-            <ScriptGenerationStep />
-            <VoNarrationStep />
-            <GenerateVoiceoverStep />
-            <PickStoryStep />
-            <SettingsStep />
-            <StartStep />
+            <div id="pipeline-step-1"><LoginStep /></div>
+            <div id="pipeline-step-2"><IdeaGenerationStep /></div>
+            <div id="pipeline-step-3"><ScriptGenerationStep /></div>
+            <div id="pipeline-step-4"><VoNarrationStep /></div>
+            <div id="pipeline-step-5"><GenerateVoiceoverStep /></div>
+            <div id="pipeline-step-6"><PickStoryStep /></div>
+            <div id="pipeline-step-7"><SettingsStep /></div>
+            <div id="pipeline-step-8"><StartStep /></div>
           </div>
 
           <div className="flex-1" style={{ minHeight: '4rem' }} />

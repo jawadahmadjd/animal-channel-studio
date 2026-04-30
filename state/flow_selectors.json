@@ -9,6 +9,12 @@
   "settings_button": [
     "button[aria-haspopup='menu']:has(i:has-text('crop_9_16'))",
     "button[aria-haspopup='menu']:has(i:has-text('crop_16_9'))",
+    "button[aria-haspopup='menu']:has(i:has-text('crop_landscape'))",
+    "button[aria-haspopup='menu']:has(i:has-text('crop_square'))",
+    "button[aria-haspopup='menu']:has(i:has-text('crop_portrait'))",
+    "button[aria-haspopup='menu']:has(i:has-text('crop_4_3'))",
+    "button[aria-haspopup='menu']:has(i:has-text('crop_1_1'))",
+    "button[aria-haspopup='menu']:has(i:has-text('crop_3_4'))",
     "button.sc-67b77035-1"
   ],
   "type_tab_image": [
@@ -28,10 +34,14 @@
     "button[role='tab']:has-text('Ingredients')"
   ],
   "aspect_ratio_buttons": [
+    "button[role='tab']:has-text('4:3')",
+    "button[role='tab']:has-text('1:1')",
+    "button[role='tab']:has-text('3:4')",
     "button[role='tab']:has-text('9:16')",
     "button[role='tab']:has-text('16:9')"
   ],
   "clip_count_buttons": [
+    "button[role='tab']:text-is('1x')",
     "button[role='tab']:text-is('x1')",
     "button[role='tab']:text-is('x2')",
     "button[role='tab']:text-is('x3')",
@@ -55,6 +65,17 @@
     "[role='menuitemradio']",
     "[role='menuitem']",
     "[role='option']"
+  ],
+  "image_model_options": [
+    "[role='menuitemradio']:has-text('Nano Banana Pro')",
+    "[role='menuitemradio']:has-text('Nano Banana 2')",
+    "[role='menuitemradio']:has-text('Imagen 4')",
+    "[role='menuitem']:has-text('Nano Banana Pro')",
+    "[role='menuitem']:has-text('Nano Banana 2')",
+    "[role='menuitem']:has-text('Imagen 4')",
+    "[role='option']:has-text('Nano Banana Pro')",
+    "[role='option']:has-text('Nano Banana 2')",
+    "[role='option']:has-text('Imagen 4')"
   ],
   "generate_button": [
     "button:has-text('Create')",

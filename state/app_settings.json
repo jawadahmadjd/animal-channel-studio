@@ -1,0 +1,11 @@
+{
+  "deepseek_api_key": "sk-d4e05531d03f4a59a9fb8015f4ff0a07",
+  "elevenlabs_api_key": "sk_9ccab66e6eeb499657045aef8a8c3b596e8b1b5e78df5df0",
+  "output_dir": "",
+  "default_scene_count": 12,
+  "flow_headless": false,
+  "wait_between_scenes": 5,
+  "max_retries_per_scene": 3,
+  "confirm_costly_operations": true,
+  "pipeline_timeout_sec": 300
+}

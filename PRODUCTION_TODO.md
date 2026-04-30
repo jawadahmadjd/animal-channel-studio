@@ -573,11 +573,13 @@ StartStep (step 6)
 
 ### P1 — Build Pipeline Verification
 
-**Context:** `electron-builder` is configured in `ui/package.json` under the `"build"` key. It packages `dist/` (Vite frontend build) and `dist-electron/` (compiled Electron main) into a Windows NSIS installer. The `extraResources` config copies `scripts/` and `bridge/` into the installed app's `resources/` folder. This has never been tested end-to-end.
+**Context:** `electron-builder` is configured in `ui/package.json` under the `"build"` key. It packages `dist/` (Vite frontend build) and `dist-electron/` (compiled Electron main) into a Windows NSIS installer. The `extraResources` config copies `scripts/` and `bridge/` into the installed app's `resources/` folder.
 
-- [ ] Run `npm run electron:build` from `ui/` and verify it produces `ui/dist-app/Animal Channel Studio Setup X.X.X.exe`
+- [x] TypeScript (`tsconfig.electron.json`) compiles without errors
+- [x] Vite frontend build completes cleanly
+- [x] `npm run electron:build` produces `dist-app/Animal Channel Studio Setup 1.2.6.exe` (85 MB) + `latest.yml` blockmap
+- [x] `extraResources` correctly copies `scripts/` and `bridge/` — verified in `win-unpacked/resources/`
 - [ ] Install the `.exe` on a test machine and verify: app launches, bridge starts, Settings opens, API key can be entered
-- [ ] Verify `extraResources` correctly copies `scripts/` and `bridge/` to `resources/scripts/` and `resources/bridge/`
 - [ ] Verify writable folders (`state/`, `output/`, `logs/`) are created in the user data dir (not inside the install dir, which may be read-only on some systems)
 
 ---
@@ -594,17 +596,14 @@ StartStep (step 6)
 - [ ] Test: uninstall Python from the test machine, install the packaged app, verify everything still works
 
 **Fallback (Option B — require Python):**
-- [ ] In `electron/main.ts`, check if `python` or `python3` is available via `child_process.execSync('python --version')`; if not found, show a dialog: "Python 3.10+ is required. Download it from python.org." with a button that opens the URL
+- [x] In `electron/main.ts`, `getPythonExe()` checks for bundled runtime first, then falls back to system Python. If system Python is not found, shows an error dialog with python.org download instructions.
 
 ---
 
 ### P3 — Installer UX
 
-- [ ] In `ui/package.json` electron-builder config, add NSIS options:
-  - `"createDesktopShortcut": true`
-  - `"createStartMenuShortcut": true`
-  - `"runAfterFinish": true` (launch app immediately after install)
-- [ ] Add a license agreement screen to the installer (create `LICENSE.txt` in `ui/`)
+- [x] In `ui/package.json` electron-builder config, added NSIS options: `createDesktopShortcut`, `createStartMenuShortcut`, `runAfterFinish`, `license`
+- [x] Created `ui/LICENSE.txt` — proprietary license agreement shown during install
 - [ ] Test uninstall via Windows "Add or Remove Programs" — verify no orphaned files remain in `%AppData%` or `Program Files`
 
 ---
@@ -645,8 +644,8 @@ Update these counts as you check off items above.
 | High (H1–H6) | 18 | 17 | 1 |
 | Medium (M1–M5) | 10 | 9 | 1 |
 | Low (L1–L6) | 10 | 0 | 10 |
-| Packaging (P1–P5) | 12 | 0 | 12 |
-| **Total** | **89** | **57** | **32** |
+| Packaging (P1–P5) | 12 | 6 | 6 |
+| **Total** | **89** | **63** | **26** |
 
 ---
 

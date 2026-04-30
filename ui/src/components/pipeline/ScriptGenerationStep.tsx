@@ -27,6 +27,7 @@ export default function ScriptGenerationStep() {
     multiVoNarrations,
     selectedMultiScriptIndices,
     toggleMultiScriptSelected,
+    checkpointContentCreation,
   } = useStore()
 
   const [mode, setMode] = useState<'generate' | 'manual'>('generate')
@@ -62,6 +63,7 @@ export default function ScriptGenerationStep() {
     setError('')
     setScriptMeta(null)
     setMultiResults([])
+    checkpointContentCreation()
 
     if (isMulti) {
       const results: ScriptResult[] = []
@@ -156,6 +158,7 @@ export default function ScriptGenerationStep() {
       targetWordCount: wordCount,
       lengthOk: true,
     }))
+    checkpointContentCreation()
     setMultiScripts(scripts)
     logUIEvent('click:script:useManualMulti', { count: scripts.length })
     setActiveStep(4)

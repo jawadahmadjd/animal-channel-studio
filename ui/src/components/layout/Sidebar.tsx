@@ -34,7 +34,7 @@ export default function Sidebar({ onNewVideo }: Props) {
   }, [setIsAuthorized, runState])
 
   function handleRelogin() {
-    api.runLogin(false).catch(() => {})
+    api.runLogin().catch(() => {})
     setActiveView('pipeline')
   }
 

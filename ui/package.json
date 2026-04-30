@@ -1,6 +1,6 @@
 {
   "name": "animal-channel-studio",
-  "version": "1.2.8",
+  "version": "1.2.9",
   "description": "Animal Channel Creator Studio",
   "author": "Jawad Ahmad <jawadahmadjd@gmail.com>",
   "main": "dist-electron/main.js",
@@ -72,7 +72,9 @@
       {
         "from": "python-runtime",
         "to": "python-runtime",
-        "filter": ["**/*"]
+        "filter": [
+          "**/*"
+        ]
       }
     ],
     "publish": {

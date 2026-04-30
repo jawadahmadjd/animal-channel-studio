@@ -1,0 +1,245 @@
+{
+  "schema_version": 1,
+  "story_id": "story_d93921207f",
+  "idea_index": 0,
+  "idea_title": "The Long Walk",
+  "run_status": "in_progress",
+  "created_at": "2026-04-27T12:11:16.012032+00:00",
+  "updated_at": "2026-04-27T13:40:34.702396+00:00",
+  "story_payload": {
+    "story_title": "The Long Walk",
+    "scenes": [
+      {
+        "scene_no": 1,
+        "scene_name": "The wind screams across the endless white, biting through his downy feathers.",
+        "vo": "The wind screams across this endless white, biting right through his downy feathers.",
+        "veo_prompt": "Cinematic shot of a lone penguin in a vast, featureless white tundra. Extreme wide angle, low camera, wind whipping snow across the frame. The penguin's feathers ruffle violently. Harsh, cold lighting, pale blue sky. Moody, desolate atmosphere."
+      },
+      {
+        "scene_no": 2,
+        "scene_name": "He places one webbed foot before the other, a slow, determined march.",
+        "vo": "He places one webbed foot in front of the other, a slow, determined march.",
+        "veo_prompt": "Close-up tracking shot from behind, low angle, following a penguin's webbed feet stepping deliberately into deep snow. Focus on the texture of the snow and the slow, rhythmic movement. Overcast, diffused light. Sense of endurance and solitude."
+      },
+      {
+        "scene_no": 3,
+        "scene_name": "Ahead, only more ice, a shimmering horizon that never comes closer.",
+        "vo": "Ahead, there's only more ice—a shimmering horizon that never seems to get any closer.",
+        "veo_prompt": "Extreme long shot from the penguin's eye level, looking across a flat, icy plain. The horizon shimmers with mirage-like heat haze over the ice. Pale, cold light, no other features. Sense of infinite space and futility."
+      },
+      {
+        "scene_no": 4,
+        "scene_name": "Behind, his tracks vanish, erased by the relentless blizzard.",
+        "vo": "Behind him, his tracks vanish, erased by the relentless blizzard.",
+        "veo_prompt": "Reverse tracking shot, looking back at the penguin's footprints in the snow. The wind blows snow over them, slowly filling them in. Wide shot, snow swirling, low contrast. Feeling of being swallowed by the environment."
+      },
+      {
+        "scene_no": 5,
+        "scene_name": "The cold seeps into his bones, a deep, aching loneliness.",
+        "vo": "The cold seeps into his bones—a deep, aching loneliness.",
+        "veo_prompt": "Medium shot of the penguin's face, eyes half-closed, feathers frosted with ice. Slow motion, shallow depth of field. Soft, blue-grey light. Expression of exhaustion and isolation. Snowflakes drifting in the air."
+      },
+      {
+        "scene_no": 6,
+        "scene_name": "He does not know why he walks, only that he must.",
+        "vo": "He doesn't know why he walks. Only that he must.",
+        "veo_prompt": "Wide shot of the penguin continuing to walk, body leaning forward against the wind. Camera pans slowly with him. Stark white background, no landmarks. Melancholic, determined mood."
+      },
+      {
+        "scene_no": 7,
+        "scene_name": "The sun hangs low, a pale ghost in the grey sky.",
+        "vo": "The sun hangs low, a pale ghost in the grey sky.",
+        "veo_prompt": "Wide shot of the sun barely visible through thick clouds, a faint white disc. The landscape is flat and white. Low contrast, muted colors. Cinematic, bleak atmosphere."
+      },
+      {
+        "scene_no": 8,
+        "scene_name": "He stops, peers into the emptiness, and sees nothing.",
+        "vo": "He stops. He peers into the emptiness and sees nothing.",
+        "veo_prompt": "Frontal medium shot of the penguin standing still, head slightly turned, scanning the horizon. Eyes squinting against the wind. Snow blowing across the frame. Empty, white background. Sense of searching and failure."
+      },
+      {
+        "scene_no": 9,
+        "scene_name": "A single, sharp cry is swallowed by the silence.",
+        "vo": "A single, sharp cry is swallowed by the silence.",
+        "veo_prompt": "Close-up of the penguin's beak opening, emitting a cry. Snowflakes in the air. The sound is visually represented by a slight vibration. The cry fades into the vast white. Emotional, haunting."
+      },
+      {
+        "scene_no": 10,
+        "scene_name": "He continues, step by step, into the void.",
+        "vo": "He continues, step by step, into the void.",
+        "veo_prompt": "Extreme long shot of the penguin walking away from the camera, becoming smaller against the infinite white. The blizzard intensifies, partially obscuring him. Slow fade to white. Final, resolute, lonely image."
+      }
+    ]
+  },
+  "scenes": [
+    {
+      "scene_no": 1,
+      "scene_name": "The wind screams across the endless white, biting through his downy feathers.",
+      "status": "generated",
+      "attempts": 1,
+      "downloads": [],
+      "error": "",
+      "updated_at": "2026-04-27T13:02:06.183907+00:00",
+      "generated_clip_count": 4
+    },
+    {
+      "scene_no": 2,
+      "scene_name": "He places one webbed foot before the other, a slow, determined march.",
+      "status": "generated",
+      "attempts": 1,
+      "downloads": [],
+      "error": "",
+      "updated_at": "2026-04-27T13:03:14.296508+00:00",
+      "generated_clip_count": 8
+    },
+    {
+      "scene_no": 3,
+      "scene_name": "Ahead, only more ice, a shimmering horizon that never comes closer.",
+      "status": "generated",
+      "attempts": 1,
+      "downloads": [],
+      "error": "",
+      "updated_at": "2026-04-27T13:04:26.365142+00:00",
+      "generated_clip_count": 8
+    },
+    {
+      "scene_no": 4,
+      "scene_name": "Behind, his tracks vanish, erased by the relentless blizzard.",
+      "status": "running",
+      "attempts": 3,
+      "downloads": [],
+      "error": "",
+      "updated_at": "2026-04-27T13:39:32.480131+00:00"
+    },
+    {
+      "scene_no": 5,
+      "scene_name": "The cold seeps into his bones, a deep, aching loneliness.",
+      "status": "running",
+      "attempts": 3,
+      "downloads": [],
+      "error": "",
+      "updated_at": "2026-04-27T13:40:46.698691+00:00"
+    },
+    {
+      "scene_no": 6,
+      "scene_name": "He does not know why he walks, only that he must.",
+      "status": "failed",
+      "attempts": 2,
+      "downloads": [],
+      "error": "Timed out after 300s without thumbnail completion.",
+      "updated_at": "2026-04-27T13:30:15.369168+00:00"
+    },
+    {
+      "scene_no": 7,
+      "scene_name": "The sun hangs low, a pale ghost in the grey sky.",
+      "status": "failed",
+      "attempts": 2,
+      "downloads": [],
+      "error": "Timed out after 300s without thumbnail completion.",
+      "updated_at": "2026-04-27T13:34:08.447356+00:00"
+    },
+    {
+      "scene_no": 8,
+      "scene_name": "He stops, peers into the emptiness, and sees nothing.",
+      "status": "failed",
+      "attempts": 2,
+      "downloads": [],
+      "error": "Timed out after 300s without thumbnail completion.",
+      "updated_at": "2026-04-27T13:35:25.823654+00:00"
+    },
+    {
+      "scene_no": 9,
+      "scene_name": "A single, sharp cry is swallowed by the silence.",
+      "status": "failed",
+      "attempts": 2,
+      "downloads": [],
+      "error": "Timed out after 300s without thumbnail completion.",
+      "updated_at": "2026-04-27T13:39:19.571787+00:00"
+    },
+    {
+      "scene_no": 10,
+      "scene_name": "He continues, step by step, into the void.",
+      "status": "failed",
+      "attempts": 2,
+      "downloads": [],
+      "error": "Timed out after 300s without thumbnail completion.",
+      "updated_at": "2026-04-27T13:40:34.702396+00:00"
+    }
+  ],
+  "flow_tracker": {
+    "downloaded_card_keys": [
+      "fe_id_012f28b1-54a1-41ba-8283-636326c336a8|/fx/tools/flow/project/6229e758-dca7-4017-95ce-ca93109aa4b4/edit/fc0465cd-4e4e-4e54-9a2f-828ee8c83de1",
+      "fe_id_0b5388ea-e8b8-4001-b461-399b9d47da0e|/fx/tools/flow/project/6229e758-dca7-4017-95ce-ca93109aa4b4/edit/9c7d2ebb-c96a-4c74-95b9-3019f4b70d5e",
+      "fe_id_2eec713e-720e-4274-84dc-45de59185e07|/fx/tools/flow/project/6229e758-dca7-4017-95ce-ca93109aa4b4/edit/a982ffe6-3f0b-4fde-a256-61d4415ce349",
+      "fe_id_3527eb85-029d-4176-acf9-cdd0bd81925b|/fx/tools/flow/project/6229e758-dca7-4017-95ce-ca93109aa4b4/edit/1d874ce7-d461-45d0-aceb-4075ac0284fb",
+      "fe_id_49008236-3f20-49f8-b6af-ff151ea5a084",
+      "fe_id_49008236-3f20-49f8-b6af-ff151ea5a084|/fx/tools/flow/project/6229e758-dca7-4017-95ce-ca93109aa4b4/edit/0e067228-ae07-4fcc-b3d8-422c27a3b6ce",
+      "fe_id_4fdaff4e-b61b-4fd3-8753-5f5a42c24503|/fx/tools/flow/project/6229e758-dca7-4017-95ce-ca93109aa4b4/edit/ec85ff67-b699-43c7-a176-ca350918191e",
+      "fe_id_5a41700d-8d5e-4b00-95be-538fb6098ae6|/fx/tools/flow/project/6229e758-dca7-4017-95ce-ca93109aa4b4/edit/0f00a993-2091-4133-812e-40a6f4d4d5e7",
+      "fe_id_639c7622-6f88-4566-ba84-668c3856eab3",
+      "fe_id_639c7622-6f88-4566-ba84-668c3856eab3|/fx/tools/flow/project/6229e758-dca7-4017-95ce-ca93109aa4b4/edit/3126ac0a-160a-42fb-aaef-616d10faf19a",
+      "fe_id_8cfbc6a7-08b6-4e52-a654-8f2568dd583c",
+      "fe_id_8cfbc6a7-08b6-4e52-a654-8f2568dd583c|/fx/tools/flow/project/6229e758-dca7-4017-95ce-ca93109aa4b4/edit/445ffe49-2e5a-4b53-91af-9d16cd9ab321",
+      "fe_id_a6e4125f-d17c-4194-bf26-a23de1f2bc1b",
+      "fe_id_a6e4125f-d17c-4194-bf26-a23de1f2bc1b|/fx/tools/flow/project/6229e758-dca7-4017-95ce-ca93109aa4b4/edit/c7b51270-a1d9-47bb-9945-5f92bf07799c",
+      "fe_id_b4307e22-d132-4340-aee9-c9ff2f346d97",
+      "fe_id_b4307e22-d132-4340-aee9-c9ff2f346d97|/fx/tools/flow/project/6229e758-dca7-4017-95ce-ca93109aa4b4/edit/f18ef533-bf2f-48a4-8ef8-828733051d29",
+      "fe_id_ce9e6518-6529-462d-8179-dd2aeb803cad|/fx/tools/flow/project/6229e758-dca7-4017-95ce-ca93109aa4b4/edit/8be057ee-f6ff-40f4-bf50-e9bf235556bd",
+      "fe_id_d220182b-e185-4dd7-ac8e-9aa85b51151c",
+      "fe_id_d220182b-e185-4dd7-ac8e-9aa85b51151c|/fx/tools/flow/project/6229e758-dca7-4017-95ce-ca93109aa4b4/edit/9f3bf5d1-b344-452a-b3d6-b60727534340",
+      "fe_id_ebfc7a77-ae17-4196-8789-a01e715ca27d",
+      "fe_id_ebfc7a77-ae17-4196-8789-a01e715ca27d|/fx/tools/flow/project/6229e758-dca7-4017-95ce-ca93109aa4b4/edit/5c34c9ea-9c6d-4ce3-ba96-c140fcec756e",
+      "fe_id_fe807aa5-5464-4ea8-a082-fa2237d57272|/fx/tools/flow/project/6229e758-dca7-4017-95ce-ca93109aa4b4/edit/fd906e75-64a5-45c5-a99a-00908bc54ff1",
+      "fe_id_fe8487cc-b2b2-4bd1-b199-686c996f6d5e|/fx/tools/flow/project/6229e758-dca7-4017-95ce-ca93109aa4b4/edit/42095de6-a965-47de-ac64-1eb989258672"
+    ],
+    "failed_card_keys": [
+      "fe_id_158d8f7f-befd-43a5-beb7-49d1be4bef19",
+      "fe_id_1cca5a79-d199-47d3-b8b2-bca8d492752e",
+      "fe_id_1e19147e-9efa-4618-b7cb-30fc108a73cc",
+      "fe_id_22a43cbe-52a5-40cd-b3f3-6f6a9d9d0503",
+      "fe_id_2760ca31-9b47-493a-9ad2-8ff5508b7124",
+      "fe_id_40b0f109-6a66-44ca-a363-dc06b0726fa6",
+      "fe_id_49008236-3f20-49f8-b6af-ff151ea5a084",
+      "fe_id_49008236-3f20-49f8-b6af-ff151ea5a084|/fx/tools/flow/project/6229e758-dca7-4017-95ce-ca93109aa4b4/edit/0e067228-ae07-4fcc-b3d8-422c27a3b6ce",
+      "fe_id_4c33b585-fb2a-4ab7-8585-d6461f440507",
+      "fe_id_553ad463-ae43-42e8-9f41-23ddc4035855",
+      "fe_id_623065a3-d3c3-4bb7-a76c-6a436b6294c0",
+      "fe_id_6278278b-99c5-490f-b877-5bd3bcdd8846",
+      "fe_id_632d05d2-582f-42ae-9d8f-c4136019608b",
+      "fe_id_639c7622-6f88-4566-ba84-668c3856eab3",
+      "fe_id_65c6aaea-6995-49b4-bc93-85e3192b08b0",
+      "fe_id_75d76d72-5a7d-4f0c-840d-f3b5258abe1d",
+      "fe_id_769adc90-8b2e-4fc2-adab-4f75caba4777",
+      "fe_id_86f0e819-0452-4841-bbb2-0fd0f7880a80",
+      "fe_id_8cfbc6a7-08b6-4e52-a654-8f2568dd583c",
+      "fe_id_8cfbc6a7-08b6-4e52-a654-8f2568dd583c|/fx/tools/flow/project/6229e758-dca7-4017-95ce-ca93109aa4b4/edit/445ffe49-2e5a-4b53-91af-9d16cd9ab321",
+      "fe_id_9f2028a1-ba57-49d4-88be-e0b29cf5dd07",
+      "fe_id_a6e4125f-d17c-4194-bf26-a23de1f2bc1b",
+      "fe_id_a6e4125f-d17c-4194-bf26-a23de1f2bc1b|/fx/tools/flow/project/6229e758-dca7-4017-95ce-ca93109aa4b4/edit/c7b51270-a1d9-47bb-9945-5f92bf07799c",
+      "fe_id_b4307e22-d132-4340-aee9-c9ff2f346d97",
+      "fe_id_b4307e22-d132-4340-aee9-c9ff2f346d97|/fx/tools/flow/project/6229e758-dca7-4017-95ce-ca93109aa4b4/edit/f18ef533-bf2f-48a4-8ef8-828733051d29",
+      "fe_id_b7100ca0-c33a-48d7-bbc8-19ae5d96d811",
+      "fe_id_b734ad56-12e5-49cc-8e5e-8d1c40c6a8db",
+      "fe_id_bc048800-25b8-4ec3-8f23-6ebe5400aa6c",
+      "fe_id_bc9dfab4-634b-4db0-a3c1-f6548481ae20",
+      "fe_id_c3a0a6eb-8130-4a6b-b639-9c266ea11159",
+      "fe_id_c618d9dd-55ed-42ae-a456-74eada232dee",
+      "fe_id_cf5a135e-90ba-412d-9169-4ddc6e772c6c",
+      "fe_id_cfacc78f-5661-4a14-b81e-551e65b5434b",
+      "fe_id_d220182b-e185-4dd7-ac8e-9aa85b51151c",
+      "fe_id_d220182b-e185-4dd7-ac8e-9aa85b51151c|/fx/tools/flow/project/6229e758-dca7-4017-95ce-ca93109aa4b4/edit/9f3bf5d1-b344-452a-b3d6-b60727534340",
+      "fe_id_d50db44c-3cd8-4ae6-8638-95237bb8db6d",
+      "fe_id_db97d698-4e5c-4d96-862c-ee85530d0694",
+      "fe_id_dc0dbd92-af5c-4559-aa02-5025c288e286",
+      "fe_id_ea0012af-7d83-4ad0-91a5-e777436c7eb8",
+      "fe_id_ebfc7a77-ae17-4196-8789-a01e715ca27d",
+      "fe_id_ebfc7a77-ae17-4196-8789-a01e715ca27d|/fx/tools/flow/project/6229e758-dca7-4017-95ce-ca93109aa4b4/edit/5c34c9ea-9c6d-4ce3-ba96-c140fcec756e",
+      "fe_id_f2f05601-d24b-4df9-8678-3049a426e064",
+      "fe_id_f39ab5b8-b423-4463-ab79-6bfb5bdbb355",
+      "fe_id_f9eac98a-95be-443c-a447-94e08b4a8cfd",
+      "fe_id_fcee4dd0-5aa0-4cb1-bbf6-733d39d9fe61"
+    ]
+  },
+  "downloaded_cards": [],
+  "flow_project_url": "https://labs.google/fx/tools/flow/project/6229e758-dca7-4017-95ce-ca93109aa4b4"
+}

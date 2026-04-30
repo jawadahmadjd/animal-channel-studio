@@ -1,0 +1,279 @@
+#!/usr/bin/env python3
+"""
+Automate release flow:
+1) Optional UI build check
+2) Version bump in ui/package.json (+ package-lock.json)
+3) Commit, tag, and push
+4) Trigger GitHub Actions release workflow (tag-based)
+"""
+
+from __future__ import annotations
+
+import argparse
+import json
+import os
+import re
+import shlex
+import shutil
+import subprocess
+import sys
+from pathlib import Path
+from typing import Iterable
+
+
+ROOT = Path(__file__).resolve().parent
+UI_DIR = ROOT / "ui"
+PACKAGE_JSON = UI_DIR / "package.json"
+PACKAGE_LOCK = UI_DIR / "package-lock.json"
+SEMVER_RE = re.compile(r"^\d+\.\d+\.\d+(?:-[0-9A-Za-z.-]+)?$")
+
+
+def read_bool_env(name: str, default: bool) -> bool:
+    value = os.getenv(name)
+    if value is None:
+        return default
+    return value.strip().lower() in {"1", "true", "yes", "on"}
+
+
+def run(
+    cmd: Iterable[str],
+    *,
+    cwd: Path = ROOT,
+    capture_output: bool = False,
+    check: bool = True,
+) -> subprocess.CompletedProcess[str]:
+    cmd_list = list(cmd)
+    pretty = " ".join(shlex.quote(part) for part in cmd_list)
+    print(f"\n[run] {pretty}")
+    result = subprocess.run(
+        cmd_list,
+        cwd=str(cwd),
+        check=False,
+        text=True,
+        capture_output=capture_output,
+    )
+    if result.stdout and capture_output:
+        print(result.stdout.strip())
+    if result.stderr:
+        print(result.stderr.strip(), file=sys.stderr)
+    if check and result.returncode != 0:
+        raise RuntimeError(f"Command failed with exit code {result.returncode}: {pretty}")
+    return result
+
+
+def require_tool(name: str) -> None:
+    if shutil.which(name):
+        return
+    if os.name == "nt" and shutil.which(f"{name}.cmd"):
+        return
+    raise RuntimeError(f"Required tool not found in PATH: {name}")
+
+
+def git_output(*args: str) -> str:
+    result = run(["git", *args], capture_output=True)
+    return result.stdout.strip()
+
+
+def ensure_project_layout() -> None:
+    if not PACKAGE_JSON.exists():
+        raise RuntimeError(f"Missing {PACKAGE_JSON}")
+    if not (ROOT / ".git").exists():
+        raise RuntimeError("This script must run from the repo root (missing .git folder).")
+
+
+def ensure_inside_git_repo() -> None:
+    out = git_output("rev-parse", "--is-inside-work-tree")
+    if out.lower() != "true":
+        raise RuntimeError("Current directory is not inside a git work tree.")
+
+
+def get_current_branch() -> str:
+    branch = git_output("rev-parse", "--abbrev-ref", "HEAD")
+    if branch == "HEAD":
+        raise RuntimeError("Detached HEAD is not supported for release push.")
+    return branch
+
+
+def validate_semver(version: str) -> None:
+    if not SEMVER_RE.match(version):
+        raise RuntimeError(
+            f"Invalid version '{version}'. Expected format like 1.2.3 or 1.2.3-beta.1"
+        )
+
+
+def get_package_version() -> str:
+    data = json.loads(PACKAGE_JSON.read_text(encoding="utf-8"))
+    version = data.get("version")
+    if not isinstance(version, str):
+        raise RuntimeError("ui/package.json does not contain a string 'version' field.")
+    return version
+
+
+def bump_version(version: str | None, bump: str, preid: str | None) -> str:
+    cmd = ["npm.cmd" if os.name == "nt" else "npm", "--prefix", str(UI_DIR), "version"]
+    if version:
+        validate_semver(version)
+        cmd.append(version)
+    else:
+        cmd.append(bump)
+    cmd.append("--no-git-tag-version")
+    if preid:
+        cmd.extend(["--preid", preid])
+    run(cmd)
+    new_version = get_package_version()
+    print(f"[info] New version: {new_version}")
+    return new_version
+
+
+def run_build_check(skip: bool) -> None:
+    if skip:
+        print("[info] Skipping UI build check.")
+        return
+    cmd = ["npm.cmd" if os.name == "nt" else "npm", "--prefix", str(UI_DIR), "run", "build"]
+    run(cmd)
+
+
+def stage_files(stage_all: bool) -> None:
+    if stage_all:
+        run(["git", "add", "-A"])
+        return
+    run(["git", "add", str(PACKAGE_JSON)])
+    if PACKAGE_LOCK.exists():
+        run(["git", "add", str(PACKAGE_LOCK)])
+
+
+def ensure_staged_changes() -> None:
+    result = run(["git", "diff", "--cached", "--quiet"], check=False)
+    if result.returncode == 0:
+        raise RuntimeError("No staged changes to commit.")
+
+
+def commit_changes(message: str) -> None:
+    run(["git", "commit", "-m", message])
+
+
+def ensure_tag_absent(tag: str) -> None:
+    result = run(["git", "rev-parse", "-q", "--verify", f"refs/tags/{tag}"], check=False)
+    if result.returncode == 0:
+        raise RuntimeError(f"Tag already exists: {tag}")
+
+
+def create_tag(tag: str, message: str) -> None:
+    run(["git", "tag", "-a", tag, "-m", message])
+
+
+def push_branch_and_tag(remote: str, branch: str, tag: str) -> None:
+    run(["git", "push", remote, branch])
+    run(["git", "push", remote, tag])
+
+
+def parse_args() -> argparse.Namespace:
+    parser = argparse.ArgumentParser(
+        description="One-command release push (bump version, commit, tag, push)."
+    )
+    parser.add_argument(
+        "--bump",
+        default=os.getenv("PUSH_DEFAULT_BUMP", "patch"),
+        choices=["patch", "minor", "major", "prepatch", "preminor", "premajor", "prerelease"],
+        help="Semver bump type (ignored when --version is provided).",
+    )
+    parser.add_argument(
+        "--version",
+        help="Set an explicit version, e.g. 1.3.0 (instead of using --bump).",
+    )
+    parser.add_argument(
+        "--preid",
+        default=os.getenv("PUSH_PREID"),
+        help="Prerelease identifier for prerelease bumps, e.g. beta.",
+    )
+    parser.add_argument(
+        "--remote",
+        default=os.getenv("PUSH_REMOTE", "origin"),
+        help="Git remote to push to.",
+    )
+    parser.add_argument(
+        "--branch",
+        default=os.getenv("PUSH_BRANCH"),
+        help="Branch to push (defaults to current branch).",
+    )
+    parser.add_argument(
+        "--message",
+        default=os.getenv("PUSH_COMMIT_MESSAGE"),
+        help="Custom git commit message.",
+    )
+    parser.add_argument(
+        "--tag-prefix",
+        default=os.getenv("PUSH_TAG_PREFIX", "v"),
+        help="Tag prefix (default: v).",
+    )
+    parser.add_argument(
+        "--no-stage-all",
+        action="store_true",
+        help="Do not stage every change; stage only version files.",
+    )
+    parser.add_argument(
+        "--no-build-check",
+        action="store_true",
+        help="Skip running `npm --prefix ui run build` before release.",
+    )
+    parser.add_argument(
+        "--dry-run",
+        action="store_true",
+        help="Show release plan and exit without changing anything.",
+    )
+    return parser.parse_args()
+
+
+def main() -> int:
+    args = parse_args()
+
+    require_tool("git")
+    require_tool("npm")
+    ensure_project_layout()
+    ensure_inside_git_repo()
+
+    branch = args.branch or get_current_branch()
+    old_version = get_package_version()
+
+    stage_all = not args.no_stage_all
+    run_check = not args.no_build_check and read_bool_env("PUSH_RUN_BUILD_CHECK", True)
+    if args.no_build_check:
+        run_check = False
+
+    if args.dry_run:
+        target = args.version or f"{args.bump} (from {old_version})"
+        print("[dry-run] Planned release actions:")
+        print(f"  - branch: {branch}")
+        print(f"  - remote: {args.remote}")
+        print(f"  - version: {target}")
+        print(f"  - stage_all: {stage_all}")
+        print(f"  - build_check: {run_check}")
+        return 0
+
+    run_build_check(skip=not run_check)
+    new_version = bump_version(args.version, args.bump, args.preid)
+
+    tag = f"{args.tag_prefix}{new_version}"
+    ensure_tag_absent(tag)
+
+    stage_files(stage_all=stage_all)
+    ensure_staged_changes()
+
+    commit_message = args.message or f"chore(release): {tag}"
+    commit_changes(commit_message)
+    create_tag(tag, f"Release {tag}")
+    push_branch_and_tag(args.remote, branch, tag)
+
+    print("\n[success] Release push completed.")
+    print(f"[success] Commit pushed to {args.remote}/{branch}")
+    print(f"[success] Tag pushed: {tag}")
+    print("[info] GitHub Actions should now build and publish the release from this tag.")
+    return 0
+
+
+if __name__ == "__main__":
+    try:
+        raise SystemExit(main())
+    except Exception as exc:
+        print(f"[error] {exc}", file=sys.stderr)
+        raise SystemExit(1)

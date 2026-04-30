@@ -52,6 +52,13 @@ def _info(text: str) -> None:
 def _warn(text: str) -> None:
     _print(f"  [!]   {text}")
 
+# ── Ensure scripts dir is importable ──────────────────────────────────────────
+# When spawned as a subprocess via full path, Python may not add the script's
+# own directory to sys.path reliably. Insert it explicitly before any imports.
+_SCRIPTS_DIR = str(Path(__file__).resolve().parent)
+if _SCRIPTS_DIR not in sys.path:
+    sys.path.insert(0, _SCRIPTS_DIR)
+
 from playwright.sync_api import sync_playwright
 from flow_automation import (
     DEFAULT_AUTH_PATH,
@@ -81,20 +88,28 @@ from write_stories import append_story_block
 
 
 ROOT_DIR = Path(__file__).resolve().parents[1]
+DATA_DIR = Path(os.environ.get("ANIMAL_STUDIO_DATA_DIR", str(ROOT_DIR)))
 
 # Increment this whenever the run-state JSON schema changes in a breaking way.
 RUN_STATE_SCHEMA_VERSION = 1
 
 IDEAS_PATH = ROOT_DIR / "Ideas.md"
-IDEAS_DB_PATH = ROOT_DIR / "state" / "ideas_db.json"
+IDEAS_DB_PATH = DATA_DIR / "state" / "ideas_db.json"
 MASTER_PROMPT_PATH = ROOT_DIR / "Master_Prompts.md"
-RUNS_DIR = ROOT_DIR / "state" / "runs"
-PIPELINE_STATE_PATH = ROOT_DIR / "state" / "processed_ideas.json"
-OUTPUT_ROOT = ROOT_DIR / "output"
-LOGS_DIR = ROOT_DIR / "logs"
+RUNS_DIR = DATA_DIR / "state" / "runs"
+PIPELINE_STATE_PATH = DATA_DIR / "state" / "processed_ideas.json"
+OUTPUT_ROOT = DATA_DIR / "output"
+LOGS_DIR = DATA_DIR / "logs"
 PIPELINE_LOG_PATH = LOGS_DIR / "pipeline.log"
 FLOW_LOG_PATH = LOGS_DIR / "flow.log"
 ERRORS_LOG_PATH = LOGS_DIR / "errors.log"
+DATA_STATE_DIR = DATA_DIR / "state"
+DATA_DEFAULT_AUTH_PATH = DATA_STATE_DIR / "flow_auth.json"
+DATA_DEFAULT_SELECTORS_PATH = DATA_STATE_DIR / "flow_selectors.json"
+DATA_DEFAULT_ELEMENTS_PATH = DATA_STATE_DIR / "flow_elements.json"
+DATA_DEFAULT_SETTINGS_PATH = DATA_STATE_DIR / "flow_settings.json"
+DATA_DEFAULT_DOWNLOADS_DIR = DATA_DIR / "downloads"
+LIVE_FLOW_BUFFER_PATH = DATA_STATE_DIR / "live_flow_buffer.json"
 
 
 def utc_now() -> str:
@@ -110,6 +125,30 @@ def load_json(path: Path, fallback: dict[str, Any]) -> dict[str, Any]:
 def save_json(path: Path, payload: dict[str, Any]) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(json.dumps(payload, indent=2, ensure_ascii=False), encoding="utf-8")
+
+
+def save_live_flow_buffer(payload: dict[str, Any]) -> None:
+    payload = {
+        "updated_at": utc_now(),
+        **payload,
+    }
+    save_json(LIVE_FLOW_BUFFER_PATH, payload)
+
+
+def media_url_from_card(card: dict[str, Any]) -> str:
+    for key in ("video_src", "source_src"):
+        value = str(card.get(key, "") or "").strip()
+        if value and not value.startswith("blob:"):
+            return value
+    return ""
+
+
+def thumbnail_url_from_card(card: dict[str, Any]) -> str:
+    for key in ("poster_src", "thumbnail_src"):
+        value = str(card.get(key, "") or "").strip()
+        if value and not value.startswith("blob:"):
+            return value
+    return ""
 
 
 def log_event(path: Path, event: str, payload: dict[str, Any]) -> None:
@@ -432,25 +471,25 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--idea-title", help="Exact idea title")
     parser.add_argument("--resume", help="Resume by story_id (loads state/runs/<story_id>.json)")
     parser.add_argument("--flow-url", default=DEFAULT_FLOW_URL)
-    parser.add_argument("--auth-path", default=str(DEFAULT_AUTH_PATH))
-    parser.add_argument("--selectors-path", default=str(DEFAULT_SELECTORS_PATH))
-    parser.add_argument("--elements-path", default=str(DEFAULT_ELEMENTS_PATH))
-    parser.add_argument("--settings-path", default=str(DEFAULT_SETTINGS_PATH))
-    parser.add_argument("--downloads-dir", default=str(DEFAULT_DOWNLOADS_DIR))
+    parser.add_argument("--auth-path", default=str(DATA_DEFAULT_AUTH_PATH))
+    parser.add_argument("--selectors-path", default=str(DATA_DEFAULT_SELECTORS_PATH))
+    parser.add_argument("--elements-path", default=str(DATA_DEFAULT_ELEMENTS_PATH))
+    parser.add_argument("--settings-path", default=str(DATA_DEFAULT_SETTINGS_PATH))
+    parser.add_argument("--downloads-dir", default=str(DATA_DEFAULT_DOWNLOADS_DIR))
     parser.add_argument("--timeout-sec", type=int, default=300)
     parser.add_argument("--scene-max-retries", type=int, default=2)
     parser.add_argument("--wait-between-sec", type=int, default=40,
                         help="Minimum seconds to wait between scenes (actual wait is random up to --wait-max-sec)")
     parser.add_argument("--wait-max-sec", type=int, default=80,
                         help="Maximum seconds to wait between scenes (random range)")
-    parser.add_argument("--max-concurrent", type=int, default=2)
+    parser.add_argument("--max-concurrent", type=int, default=1)
     parser.add_argument("--headless", choices=["true", "false"], default=None)
     parser.add_argument("--model", default=None)
     parser.add_argument("--temperature", type=float, default=0.6)
     parser.add_argument("--max-llm-retries", type=int, default=None)
     parser.add_argument("--write-stories", choices=["true", "false"], default="true")
     parser.add_argument("--mark-processed", choices=["true", "false"], default="true")
-    parser.add_argument("--stories-path", default=str(ROOT_DIR / "Stories.md"))
+    parser.add_argument("--stories-path", default=str(DATA_DIR / "Stories.md"))
     parser.add_argument("--output-root", default=str(OUTPUT_ROOT))
     parser.add_argument("--dry-run", choices=["true", "false"], default="false")
     parser.add_argument("--confirm-costly", choices=["true", "false"], default="false")
@@ -711,6 +750,20 @@ def main() -> None:
             max_wait = max(min_wait, int(args.wait_max_sec))
             poll_interval_sec = 5.0
 
+            if min_wait < 20:
+                _warn(
+                    f"Flow safety: wait_between_sec={min_wait}s is too aggressive; "
+                    "using 20s minimum."
+                )
+                min_wait = 20
+                max_wait = max(max_wait, min_wait)
+
+            if max_concurrent > 1:
+                _warn(
+                    f"Flow safety: max_concurrent={max_concurrent} increases the chance of "
+                    "Google flagging unusual activity; 1 is safer."
+                )
+
             tracker = run_state.setdefault("flow_tracker", {})
             downloaded_card_keys = set(tracker.get("downloaded_card_keys", []))
             failed_card_keys = set(tracker.get("failed_card_keys", []))
@@ -803,6 +856,23 @@ def main() -> None:
                         scene_state["error"] = ""
                         scene_state["updated_at"] = utc_now()
                         save_json(run_path, run_state)
+                        for flow_card in scene_flow_cards:
+                            if flow_card.get("card_key"):
+                                downloaded_cards.append({
+                                    "scene_no": scene_no,
+                                    **flow_card,
+                                })
+
+                        save_live_flow_buffer(
+                            {
+                                "status": "running",
+                                "story_id": idea.story_id,
+                                "scene_no": scene_no,
+                                "attempt": attempt,
+                                "progress_pct": 0,
+                                "message": f"Scene {scene_no} submitted to Flow",
+                            }
+                        )
 
                         active_jobs.append(
                             {
@@ -894,6 +964,17 @@ def main() -> None:
                                     f"{failed_job.get('ui_retries', 0)} UI retry click(s)."
                                 )
                                 scene_state["updated_at"] = utc_now()
+                                save_live_flow_buffer(
+                                    {
+                                        "status": "failed",
+                                        "story_id": idea.story_id,
+                                        "scene_no": scene_no,
+                                        "attempt": int(scene_state.get("attempts", 0)),
+                                        "card_key": card_key,
+                                        "flow_url": str(card.get("href", "")),
+                                        "message": scene_state["error"],
+                                    }
+                                )
 
                                 if int(scene_state.get("attempts", 0)) < max_attempts:
                                     pending_scene_nos.append(scene_no)
@@ -918,6 +999,20 @@ def main() -> None:
                             progress = card.get("progress_pct")
                             if progress is not None:
                                 _info(f"Card in progress at {progress}% (waiting)")
+                                if active_jobs:
+                                    save_live_flow_buffer(
+                                        {
+                                            "status": "running",
+                                            "story_id": idea.story_id,
+                                            "scene_no": int(active_jobs[0]["scene_no"]),
+                                            "attempt": int(active_jobs[0]["attempt"]),
+                                            "progress_pct": int(progress),
+                                            "card_key": card_key,
+                                            "flow_url": str(card.get("href", "")),
+                                            "thumbnail_url": thumbnail_url_from_card(card),
+                                            "message": f"Flow generation at {progress}%",
+                                        }
+                                    )
                             continue
 
                         if not active_jobs:
@@ -945,18 +1040,46 @@ def main() -> None:
                         ]
                         if not new_ready_cards:
                             new_ready_cards = [card]  # Fallback to the triggering card
+                        preview_card = new_ready_cards[0]
 
                         # Mark all ready cards as seen so we don't re-process them
                         for ready_card in new_ready_cards:
                             downloaded_card_keys.add(str(ready_card.get("card_key", "")))
 
                         clip_count = len(new_ready_cards)
+                        scene_flow_cards = [
+                            {
+                                "card_key": str(ready_card.get("card_key", "")),
+                                "href": str(ready_card.get("href", "")),
+                                "tile_id": str(ready_card.get("tile_id", "")),
+                                "label": str(ready_card.get("label", "")),
+                                "captured_at": utc_now(),
+                            }
+                            for ready_card in new_ready_cards
+                        ]
                         scene_state["status"] = "generated"
                         scene_state["generated_clip_count"] = clip_count
+                        scene_state["flow_cards"] = scene_flow_cards
                         scene_state["downloads"] = []
                         scene_state["error"] = ""
                         scene_state["updated_at"] = utc_now()
                         _ok(f"Scene {scene_no}: {clip_count} clip(s) generated — will download via project zip")
+
+                        save_live_flow_buffer(
+                            {
+                                "status": "ready",
+                                "story_id": idea.story_id,
+                                "scene_no": scene_no,
+                                "attempt": int(completed_job["attempt"]),
+                                "progress_pct": 100,
+                                "card_key": str(preview_card.get("card_key", "")),
+                                "flow_url": str(preview_card.get("href", "")),
+                                "media_url": media_url_from_card(preview_card),
+                                "thumbnail_url": thumbnail_url_from_card(preview_card),
+                                "clip_count": clip_count,
+                                "message": f"Scene {scene_no}: {clip_count} Flow clip(s) ready",
+                            }
+                        )
 
                         tracker["downloaded_card_keys"] = sorted(downloaded_card_keys)
                         tracker["failed_card_keys"] = sorted(failed_card_keys)
@@ -980,6 +1103,15 @@ def main() -> None:
                         f"Timed out after {args.timeout_sec}s without thumbnail completion."
                     )
                     scene_state["updated_at"] = utc_now()
+                    save_live_flow_buffer(
+                        {
+                            "status": "failed",
+                            "story_id": idea.story_id,
+                            "scene_no": scene_no,
+                            "attempt": int(scene_state.get("attempts", 0)),
+                            "message": scene_state["error"],
+                        }
+                    )
                     if int(scene_state.get("attempts", 0)) < max_attempts:
                         pending_scene_nos.append(scene_no)
                         _warn(
@@ -1011,7 +1143,40 @@ def main() -> None:
             staging_dir.mkdir(parents=True, exist_ok=True)
 
             # ── Attempt 1: project zip via toolbar kebab → Download Project ──
-            zip_path = download_project_zip(page, selectors_cfg, staging_dir)
+            remaining_generated_scenes: list[dict[str, Any]] = []
+            for scene_state in sorted(generated_scenes, key=lambda s: int(s["scene_no"])):
+                scene_no = int(scene_state["scene_no"])
+                hrefs = [
+                    str(card.get("href", "")).strip()
+                    for card in scene_state.get("flow_cards", [])
+                    if str(card.get("href", "")).strip()
+                ]
+                if not hrefs:
+                    remaining_generated_scenes.append(scene_state)
+                    continue
+
+                scene_dir = Path(args.downloads_dir) / f"scene_{scene_no:02d}"
+                scene_dir.mkdir(parents=True, exist_ok=True)
+                _info(f"Scene {scene_no}: downloading {len(hrefs)} tracked clip(s) by exact Flow link")
+                saved = [str(p) for p in download_clips_via_edit_pages(
+                    page,
+                    project_url,
+                    scene_dir,
+                    edit_hrefs=hrefs,
+                )]
+                if saved:
+                    scene_state["status"] = "completed"
+                    scene_state["downloads"] = saved
+                    scene_state["updated_at"] = utc_now()
+                    total_clips += len(saved)
+                    _ok(f"Scene {scene_no}: {len(saved)} tracked clip(s) saved")
+                else:
+                    remaining_generated_scenes.append(scene_state)
+                    _warn(f"Scene {scene_no}: tracked download failed; will try fallback assignment")
+                save_json(run_path, run_state)
+
+            generated_scenes = remaining_generated_scenes
+            zip_path = download_project_zip(page, selectors_cfg, staging_dir) if generated_scenes else None
 
             if zip_path and zip_path.exists():
                 _info(f"Extracting project zip: {zip_path.name}")

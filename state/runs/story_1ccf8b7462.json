@@ -1,0 +1,237 @@
+{
+  "schema_version": 1,
+  "story_id": "story_1ccf8b7462",
+  "idea_index": 0,
+  "idea_title": "Penguin Left Behind",
+  "run_status": "in_progress",
+  "created_at": "2026-04-26T13:25:15.491121+00:00",
+  "updated_at": "2026-04-26T13:30:54.137352+00:00",
+  "story_payload": {
+    "story_title": "Penguin Left Behind",
+    "scenes": [
+      {
+        "scene_no": 1,
+        "scene_name": "The lone penguin stands motionless on the frozen shore.",
+        "vo": "A single penguin stands perfectly still on the icy shore.",
+        "veo_prompt": "Cinematic wide shot of a lone emperor penguin standing motionless on a frozen Antarctic shore, soft diffused daylight, gentle snowflakes falling, the penguin's dark silhouette contrasting with white ice, slow camera push in, mood of solitude and stillness, hyperrealistic detail in feathers and ice texture."
+      },
+      {
+        "scene_no": 2,
+        "scene_name": "Shivers ripple through its dense feathers.",
+        "vo": "Tiny shivers run through its thick, dense feathers.",
+        "veo_prompt": "Extreme close-up of a penguin's chest and neck feathers, subtle shivering movement visible, soft backlighting catching frost on feather tips, shallow depth of field with blurred icy background, slow motion, natural sound of wind, warm amber tones from low sun, intimate and vulnerable mood."
+      },
+      {
+        "scene_no": 3,
+        "scene_name": "The vast, empty horizon offers no familiar shapes.",
+        "vo": "The horizon stretches endlessly, empty and featureless.",
+        "veo_prompt": "Panoramic landscape shot of a flat, white Antarctic horizon with no landmarks, low-angle camera looking across ice sheet, overcast sky merging with snow, cold blue-gray color palette, slow horizontal pan, sense of isolation and emptiness, wind-blown snow streaks."
+      },
+      {
+        "scene_no": 4,
+        "scene_name": "A bitter wind howls, scouring the ice.",
+        "vo": "A bitter wind howls across the ice, scouring everything in its path.",
+        "veo_prompt": "Dynamic shot of wind-driven snow blowing across the icy surface, low camera angle showing snow particles racing past, harsh whiteout conditions, sound of howling wind implied visually, fast shutter effect for snow streaks, cold desaturated tones, raw and hostile atmosphere."
+      },
+      {
+        "scene_no": 5,
+        "scene_name": "Its stomach growls with a hollow ache.",
+        "vo": "Its stomach growls with a deep, hollow ache.",
+        "veo_prompt": "Close-up of penguin's belly area, slight movement as it breathes, soft focus on the beak and eye, subtle internal sound implied, dim light with blue shadows, vulnerable posture, shallow depth of field highlighting the penguin's thin frame, empathetic mood."
+      },
+      {
+        "scene_no": 6,
+        "scene_name": "The colony's distant calls are swallowed by the storm.",
+        "vo": "The distant calls of the colony are swallowed up by the storm.",
+        "veo_prompt": "Wide shot of a blizzard obscuring the horizon, penguin alone in foreground, faint blur of distant colony shapes barely visible through snow, wind whipping snow into lens, muffled sound design, cold blue-white palette, sense of disconnection and loss."
+      },
+      {
+        "scene_no": 7,
+        "scene_name": "Night descends, a crushing blanket of cold and silence.",
+        "vo": "Night falls, a crushing blanket of cold and silence.",
+        "veo_prompt": "Transition shot from twilight to deep blue night, penguin silhouette against darkening sky, stars beginning to appear, frost forming on ice, slow fade to near-black, cold moonlight on snow, complete stillness, atmospheric and oppressive silence."
+      },
+      {
+        "scene_no": 8,
+        "scene_name": "It tucks its beak, a solitary statue against the endless white.",
+        "vo": "It tucks its beak, becoming a solitary statue against the endless white.",
+        "veo_prompt": "Static medium shot of penguin with beak tucked into feathers, standing alone on vast white plain, night sky with faint aurora borealis in background, long exposure effect, snow gently accumulating on its back, timeless and stoic composition, cold blue and green hues."
+      },
+      {
+        "scene_no": 9,
+        "scene_name": "Dawn brings only more empty light.",
+        "vo": "Dawn arrives, but it brings only more empty light.",
+        "veo_prompt": "Slow sunrise over icy horizon, pale golden light spreading across empty landscape, penguin still standing in same spot, frost on its feathers, camera slowly rising from low angle, melancholic mood, soft pastel colors, sense of enduring emptiness."
+      },
+      {
+        "scene_no": 10,
+        "scene_name": "Hope is a fragile ember flickering in the dark.",
+        "vo": "Hope is a fragile ember, flickering in the dark.",
+        "veo_prompt": "Extreme close-up of penguin's eye reflecting faint light, tiny sparkle in the darkness, surrounding feathers in deep shadow, warm orange glint contrasting with cold blue, shallow depth of field, metaphorical visual of resilience, intimate and emotional tone."
+      }
+    ]
+  },
+  "scenes": [
+    {
+      "scene_no": 1,
+      "scene_name": "The lone penguin stands motionless on the frozen shore.",
+      "status": "completed",
+      "attempts": 1,
+      "downloads": [
+        "D:\\Youtube\\5- Animal Channel\\downloads\\scene_01\\clip_03_1777210053.mp4"
+      ],
+      "error": "",
+      "updated_at": "2026-04-26T13:27:43.983934+00:00"
+    },
+    {
+      "scene_no": 2,
+      "scene_name": "Shivers ripple through its dense feathers.",
+      "status": "completed",
+      "attempts": 1,
+      "downloads": [
+        "D:\\Youtube\\5- Animal Channel\\downloads\\scene_02\\clip_01_1777210128.mp4",
+        "D:\\Youtube\\5- Animal Channel\\downloads\\scene_02\\clip_03_1777210146.mp4"
+      ],
+      "error": "",
+      "updated_at": "2026-04-26T13:29:16.398964+00:00"
+    },
+    {
+      "scene_no": 3,
+      "scene_name": "The vast, empty horizon offers no familiar shapes.",
+      "status": "completed",
+      "attempts": 1,
+      "downloads": [
+        "D:\\Youtube\\5- Animal Channel\\downloads\\scene_03\\clip_01_1777210225.mp4",
+        "D:\\Youtube\\5- Animal Channel\\downloads\\scene_03\\clip_03_1777210243.mp4"
+      ],
+      "error": "",
+      "updated_at": "2026-04-26T13:30:54.137319+00:00"
+    },
+    {
+      "scene_no": 4,
+      "scene_name": "A bitter wind howls, scouring the ice.",
+      "status": "running",
+      "attempts": 1,
+      "downloads": [],
+      "error": "",
+      "updated_at": "2026-04-26T13:29:26.124993+00:00"
+    },
+    {
+      "scene_no": 5,
+      "scene_name": "Its stomach growls with a hollow ache.",
+      "status": "running",
+      "attempts": 1,
+      "downloads": [],
+      "error": "",
+      "updated_at": "2026-04-26T13:31:04.018743+00:00"
+    },
+    {
+      "scene_no": 6,
+      "scene_name": "The colony's distant calls are swallowed by the storm.",
+      "status": "pending",
+      "attempts": 0,
+      "downloads": [],
+      "error": "",
+      "updated_at": "2026-04-26T13:25:15.491121+00:00"
+    },
+    {
+      "scene_no": 7,
+      "scene_name": "Night descends, a crushing blanket of cold and silence.",
+      "status": "pending",
+      "attempts": 0,
+      "downloads": [],
+      "error": "",
+      "updated_at": "2026-04-26T13:25:15.491121+00:00"
+    },
+    {
+      "scene_no": 8,
+      "scene_name": "It tucks its beak, a solitary statue against the endless white.",
+      "status": "pending",
+      "attempts": 0,
+      "downloads": [],
+      "error": "",
+      "updated_at": "2026-04-26T13:25:15.491121+00:00"
+    },
+    {
+      "scene_no": 9,
+      "scene_name": "Dawn brings only more empty light.",
+      "status": "pending",
+      "attempts": 0,
+      "downloads": [],
+      "error": "",
+      "updated_at": "2026-04-26T13:25:15.491121+00:00"
+    },
+    {
+      "scene_no": 10,
+      "scene_name": "Hope is a fragile ember flickering in the dark.",
+      "status": "pending",
+      "attempts": 0,
+      "downloads": [],
+      "error": "",
+      "updated_at": "2026-04-26T13:25:15.491121+00:00"
+    }
+  ],
+  "flow_tracker": {
+    "downloaded_card_keys": [
+      "fe_id_178df76f-fdb1-43b7-a431-687f0b1869fc|/fx/tools/flow/project/994bbdc1-8600-4ff3-b965-f48357caf0d2/edit/700007cf-d0f0-4e82-ac71-d2d88e243e46",
+      "fe_id_1ca8e874-93cb-4361-8ff2-898f6816c4cc|/fx/tools/flow/project/994bbdc1-8600-4ff3-b965-f48357caf0d2/edit/b3965f0c-9844-4439-b701-bbc623746129",
+      "fe_id_51204cf9-bfa0-4a19-84be-b6529496e059|/fx/tools/flow/project/994bbdc1-8600-4ff3-b965-f48357caf0d2/edit/9fb5b8a3-ebde-430f-9733-c07e7748f617",
+      "fe_id_593750dd-7d4f-42d3-ba45-1d6aebd3250c",
+      "fe_id_593750dd-7d4f-42d3-ba45-1d6aebd3250c|/fx/tools/flow/project/994bbdc1-8600-4ff3-b965-f48357caf0d2/edit/169f1408-089b-4186-8163-c0baf2a925e2",
+      "fe_id_7979bc0f-faca-45c0-9f51-2c1b8089f943",
+      "fe_id_7979bc0f-faca-45c0-9f51-2c1b8089f943|/fx/tools/flow/project/994bbdc1-8600-4ff3-b965-f48357caf0d2/edit/446939d3-b88a-4bbd-a5de-02efd5d5fc21",
+      "fe_id_7cc625fc-fdf3-4e8a-b10c-5a9273942be9|/fx/tools/flow/project/994bbdc1-8600-4ff3-b965-f48357caf0d2/edit/fbf5fb91-83cb-4fc4-afc2-f9664d8af8f0",
+      "fe_id_834b8243-b630-4453-bb5d-6dc3a6188b50|/fx/tools/flow/project/994bbdc1-8600-4ff3-b965-f48357caf0d2/edit/2f5b4c94-aaa4-4277-b11d-1a06ec4a2611",
+      "fe_id_a55ac4b7-7254-4ef1-b492-5713033a322b|/fx/tools/flow/project/994bbdc1-8600-4ff3-b965-f48357caf0d2/edit/89e8da92-a375-4f76-a6a9-e7419d6fddae"
+    ],
+    "failed_card_keys": [
+      "fe_id_593750dd-7d4f-42d3-ba45-1d6aebd3250c",
+      "fe_id_593750dd-7d4f-42d3-ba45-1d6aebd3250c|/fx/tools/flow/project/994bbdc1-8600-4ff3-b965-f48357caf0d2/edit/169f1408-089b-4186-8163-c0baf2a925e2",
+      "fe_id_7979bc0f-faca-45c0-9f51-2c1b8089f943",
+      "fe_id_7979bc0f-faca-45c0-9f51-2c1b8089f943|/fx/tools/flow/project/994bbdc1-8600-4ff3-b965-f48357caf0d2/edit/446939d3-b88a-4bbd-a5de-02efd5d5fc21"
+    ]
+  },
+  "downloaded_cards": [
+    {
+      "scene_no": 1,
+      "card_key": "fe_id_51204cf9-bfa0-4a19-84be-b6529496e059|/fx/tools/flow/project/994bbdc1-8600-4ff3-b965-f48357caf0d2/edit/9fb5b8a3-ebde-430f-9733-c07e7748f617",
+      "files": [
+        "D:\\Youtube\\5- Animal Channel\\downloads\\scene_01\\clip_03_1777210053.mp4"
+      ],
+      "downloaded_at": "2026-04-26T13:27:43.983919+00:00"
+    },
+    {
+      "scene_no": 2,
+      "card_key": "fe_id_834b8243-b630-4453-bb5d-6dc3a6188b50|/fx/tools/flow/project/994bbdc1-8600-4ff3-b965-f48357caf0d2/edit/2f5b4c94-aaa4-4277-b11d-1a06ec4a2611",
+      "files": [
+        "D:\\Youtube\\5- Animal Channel\\downloads\\scene_02\\clip_01_1777210128.mp4"
+      ],
+      "downloaded_at": "2026-04-26T13:28:58.357466+00:00"
+    },
+    {
+      "scene_no": 2,
+      "card_key": "fe_id_1ca8e874-93cb-4361-8ff2-898f6816c4cc|/fx/tools/flow/project/994bbdc1-8600-4ff3-b965-f48357caf0d2/edit/b3965f0c-9844-4439-b701-bbc623746129",
+      "files": [
+        "D:\\Youtube\\5- Animal Channel\\downloads\\scene_02\\clip_03_1777210146.mp4"
+      ],
+      "downloaded_at": "2026-04-26T13:29:16.398932+00:00"
+    },
+    {
+      "scene_no": 3,
+      "card_key": "fe_id_178df76f-fdb1-43b7-a431-687f0b1869fc|/fx/tools/flow/project/994bbdc1-8600-4ff3-b965-f48357caf0d2/edit/700007cf-d0f0-4e82-ac71-d2d88e243e46",
+      "files": [
+        "D:\\Youtube\\5- Animal Channel\\downloads\\scene_03\\clip_01_1777210225.mp4"
+      ],
+      "downloaded_at": "2026-04-26T13:30:36.118110+00:00"
+    },
+    {
+      "scene_no": 3,
+      "card_key": "fe_id_7cc625fc-fdf3-4e8a-b10c-5a9273942be9|/fx/tools/flow/project/994bbdc1-8600-4ff3-b965-f48357caf0d2/edit/fbf5fb91-83cb-4fc4-afc2-f9664d8af8f0",
+      "files": [
+        "D:\\Youtube\\5- Animal Channel\\downloads\\scene_03\\clip_03_1777210243.mp4"
+      ],
+      "downloaded_at": "2026-04-26T13:30:54.137295+00:00"
+    }
+  ],
+  "flow_project_url": "https://labs.google/fx/tools/flow/project/994bbdc1-8600-4ff3-b965-f48357caf0d2"
+}

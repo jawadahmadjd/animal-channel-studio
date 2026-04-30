@@ -1,0 +1,186 @@
+{
+  "schema_version": 1,
+  "story_id": "story_1419478df1",
+  "idea_index": 0,
+  "idea_title": "The Injured Cheetah",
+  "run_status": "in_progress",
+  "created_at": "2026-04-26T14:48:19.085175+00:00",
+  "updated_at": "2026-04-26T15:15:32.311867+00:00",
+  "story_payload": {
+    "story_title": "The Injured Cheetah",
+    "scenes": [
+      {
+        "scene_no": 1,
+        "scene_name": "A cheetah with a shattered hind leg drags itself across the scorching savanna.",
+        "vo": "A cheetah, its hind leg shattered, drags itself across the blazing savanna.",
+        "veo_prompt": "Cinematic wide shot, golden hour light, a cheetah with a visibly injured hind leg limping slowly across a dry, sun-scorched savanna. Dust rises from its paw steps, tall grass sways gently, intense heat haze in the background. Camera tracks low and slowly, capturing the animal's struggle and pain."
+      },
+      {
+        "scene_no": 2,
+        "scene_name": "Pain pulses through its body with every agonizing step.",
+        "vo": "With every agonizing step, pain pulses through its entire body.",
+        "veo_prompt": "Close-up shot of the cheetah's face, tears of pain visible, sweat on its fur, eyes squinting in agony. Slow motion, shallow depth of field, blurred savanna background. Golden light catches its expression, emphasizing suffering."
+      },
+      {
+        "scene_no": 3,
+        "scene_name": "Hunger gnaws at its belly, a constant, desperate companion.",
+        "vo": "Hunger gnaws at its belly—a constant, desperate companion.",
+        "veo_prompt": "Medium shot, cheetah lying on its side, ribs visible, stomach hollow. Camera pans slowly from its head to its thin midsection. Dry grass around, late afternoon shadows, mood of desperation and fatigue."
+      },
+      {
+        "scene_no": 4,
+        "scene_name": "It spots a herd of gazelles, but the wound makes a swift chase impossible.",
+        "vo": "It spots a herd of gazelles in the distance, but that injured leg makes a swift chase impossible.",
+        "veo_prompt": "Over-the-shoulder shot from behind the cheetah, its point of view showing a herd of gazelles grazing peacefully in the distance. The cheetah's head turns slightly, ears forward, then looks down at its injured leg. Warm golden light, dust motes in air, contrast between vitality and injury."
+      },
+      {
+        "scene_no": 5,
+        "scene_name": "The predator crouches low, waiting for a weaker target, but none appear.",
+        "vo": "The predator crouches low in the grass, waiting for a weaker target to stray from the herd. But none appear.",
+        "veo_prompt": "Low-angle shot, cheetah crouched in tall grass, body tense, eyes scanning the herd. Camera slowly zooms in on its face, then cuts to the gazelles grazing, no weak or young ones separated. Late afternoon, long shadows, tension in stillness."
+      },
+      {
+        "scene_no": 6,
+        "scene_name": "Dust swirls as the sun bleeds into the horizon.",
+        "vo": "Dust swirls in the air as the sun bleeds into the horizon.",
+        "veo_prompt": "Wide cinematic shot, sunset, sun setting behind the savanna, casting orange and red hues. Dust devils spin gently in the distance, silhouette of the cheetah lying alone under an acacia tree. Epic, melancholic mood, wind rustling grass."
+      },
+      {
+        "scene_no": 7,
+        "scene_name": "Alone, it licks the swollen joint, smelling its own blood.",
+        "vo": "Alone, it licks the swollen joint, tasting its own blood.",
+        "veo_prompt": "Close-up macro shot, cheetah's tongue gently licking a swollen, bloody hind leg joint. Dried blood on fur, flies buzzing around. Camera stays tight, low light, twilight colors, raw and intimate detail of injury."
+      },
+      {
+        "scene_no": 8,
+        "scene_name": "Each failed hunt tightens the noose of survival.",
+        "vo": "Each failed hunt tightens the noose of survival around its neck.",
+        "veo_prompt": "Montage sequence: three quick cuts showing the cheetah attempting to stalk prey but failing—first a gazelle bolts, then a warthog escapes, then a bird flies away. Each cut shows the cheetah's exhaustion increasing. Desaturated colors, slow motion, dust and fading light."
+      },
+      {
+        "scene_no": 9,
+        "scene_name": "The night brings cold and the distant howl of hyenas.",
+        "vo": "Night brings cold, and the distant howl of hyenas echoes across the plain.",
+        "veo_prompt": "Night scene, full moon, cheetah curled up under a thorn bush, shivering slightly. Cold blue tones, mist rising from the ground. In the distance, faint silhouettes of hyenas moving, their howls audible in the stillness. Cinematic, tense, lonely atmosphere."
+      }
+    ]
+  },
+  "scenes": [
+    {
+      "scene_no": 1,
+      "scene_name": "A cheetah with a shattered hind leg drags itself across the scorching savanna.",
+      "status": "failed",
+      "attempts": 1,
+      "downloads": [],
+      "error": "Project zip download failed.",
+      "updated_at": "2026-04-26T15:15:31.890463+00:00",
+      "generated_clip_count": 4
+    },
+    {
+      "scene_no": 2,
+      "scene_name": "Pain pulses through its body with every agonizing step.",
+      "status": "failed",
+      "attempts": 1,
+      "downloads": [],
+      "error": "Project zip download failed.",
+      "updated_at": "2026-04-26T15:15:31.890476+00:00",
+      "generated_clip_count": 2
+    },
+    {
+      "scene_no": 3,
+      "scene_name": "Hunger gnaws at its belly, a constant, desperate companion.",
+      "status": "failed",
+      "attempts": 1,
+      "downloads": [],
+      "error": "Project zip download failed.",
+      "updated_at": "2026-04-26T15:15:31.890479+00:00",
+      "generated_clip_count": 2
+    },
+    {
+      "scene_no": 4,
+      "scene_name": "It spots a herd of gazelles, but the wound makes a swift chase impossible.",
+      "status": "failed",
+      "attempts": 1,
+      "downloads": [],
+      "error": "Project zip download failed.",
+      "updated_at": "2026-04-26T15:15:31.890482+00:00",
+      "generated_clip_count": 2
+    },
+    {
+      "scene_no": 5,
+      "scene_name": "The predator crouches low, waiting for a weaker target, but none appear.",
+      "status": "failed",
+      "attempts": 1,
+      "downloads": [],
+      "error": "Project zip download failed.",
+      "updated_at": "2026-04-26T15:15:31.890484+00:00",
+      "generated_clip_count": 2
+    },
+    {
+      "scene_no": 6,
+      "scene_name": "Dust swirls as the sun bleeds into the horizon.",
+      "status": "failed",
+      "attempts": 2,
+      "downloads": [],
+      "error": "Project zip download failed.",
+      "updated_at": "2026-04-26T15:15:31.890486+00:00",
+      "generated_clip_count": 2
+    },
+    {
+      "scene_no": 7,
+      "scene_name": "Alone, it licks the swollen joint, smelling its own blood.",
+      "status": "failed",
+      "attempts": 1,
+      "downloads": [],
+      "error": "Project zip download failed.",
+      "updated_at": "2026-04-26T15:15:31.890489+00:00",
+      "generated_clip_count": 2
+    },
+    {
+      "scene_no": 8,
+      "scene_name": "Each failed hunt tightens the noose of survival.",
+      "status": "failed",
+      "attempts": 2,
+      "downloads": [],
+      "error": "Project zip download failed.",
+      "updated_at": "2026-04-26T15:15:31.890491+00:00",
+      "generated_clip_count": 2
+    },
+    {
+      "scene_no": 9,
+      "scene_name": "The night brings cold and the distant howl of hyenas.",
+      "status": "failed",
+      "attempts": 3,
+      "downloads": [],
+      "error": "Project zip download failed.",
+      "updated_at": "2026-04-26T15:15:31.890493+00:00",
+      "generated_clip_count": 2
+    }
+  ],
+  "flow_tracker": {
+    "downloaded_card_keys": [
+      "fe_id_1877df97-1fcf-4f0b-8ec7-e325c31b5227",
+      "fe_id_1bffd4bb-2e54-430b-a527-8288a3b4c2ae|/fx/tools/flow/project/652057de-3da7-40da-a7b0-2c8ee034355a/edit/3e1931b2-8435-4b16-bfe8-e7f4efb7c872",
+      "fe_id_32562ee9-582f-4e4a-87d6-48e6bc940c35",
+      "fe_id_32562ee9-582f-4e4a-87d6-48e6bc940c35|/fx/tools/flow/project/652057de-3da7-40da-a7b0-2c8ee034355a/edit/a6021611-b4a4-4e82-8b56-37e9f0b8a812",
+      "fe_id_978f69cf-a0b7-4676-9573-ac1ebbe903ab|/fx/tools/flow/project/652057de-3da7-40da-a7b0-2c8ee034355a/edit/d7421efa-7ff0-434b-8e3e-67d74e46d7de",
+      "fe_id_a3952d26-f0ae-4e76-946b-f419150ddd12|/fx/tools/flow/project/652057de-3da7-40da-a7b0-2c8ee034355a/edit/4ba7b41a-0d7e-4fc1-8166-4078262078ce",
+      "fe_id_a83e7ead-bdee-4354-8619-27a6e82021cb|/fx/tools/flow/project/652057de-3da7-40da-a7b0-2c8ee034355a/edit/b71b29c4-9e2f-4cbe-a6c2-11dd88f8bc1a",
+      "fe_id_bf173c6a-d147-443d-a0ac-b98ebb36d75a|/fx/tools/flow/project/652057de-3da7-40da-a7b0-2c8ee034355a/edit/38c1d063-2320-445a-aff5-8dfe36b8264f",
+      "fe_id_c18dee53-9e43-4382-8194-bbf47a38aaac|/fx/tools/flow/project/652057de-3da7-40da-a7b0-2c8ee034355a/edit/d918f357-14f8-4502-86a7-fd78548547ac",
+      "fe_id_c9b627b9-9784-4678-b54e-6890ac56587d|/fx/tools/flow/project/652057de-3da7-40da-a7b0-2c8ee034355a/edit/5ae1a194-2df3-4ba5-836f-c7d3b494c6f1",
+      "fe_id_df73d31f-2ae3-417e-bccc-2b93b2a6e949|/fx/tools/flow/project/652057de-3da7-40da-a7b0-2c8ee034355a/edit/7905ec5f-26bf-4753-83ca-ef465cef9be9",
+      "fe_id_edcca93e-0a91-4a52-84cb-df1700e0cac2",
+      "fe_id_f75c8a87-d235-431d-a332-856f6a78ff7a|/fx/tools/flow/project/652057de-3da7-40da-a7b0-2c8ee034355a/edit/4f2e5e89-7a39-499f-b20d-c3a334c65551",
+      "fe_id_fa983e87-e1f0-4525-b5c2-67e26002043e"
+    ],
+    "failed_card_keys": [
+      "fe_id_1877df97-1fcf-4f0b-8ec7-e325c31b5227",
+      "fe_id_32562ee9-582f-4e4a-87d6-48e6bc940c35",
+      "fe_id_edcca93e-0a91-4a52-84cb-df1700e0cac2",
+      "fe_id_fa983e87-e1f0-4525-b5c2-67e26002043e"
+    ]
+  },
+  "downloaded_cards": [],
+  "flow_project_url": "https://labs.google/fx/tools/flow/project/652057de-3da7-40da-a7b0-2c8ee034355a"
+}

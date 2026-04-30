@@ -1,5 +1,5 @@
-import { useEffect, useRef, useState } from 'react'
-import { Volume2, Loader2, Play, Pause, RefreshCw, ArrowRight, Check, ChevronDown, Square, X, RotateCcw, FolderOpen } from 'lucide-react'
+import { useEffect, useRef, useState, type ClipboardEvent } from 'react'
+import { Volume2, Loader2, Play, Pause, RefreshCw, ArrowRight, Check, ChevronDown, Square, X, RotateCcw, FolderOpen, Copy, ClipboardPaste, Upload } from 'lucide-react'
 import { useStore } from '../../store/useStore'
 import { api, logUIEvent } from '../../api/client'
 import StepCard from './StepCard'
@@ -11,10 +11,12 @@ export default function GenerateVoiceoverStep() {
     voNarrations,
     multiVoNarrations,
     multiScripts,
+    apiKeysConfigured,
     elevenlabsVoices, setElevenLabsVoices,
     selectedVoiceId, setSelectedVoiceId,
     generatedAudioFilename, setGeneratedAudioFilename,
     sceneAudioFilenames, updateSceneAudioFilename, setSceneAudioFilenames,
+    audioStaleReason,
     setActiveStep,
     appendLog,
   } = useStore()
@@ -23,6 +25,7 @@ export default function GenerateVoiceoverStep() {
   const [generatingAll, setGeneratingAll] = useState(false)
   const [confirmCostly, setConfirmCostly] = useState(true)
   const stopRef = useRef(false)
+  const fileInputRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
     api.getAppSettings().then((data) => {
@@ -39,6 +42,9 @@ export default function GenerateVoiceoverStep() {
   const [previewAudio, setPreviewAudio] = useState<HTMLAudioElement | null>(null)
   const [expandedCards, setExpandedCards] = useState<Set<number>>(new Set([0]))
   const [voiceSelectorOpen, setVoiceSelectorOpen] = useState(false)
+  const [addVoiceoverOpen, setAddVoiceoverOpen] = useState(false)
+  const [importingVoiceovers, setImportingVoiceovers] = useState(false)
+  const [voiceoverMessage, setVoiceoverMessage] = useState('')
   // Per-scene manual filename inputs
   const [manualFilenameInput, setManualFilenameInput] = useState<Record<number, string>>({})
 
@@ -47,7 +53,7 @@ export default function GenerateVoiceoverStep() {
     ? voNarrations
     : multiVoNarrations.flat()
   const hasNarrations = effectiveNarrations.length > 0
-  const allGenerated = hasNarrations && sceneAudioFilenames.length === effectiveNarrations.length
+  const allGenerated = !audioStaleReason && hasNarrations && sceneAudioFilenames.length === effectiveNarrations.length
     && sceneAudioFilenames.every(Boolean)
   const anyGenerated = sceneAudioFilenames.some(Boolean)
 
@@ -60,18 +66,33 @@ export default function GenerateVoiceoverStep() {
   }
 
   useEffect(() => {
+    if (!apiKeysConfigured.elevenlabs) {
+      setLoadingVoices(false)
+      return
+    }
     if (elevenlabsVoices.length > 0) return
+
+    let cancelled = false
     setLoadingVoices(true)
+    setError('')
     api.getElevenLabsVoices()
       .then((res) => {
+        if (cancelled) return
         setElevenLabsVoices(res.voices)
         if (res.voices.length > 0 && !selectedVoiceId) {
           setSelectedVoiceId(res.voices[0].voice_id)
         }
       })
-      .catch((e: unknown) => setError(e instanceof Error ? e.message : 'Failed to load voices'))
-      .finally(() => setLoadingVoices(false))
-  }, [])
+      .catch((e: unknown) => {
+        if (cancelled) return
+        setError(e instanceof Error ? e.message : 'Failed to load voices')
+      })
+      .finally(() => {
+        if (!cancelled) setLoadingVoices(false)
+      })
+
+    return () => { cancelled = true }
+  }, [apiKeysConfigured.elevenlabs, elevenlabsVoices.length, selectedVoiceId, setElevenLabsVoices, setSelectedVoiceId])
 
   function playPreview(url: string) {
     if (!url) return
@@ -79,6 +100,129 @@ export default function GenerateVoiceoverStep() {
     const a = new Audio(url)
     setPreviewAudio(a)
     a.play().catch(() => {})
+  }
+
+  function voiceoversToPlainText(): string {
+    return sceneAudioFilenames
+      .slice(0, effectiveNarrations.length)
+      .map((filename, i) => filename ? `Scene ${i + 1}: ${api.audioUrl(filename)}` : '')
+      .filter(Boolean)
+      .join('\n')
+  }
+
+  async function copyVoiceovers() {
+    const text = voiceoversToPlainText()
+    if (!text) return
+    try {
+      await navigator.clipboard.writeText(text)
+      setError('')
+      setVoiceoverMessage('Copied voiceover links to clipboard.')
+      window.setTimeout(() => setVoiceoverMessage(''), 2200)
+    } catch {
+      setError('Clipboard write failed. Check browser clipboard permissions.')
+    }
+  }
+
+  function parseVoiceoverReferences(raw: string): string[] {
+    return raw
+      .split(/\r?\n/)
+      .map((line) => {
+        const trimmed = line.trim()
+        const url = trimmed.match(/https?:\/\/\S+/i)?.[0]
+        if (url) return url.replace(/[),.;]+$/, '')
+        const value = trimmed.includes(':') ? trimmed.slice(trimmed.indexOf(':') + 1).trim() : trimmed
+        return value.replace(/^["']|["']$/g, '')
+      })
+      .filter(Boolean)
+  }
+
+  function localAudioFilenameFromUrl(ref: string): string | null {
+    try {
+      const url = new URL(ref)
+      if (url.hostname !== '127.0.0.1' && url.hostname !== 'localhost') return null
+      const match = url.pathname.match(/\/audio\/([^/]+)$/)
+      return match ? decodeURIComponent(match[1]) : null
+    } catch {
+      return null
+    }
+  }
+
+  async function resolveVoiceoverReference(ref: string): Promise<string> {
+    if (!/^https?:\/\//i.test(ref)) return ref
+    const localFilename = localAudioFilenameFromUrl(ref)
+    if (localFilename) return localFilename
+    const imported = await api.importVoiceoverUrl(ref)
+    return imported.filename
+  }
+
+  function applyImportedVoiceovers(filenames: string[]) {
+    const next = Array.from({ length: effectiveNarrations.length }, (_, i) => filenames[i] ?? sceneAudioFilenames[i] ?? '')
+    setSceneAudioFilenames(next)
+    if (filenames[0]) setGeneratedAudioFilename(filenames[0])
+    setVoiceoverMessage(`Added ${filenames.length} voiceover${filenames.length === 1 ? '' : 's'}.`)
+    window.setTimeout(() => setVoiceoverMessage(''), 2200)
+  }
+
+  async function importVoiceoverReferences(refs: string[]) {
+    if (refs.length === 0) {
+      setError('No voiceover links found in pasted text.')
+      return
+    }
+    setImportingVoiceovers(true)
+    setError('')
+    setVoiceoverMessage('')
+    try {
+      const filenames = await Promise.all(refs.slice(0, effectiveNarrations.length).map(resolveVoiceoverReference))
+      applyImportedVoiceovers(filenames)
+    } catch (e: unknown) {
+      setError(e instanceof Error ? e.message : 'Failed to import voiceovers.')
+    } finally {
+      setImportingVoiceovers(false)
+    }
+  }
+
+  function handleVoiceoverPaste(e: ClipboardEvent<HTMLTextAreaElement>) {
+    const refs = parseVoiceoverReferences(e.clipboardData.getData('text'))
+    e.preventDefault()
+    void importVoiceoverReferences(refs)
+  }
+
+  function fileToBase64(file: File): Promise<string> {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader()
+      reader.onload = () => {
+        const result = reader.result
+        if (typeof result !== 'string') {
+          reject(new Error('Could not read audio file.'))
+          return
+        }
+        resolve(result.split(',')[1] ?? '')
+      }
+      reader.onerror = () => reject(new Error('Could not read audio file.'))
+      reader.readAsDataURL(file)
+    })
+  }
+
+  async function handleVoiceoverFiles(files: FileList | null) {
+    const selected = Array.from(files ?? []).slice(0, effectiveNarrations.length)
+    if (selected.length === 0) return
+    setImportingVoiceovers(true)
+    setError('')
+    setVoiceoverMessage('')
+    try {
+      const filenames = []
+      for (const file of selected) {
+        const content = await fileToBase64(file)
+        const imported = await api.importVoiceoverFile(file.name, content)
+        filenames.push(imported.filename)
+      }
+      applyImportedVoiceovers(filenames)
+    } catch (e: unknown) {
+      setError(e instanceof Error ? e.message : 'Failed to upload voiceovers.')
+    } finally {
+      setImportingVoiceovers(false)
+      if (fileInputRef.current) fileInputRef.current.value = ''
+    }
   }
 
   async function generateScene(index: number) {
@@ -194,6 +338,7 @@ export default function GenerateVoiceoverStep() {
     const isGenerating = generatingScene[flatIndex]
     const isPlaying = playingIndex === flatIndex
     const isDone = Boolean(filename)
+    const isStale = Boolean(audioStaleReason && filename)
     const label = (displayIndex ?? flatIndex) + 1
     const hasNarrationText = Boolean(item?.narration?.trim())
     const manualInput = manualFilenameInput[flatIndex] ?? ''
@@ -203,7 +348,9 @@ export default function GenerateVoiceoverStep() {
       <div key={flatIndex} className="space-y-1">
         <div
           className={`flex items-center gap-3 px-4 py-3 rounded-xl border-2 transition-all ${
-            isDone ? 'border-emerald-100 bg-emerald-50' : 'border-slate-100 bg-slate-50'
+            isStale
+              ? 'border-red-200 bg-red-50'
+              : isDone ? 'border-emerald-100 bg-emerald-50' : 'border-slate-100 bg-slate-50'
           }`}
         >
           <span className="w-7 h-7 shrink-0 rounded-lg bg-slate-200 text-slate-600 text-[11px] font-black flex items-center justify-center">
@@ -216,6 +363,11 @@ export default function GenerateVoiceoverStep() {
             <Loader2 size={16} className="shrink-0 text-slate-400 animate-spin" />
           ) : isDone ? (
             <>
+              {isStale && (
+                <span className="shrink-0 text-[10px] font-black uppercase tracking-widest text-red-500 bg-white/70 border border-red-100 rounded-full px-2 py-0.5">
+                  Stale
+                </span>
+              )}
               <button
                 onClick={() => togglePlay(flatIndex, filename)}
                 className="w-8 h-8 rounded-lg bg-emerald-500 text-white flex items-center justify-center hover:bg-emerald-600 transition-all shrink-0"
@@ -320,9 +472,14 @@ export default function GenerateVoiceoverStep() {
 
             {voiceSelectorOpen && (
               <div className="px-4 pb-4 pt-3">
-                {!loadingVoices && elevenlabsVoices.length === 0 && !error && (
+                {!loadingVoices && elevenlabsVoices.length === 0 && !error && !apiKeysConfigured.elevenlabs && (
                   <p className="text-sm text-slate-400 font-medium">
-                    No voices loaded. Check your ElevenLabs API key in Settings.
+                    Add your ElevenLabs API key in Settings to load voices.
+                  </p>
+                )}
+                {!loadingVoices && elevenlabsVoices.length === 0 && !error && apiKeysConfigured.elevenlabs && (
+                  <p className="text-sm text-slate-400 font-medium">
+                    No voices loaded. Try refreshing the voice list.
                   </p>
                 )}
                 {elevenlabsVoices.length > 0 && (
@@ -373,6 +530,65 @@ export default function GenerateVoiceoverStep() {
               </div>
             )}
           </div>
+
+          <div className="flex flex-wrap gap-2 mb-4">
+            <button
+              onClick={copyVoiceovers}
+              disabled={!anyGenerated}
+              className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-black text-slate-600 bg-slate-100 hover:bg-slate-200 transition-all disabled:opacity-40"
+            >
+              <Copy size={14} />
+              Copy Voiceovers
+            </button>
+            <button
+              onClick={() => setAddVoiceoverOpen((v) => !v)}
+              disabled={importingVoiceovers}
+              className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-black text-violet-700 bg-violet-50 border border-violet-100 hover:bg-violet-100 transition-all disabled:opacity-40"
+            >
+              {importingVoiceovers ? <Loader2 size={14} className="animate-spin" /> : <ClipboardPaste size={14} />}
+              Add Voiceover
+            </button>
+          </div>
+
+          {addVoiceoverOpen && (
+            <div className="mb-4 space-y-2">
+              <textarea
+                onPaste={handleVoiceoverPaste}
+                placeholder="Paste voiceover links here"
+                className="w-full px-3 py-2.5 rounded-xl text-xs bg-white border border-dashed border-slate-300 text-slate-600 outline-none resize-none focus:border-violet-400 focus:ring-4 focus:ring-violet-50 transition-all leading-relaxed"
+                rows={2}
+                disabled={importingVoiceovers}
+              />
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="audio/mpeg,audio/mp3,audio/wav,audio/x-wav,audio/mp4,audio/aac,audio/ogg,.mp3,.wav,.m4a,.aac,.ogg"
+                multiple
+                className="hidden"
+                onChange={(e) => void handleVoiceoverFiles(e.target.files)}
+              />
+              <button
+                onClick={() => fileInputRef.current?.click()}
+                disabled={importingVoiceovers}
+                className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-black text-slate-600 bg-slate-100 hover:bg-slate-200 transition-all disabled:opacity-40"
+              >
+                {importingVoiceovers ? <Loader2 size={14} className="animate-spin" /> : <Upload size={14} />}
+                Upload Audio Files
+              </button>
+            </div>
+          )}
+
+          {voiceoverMessage && (
+            <p className="mb-4 text-xs font-bold text-emerald-600 bg-emerald-50 px-4 py-2 rounded-lg border border-emerald-100">
+              {voiceoverMessage}
+            </p>
+          )}
+
+          {audioStaleReason && anyGenerated && (
+            <p className="mb-4 text-xs font-bold text-red-500 bg-red-50 px-4 py-2 rounded-lg border border-red-100">
+              {audioStaleReason}
+            </p>
+          )}
 
           {/* Generate All + Stop buttons */}
           <div className="flex gap-3 mb-4">
@@ -428,7 +644,9 @@ export default function GenerateVoiceoverStep() {
                 const doneCount = scenes.filter((_, si) => Boolean(sceneAudioFilenames[offset + si])).length
 
                 return (
-                  <div key={scriptIdx} className="rounded-2xl border border-slate-100 bg-white overflow-hidden shadow-sm">
+                  <div key={scriptIdx} className={`rounded-2xl border bg-white overflow-hidden shadow-sm transition-colors ${
+                    audioStaleReason && doneCount > 0 ? 'border-red-200' : 'border-slate-100'
+                  }`}>
                     <button
                       onClick={() => setExpandedCards((prev) => {
                         const next = new Set(prev)

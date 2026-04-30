@@ -6,7 +6,7 @@ import StepCard from './StepCard'
 
 export default function PickStoryStep() {
   const {
-    runState, setSelectedStoryId, setSelectedStoryTitle, resetContentCreation,
+    runState, setSelectedStoryId, setSelectedStoryTitle, activeStep,
   } = useStore()
 
   const [dbIdeas, setDbIdeas] = useState<IdeaDbEntry[]>([])
@@ -30,23 +30,31 @@ export default function PickStoryStep() {
     loadDb()
   }, [])
 
+  useEffect(() => {
+    if (activeStep === 6) loadDb()
+  }, [activeStep])
+
   const selected = dbIdeas[selectedIndex] ?? null
 
   useEffect(() => {
-    if (selected) {
+    if (selected && selected.vo_narrations.length > 0) {
       setSelectedStoryId(selected.story_id)
       setSelectedStoryTitle(selected.title)
+    } else {
+      setSelectedStoryId('')
+      setSelectedStoryTitle('')
     }
   }, [selected, setSelectedStoryId, setSelectedStoryTitle])
 
   async function handleRemoveIdea() {
     if (!selected) return
-    if (!confirm(`Remove "${selected.title}" permanently? This deletes it from the database and Ideas.md.`)) return
+    if (!confirm(`Remove "${selected.title}" permanently? This deletes the saved idea, metadata, and any saved run progress for it.`)) return
     setRemoving(true)
     setActionError('')
     try {
       await api.deleteIdeaFromDb(selected.story_id)
-      resetContentCreation()
+      setSelectedStoryId('')
+      setSelectedStoryTitle('')
       await loadDb()
     } catch (e: unknown) {
       setActionError(e instanceof Error ? e.message : 'Failed to remove idea')
@@ -61,7 +69,9 @@ export default function PickStoryStep() {
     setClearing(true)
     setActionError('')
     try {
-      await api.deleteIdeaFromDb(selected.story_id)
+      await api.clearIdeaMetadata(selected.story_id)
+      setSelectedStoryId('')
+      setSelectedStoryTitle('')
       await loadDb()
     } catch (e: unknown) {
       setActionError(e instanceof Error ? e.message : 'Failed to clear metadata')
@@ -110,6 +120,14 @@ export default function PickStoryStep() {
                 <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1">Description</p>
                 <p className="text-sm text-slate-700 font-medium leading-relaxed">{selected.description}</p>
               </div>
+
+              {selected.vo_narrations.length === 0 && (
+                <div className="px-4 py-3 rounded-xl bg-amber-50 border border-amber-100">
+                  <p className="text-xs font-bold text-amber-700">
+                    Metadata is empty. Regenerate narration and VEO prompts before using this story for Flow.
+                  </p>
+                </div>
+              )}
 
               {/* Script preview (collapsible) */}
               <div className="rounded-xl border border-slate-100 overflow-hidden">
@@ -221,4 +239,3 @@ function ActionBtn({
     </button>
   )
 }
-

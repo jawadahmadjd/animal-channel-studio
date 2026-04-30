@@ -11,7 +11,7 @@ import { api, REQUIRED_BRIDGE_VERSION } from './api/client'
 
 export default function App() {
   const {
-    activeView, setActiveView, setUpdateReady, setAdvanced,
+    activeView, setActiveView, setUpdateReady,
     bridgeReady, setBridgeReady, setApiKeysConfigured,
     setupStage, setSetupProgress,
   } = useStore()
@@ -43,12 +43,6 @@ export default function App() {
       const noDeepSeek = !data.deepseek_api_key || data.deepseek_api_key === ''
       const noElevenLabs = !data.elevenlabs_api_key || data.elevenlabs_api_key === ''
       if (noDeepSeek && noElevenLabs) setActiveView('settings')
-      setAdvanced({
-        ...(typeof data.wait_between_scenes === 'number' ? { waitBetweenSec: data.wait_between_scenes } : {}),
-        ...(typeof data.max_retries_per_scene === 'number' ? { sceneMaxRetries: data.max_retries_per_scene } : {}),
-        ...(typeof data.pipeline_timeout_sec === 'number' ? { timeoutSec: data.pipeline_timeout_sec } : {}),
-        ...(typeof data.flow_headless === 'boolean' ? { headless: data.flow_headless } : {}),
-      })
     } catch {
       // During setup keep retrying forever — bridge isn't up yet
       // After setup (returning user), give up after 20 seconds
@@ -60,7 +54,7 @@ export default function App() {
         setBridgeError(true)
       }
     }
-  }, [setBridgeReady, setActiveView, setAdvanced, setApiKeysConfigured])
+  }, [setBridgeReady, setActiveView, setApiKeysConfigured])
 
   useEffect(() => {
     pollBridge()

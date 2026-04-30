@@ -32,12 +32,13 @@ function tryParseError(text: string): StructuredError | null {
 function ErrorRow({ line }: { line: LogLine }) {
   const err = tryParseError(line.text)
   if (!err) return null
+  const errorDetail = err.detail
 
   const [expanded, setExpanded] = useState(false)
   const [copied, setCopied] = useState(false)
 
   function handleCopy() {
-    navigator.clipboard.writeText(err.detail).then(() => {
+    navigator.clipboard.writeText(errorDetail).then(() => {
       setCopied(true)
       setTimeout(() => setCopied(false), 1500)
     })
@@ -67,7 +68,7 @@ function ErrorRow({ line }: { line: LogLine }) {
       </div>
       {expanded && (
         <pre className="px-4 pb-4 text-[10px] font-mono text-red-400/70 whitespace-pre-wrap break-all leading-relaxed border-t border-red-900/40 pt-3">
-          {err.detail}
+          {errorDetail}
         </pre>
       )}
     </div>

@@ -25,19 +25,20 @@ from playwright.sync_api import BrowserContext, Page, TimeoutError, sync_playwri
 
 
 ROOT_DIR = Path(__file__).resolve().parents[1]
+DATA_DIR = Path(os.environ.get("ANIMAL_STUDIO_DATA_DIR", str(ROOT_DIR)))
 
 
 class FlowGenerationFailed(Exception):
     """VEO generation failed (detected via the Flow UI failure card)."""
-STATE_DIR = ROOT_DIR / "state"
-LOGS_DIR = ROOT_DIR / "logs"
+STATE_DIR = DATA_DIR / "state"
+LOGS_DIR = DATA_DIR / "logs"
 SETTINGS_TRACE_PATH = LOGS_DIR / "flow_settings_trace.jsonl"
 SETTINGS_NEEDS_PATH = LOGS_DIR / "flow_settings_needs.jsonl"
 DEFAULT_AUTH_PATH = STATE_DIR / "flow_auth.json"
 DEFAULT_SELECTORS_PATH = STATE_DIR / "flow_selectors.json"
 DEFAULT_ELEMENTS_PATH = STATE_DIR / "flow_elements.json"
 DEFAULT_SETTINGS_PATH = STATE_DIR / "flow_settings.json"
-DEFAULT_DOWNLOADS_DIR = ROOT_DIR / "downloads"
+DEFAULT_DOWNLOADS_DIR = DATA_DIR / "downloads"
 DEFAULT_FLOW_URL = "https://labs.google/fx/tools/flow"
 
 
@@ -145,6 +146,12 @@ def default_selectors() -> dict[str, list[str]]:
         "settings_button": [
             "button[aria-haspopup='menu']:has(i:has-text('crop_9_16'))",
             "button[aria-haspopup='menu']:has(i:has-text('crop_16_9'))",
+            "button[aria-haspopup='menu']:has(i:has-text('crop_landscape'))",
+            "button[aria-haspopup='menu']:has(i:has-text('crop_square'))",
+            "button[aria-haspopup='menu']:has(i:has-text('crop_portrait'))",
+            "button[aria-haspopup='menu']:has(i:has-text('crop_4_3'))",
+            "button[aria-haspopup='menu']:has(i:has-text('crop_1_1'))",
+            "button[aria-haspopup='menu']:has(i:has-text('crop_3_4'))",
             "button.sc-67b77035-1",
         ],
         "type_tab_image": [
@@ -230,10 +237,14 @@ def default_selectors() -> dict[str, list[str]]:
             "div:has-text('720p')",
         ],
         "aspect_ratio_buttons": [
+            "button[role='tab']:has-text('4:3')",
+            "button[role='tab']:has-text('1:1')",
+            "button[role='tab']:has-text('3:4')",
             "button[role='tab']:has-text('9:16')",
             "button[role='tab']:has-text('16:9')",
         ],
         "clip_count_buttons": [
+            "button[role='tab']:text-is('1x')",
             "button[role='tab']:text-is('x1')",
             "button[role='tab']:text-is('x2')",
             "button[role='tab']:text-is('x3')",
@@ -249,12 +260,26 @@ def default_selectors() -> dict[str, list[str]]:
             "button.sc-a0dcecfb-1",
             "button[aria-haspopup='listbox']",
             "button:has-text('Veo')",
+            "button:has-text('Nano')",
+            "button:has-text('Banana')",
+            "button:has-text('Imagen')",
             "[role='combobox']",
         ],
         "model_options": [
             "[role='menuitemradio']",
             "[role='menuitem']",
             "[role='option']",
+        ],
+        "image_model_options": [
+            "[role='menuitemradio']:has-text('Nano Banana Pro')",
+            "[role='menuitemradio']:has-text('Nano Banana 2')",
+            "[role='menuitemradio']:has-text('Imagen 4')",
+            "[role='menuitem']:has-text('Nano Banana Pro')",
+            "[role='menuitem']:has-text('Nano Banana 2')",
+            "[role='menuitem']:has-text('Imagen 4')",
+            "[role='option']:has-text('Nano Banana Pro')",
+            "[role='option']:has-text('Nano Banana 2')",
+            "[role='option']:has-text('Imagen 4')",
         ],
         "project_card": [
             "[role='listitem']",
@@ -748,7 +773,8 @@ def _select_model_dropdown(
     )
 
 
-def _ensure_settings_panel_open(page: Page) -> bool:
+def _ensure_settings_panel_open(page: Page, selectors_cfg: dict[str, Any] | None = None) -> bool:
+    selectors_cfg = selectors_cfg or load_selectors_config(DEFAULT_SELECTORS_PATH, DEFAULT_ELEMENTS_PATH)
     # Markers that are only visible when the settings panel is open.
     # Clip-count tabs (x1-x4) have NO icons so :text-is works perfectly.
     # Orientation tabs (9:16/16:9) DO have crop icons, so use :has-text.
@@ -758,11 +784,24 @@ def _ensure_settings_panel_open(page: Page) -> bool:
         "button[role='tab']:text-is('x3')",
         "button[role='tab']:text-is('x2')",
         "button[role='tab']:text-is('x1')",
+        "button[role='tab']:text-is('1x')",
         "button[role='tab']:has-text('9:16')",
         "button[role='tab']:has-text('16:9')",
+        "button[role='tab']:has-text('4:3')",
+        "button[role='tab']:has-text('1:1')",
+        "button[role='tab']:has-text('3:4')",
         "button[aria-haspopup='menu']:has(i:has-text('arrow_drop_down'))",
         "button:has-text('Veo')",
+        "button:has-text('Nano')",
+        "button:has-text('Banana')",
+        "button:has-text('Imagen')",
     ]
+    marker_sels = (
+        selector_list(selectors_cfg, "clip_count_buttons")
+        + selector_list(selectors_cfg, "aspect_ratio_buttons")
+        + selector_list(selectors_cfg, "model_dropdown")
+        + marker_sels
+    )
     marker, _ = first_visible_locator(page, marker_sels, 500)
     if marker:
         _log_settings_trace("settings_panel_state", {"state": "already_open"})
@@ -770,9 +809,15 @@ def _ensure_settings_panel_open(page: Page) -> bool:
 
     # The settings toggle button shows current mode + orientation icon + clip count.
     # It is NOT labeled 'Settings'. Distinguish from model dropdown (arrow_drop_down icon).
-    settings_btn_sels = [
+    settings_btn_sels = selector_list(selectors_cfg, "settings_button") + [
         "button[aria-haspopup='menu']:has(i:has-text('crop_9_16'))",
         "button[aria-haspopup='menu']:has(i:has-text('crop_16_9'))",
+        "button[aria-haspopup='menu']:has(i:has-text('crop_landscape'))",
+        "button[aria-haspopup='menu']:has(i:has-text('crop_square'))",
+        "button[aria-haspopup='menu']:has(i:has-text('crop_portrait'))",
+        "button[aria-haspopup='menu']:has(i:has-text('crop_4_3'))",
+        "button[aria-haspopup='menu']:has(i:has-text('crop_1_1'))",
+        "button[aria-haspopup='menu']:has(i:has-text('crop_3_4'))",
         "button.sc-67b77035-1",
     ]
     for s_sel in settings_btn_sels:
@@ -811,8 +856,11 @@ def apply_settings(
     sub_type = settings_cfg.get("sub_type",     "").strip()
     aspect   = settings_cfg.get("aspect_ratio", "").strip()
     count    = settings_cfg.get("clip_count",   "").strip()
+    if count == "x1":
+        count = "1x"
     model    = settings_cfg.get("model",        "").strip()
     duration = settings_cfg.get("duration",     "").strip()
+    selectors_cfg = load_selectors_config(selectors_path or DEFAULT_SELECTORS_PATH, elements_path)
 
     print(f"  [{_ts()}] SETTINGS applying --"
           f"  mode={mode}  sub_type={sub_type or 'n/a'}  aspect={aspect}  clips={count}"
@@ -832,6 +880,12 @@ def apply_settings(
             "[role='textbox'][contenteditable='true']",
             "button[aria-haspopup='menu']:has(i:has-text('crop_9_16'))",
             "button[aria-haspopup='menu']:has(i:has-text('crop_16_9'))",
+            "button[aria-haspopup='menu']:has(i:has-text('crop_landscape'))",
+            "button[aria-haspopup='menu']:has(i:has-text('crop_square'))",
+            "button[aria-haspopup='menu']:has(i:has-text('crop_portrait'))",
+            "button[aria-haspopup='menu']:has(i:has-text('crop_4_3'))",
+            "button[aria-haspopup='menu']:has(i:has-text('crop_1_1'))",
+            "button[aria-haspopup='menu']:has(i:has-text('crop_3_4'))",
             "button[role='tab']:text-is('x4')",
         ],
         12000,
@@ -844,7 +898,7 @@ def apply_settings(
     page.wait_for_timeout(1000)
 
     print(f"             ACTION  Checking settings panel visibility...")
-    settings_visible = _ensure_settings_panel_open(page)
+    settings_visible = _ensure_settings_panel_open(page, selectors_cfg)
     if settings_visible:
         print(f"             INFO    Settings panel already open")
     else:
@@ -864,10 +918,10 @@ def apply_settings(
         _click_button_by_text(page, count, "clip count")
         page.wait_for_timeout(3000)
     if model:
-        _ensure_settings_panel_open(page)
+        _ensure_settings_panel_open(page, selectors_cfg)
         _select_model_dropdown(page, model, selectors_path, elements_path)
     if mode == "Video" and duration:
-        _ensure_settings_panel_open(page)
+        _ensure_settings_panel_open(page, selectors_cfg)
         _click_button_by_text(page, duration, "duration")
 
     print(f"  [{_ts()}] ACTION    collapsing settings menu...")
@@ -1226,14 +1280,18 @@ def list_clip_card_summaries(page: Page, selectors_cfg: dict[str, Any]) -> list[
                     const tileHost = el.closest('[data-tile-id]') || el.querySelector('[data-tile-id]');
                     const tileId = tileHost ? (tileHost.getAttribute('data-tile-id') || '') : '';
                     const anchor = el.closest('a[href*="/edit/"]') || el.querySelector('a[href*="/edit/"]');
-                    const href = anchor ? (anchor.getAttribute('href') || '') : '';
-                    const poster = video ? (video.getAttribute("poster") || "") : "";
-                    const videoSrc = video ? (video.currentSrc || video.src || "") : "";
-                    const sourceSrc = source ? (source.src || "") : "";
-                    const imgSrc = img ? (img.currentSrc || img.src || "") : "";
+                    const rawHref = anchor ? (anchor.getAttribute('href') || '') : '';
+                    const href = rawHref ? new URL(rawHref, window.location.href).href : '';
+                    const abs = value => value ? new URL(value, window.location.href).href : "";
+                    const poster = video ? abs(video.getAttribute("poster") || "") : "";
+                    const videoSrc = video ? abs(video.currentSrc || video.src || "") : "";
+                    const sourceSrc = source ? abs(source.src || "") : "";
+                    const imgSrc = img ? abs(img.currentSrc || img.src || "") : "";
                     const bg = getComputedStyle(el).backgroundImage || "";
+                    const bgMatch = bg.match(/url\\(["']?(.*?)["']?\\)/);
+                    const bgSrc = bgMatch ? abs(bgMatch[1]) : "";
                     const failed = /failed|try again|something went wrong/i.test(text);
-                    return { text, poster, videoSrc, sourceSrc, imgSrc, bg, failed, tileId, href };
+                    return { text, poster, videoSrc, sourceSrc, imgSrc, bgSrc, failed, tileId, href };
                 }"""
             )
             title = ""
@@ -1296,6 +1354,9 @@ def list_clip_card_summaries(page: Page, selectors_cfg: dict[str, Any]) -> list[
                     "href": href,
                     "tile_id": str(info.get("tileId", "")).strip(),
                     "label": (title or str(info.get("text", "")).strip())[:80],
+                    "video_src": str(info.get("videoSrc", "") or info.get("sourceSrc", "")).strip(),
+                    "poster_src": str(info.get("poster", "")).strip(),
+                    "thumbnail_src": str(info.get("imgSrc", "") or info.get("poster", "") or info.get("bgSrc", "")).strip(),
                 }
             )
         except Exception:
@@ -1648,6 +1709,7 @@ def download_clips_via_edit_pages(
     project_url: str,
     save_dir: Path,
     resolution: str = "720p",
+    edit_hrefs: list[str] | None = None,
 ) -> list[Path]:
     """
     For each clip in the project, navigate to its /edit/<id> page,
@@ -1658,14 +1720,17 @@ def download_clips_via_edit_pages(
     downloaded: list[Path] = []
     base_url = "https://labs.google"
 
-    _print(f"  [{_ts()}] DOWNLOAD collecting clip edit links from project page...")
-    page.goto(project_url, wait_until="networkidle", timeout=60000)
-    page.wait_for_timeout(5000)
+    if edit_hrefs is None:
+        _print(f"  [{_ts()}] DOWNLOAD collecting clip edit links from project page...")
+        page.goto(project_url, wait_until="networkidle", timeout=60000)
+        page.wait_for_timeout(5000)
 
-    edit_hrefs: list[str] = page.evaluate(
-        "() => [...document.querySelectorAll('a[href*=\"/edit/\"]')]"
-        ".map(a => a.getAttribute('href')).filter(Boolean)"
-    )
+        edit_hrefs = page.evaluate(
+            "() => [...document.querySelectorAll('a[href*=\"/edit/\"]')]"
+            ".map(a => a.getAttribute('href')).filter(Boolean)"
+        )
+    else:
+        _print(f"  [{_ts()}] DOWNLOAD using {len(edit_hrefs)} tracked clip edit link(s)")
     _print(f"  [{_ts()}] Found {len(edit_hrefs)} clip(s) to download")
 
     for i, href in enumerate(edit_hrefs):
@@ -1864,4 +1929,3 @@ def parse_args():
 
 if __name__ == "__main__":
     main()
-

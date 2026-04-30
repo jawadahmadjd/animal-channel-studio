@@ -1,7 +1,8 @@
 {
   "mode": "Video",
+  "sub_type": "Frames",
   "aspect_ratio": "9:16",
-  "clip_count": "x1",
+  "clip_count": "x4",
   "duration": "8s",
-  "model": "Veo 3.1 - Fast"
+  "model": "Veo 3.1 - Fast [Lower Priority]"
 }

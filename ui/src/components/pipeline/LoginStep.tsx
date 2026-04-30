@@ -4,24 +4,26 @@ import { api, subscribeToStream, classifyLogLine, logUIEvent } from '../../api/c
 import StepCard from './StepCard'
 
 export default function LoginStep() {
-  const { isAuthorized, setIsAuthorized, advanced, appendLog, runState, setRunState, setActiveStep } = useStore()
+  const { isAuthorized, setIsAuthorized, appendLog, runState, setRunState, setActiveStep } = useStore()
 
   async function handleConnect() {
-    logUIEvent('click:login:connect', { headless: advanced.headless })
+    logUIEvent('click:login:connect')
     try {
       setRunState('running')
       setActiveStep(1)
       appendLog({ text: '\n===== Open Google Flow Login =====\n', level: 'header', timestamp: ts() })
-      await api.runLogin(advanced.headless)
+      await api.runLogin()
       const unsub = subscribeToStream(
         (line) => appendLog({ text: line, level: classifyLogLine(line), timestamp: ts() }),
-        async () => {
-          setRunState('idle')
+        async (success) => {
+          setRunState(success ? 'idle' : 'error')
           unsub()
-          try {
-            const status = await api.getAuthStatus()
-            setIsAuthorized(status.authorized)
-          } catch { /* ignore */ }
+          if (success) {
+            try {
+              const status = await api.getAuthStatus()
+              setIsAuthorized(status.authorized)
+            } catch { /* ignore */ }
+          }
         }
       )
     } catch {
