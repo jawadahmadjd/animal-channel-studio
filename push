@@ -27,6 +27,7 @@ PACKAGE_JSON = UI_DIR / "package.json"
 PACKAGE_LOCK = UI_DIR / "package-lock.json"
 UI_RUNNER = ROOT / "scripts" / "ui_runner.py"
 SEMVER_RE = re.compile(r"^\d+\.\d+\.\d+(?:-[0-9A-Za-z.-]+)?$")
+DIGIT_CYCLE_RE = re.compile(r"^(\d+)\.(\d+)\.(\d+)$")
 
 
 def read_bool_env(name: str, default: bool) -> bool:
@@ -110,13 +111,59 @@ def get_package_version() -> str:
     return version
 
 
-def bump_version(version: str | None, bump: str, preid: str | None) -> str:
-    cmd = ["npm.cmd" if os.name == "nt" else "npm", "--prefix", str(UI_DIR), "version"]
-    if version:
-        validate_semver(version)
-        cmd.append(version)
+def next_digit_cycle_version(current_version: str) -> str:
+    match = DIGIT_CYCLE_RE.match(current_version)
+    if not match:
+        raise RuntimeError(
+            "Digit-cycle versioning requires a plain x.y.z version (no prerelease suffix). "
+            f"Current version is '{current_version}'."
+        )
+    major, minor, patch = (int(match.group(1)), int(match.group(2)), int(match.group(3)))
+
+    if patch < 9:
+        patch += 1
     else:
-        cmd.append(bump)
+        patch = 0
+        minor += 1
+        if minor > 9:
+            minor = 0
+            major += 1
+    return f"{major}.{minor}.{patch}"
+
+
+def resolve_target_version(
+    *,
+    current_version: str,
+    explicit_version: str | None,
+    bump: str,
+    preid: str | None,
+    version_strategy: str,
+) -> str | None:
+    if explicit_version:
+        validate_semver(explicit_version)
+        return explicit_version
+    if version_strategy == "digit-cycle" and bump == "patch" and not preid:
+        return next_digit_cycle_version(current_version)
+    return None
+
+
+def bump_version(
+    *,
+    current_version: str,
+    version: str | None,
+    bump: str,
+    preid: str | None,
+    version_strategy: str,
+) -> str:
+    cmd = ["npm.cmd" if os.name == "nt" else "npm", "--prefix", str(UI_DIR), "version"]
+    target_version = resolve_target_version(
+        current_version=current_version,
+        explicit_version=version,
+        bump=bump,
+        preid=preid,
+        version_strategy=version_strategy,
+    )
+    cmd.append(target_version or bump)
     cmd.append("--no-git-tag-version")
     if preid:
         cmd.extend(["--preid", preid])
@@ -199,7 +246,13 @@ def parse_args() -> argparse.Namespace:
         "--bump",
         default=os.getenv("PUSH_DEFAULT_BUMP", "patch"),
         choices=["patch", "minor", "major", "prepatch", "preminor", "premajor", "prerelease"],
-        help="Semver bump type (ignored when --version is provided).",
+        help="Bump type (ignored when --version is provided).",
+    )
+    parser.add_argument(
+        "--version-strategy",
+        default=os.getenv("PUSH_VERSION_STRATEGY", "digit-cycle"),
+        choices=["digit-cycle", "semver"],
+        help="Auto version strategy. digit-cycle follows x.y.0..x.y.9 then x.(y+1).0, with x.9.9 -> (x+1).0.0.",
     )
     parser.add_argument(
         "--version",
@@ -265,7 +318,13 @@ def main() -> int:
         run_check = False
 
     if args.dry_run:
-        target = args.version or f"{args.bump} (from {old_version})"
+        target = resolve_target_version(
+            current_version=old_version,
+            explicit_version=args.version,
+            bump=args.bump,
+            preid=args.preid,
+            version_strategy=args.version_strategy,
+        ) or f"{args.bump} (from {old_version}, strategy={args.version_strategy})"
         print("[dry-run] Planned release actions:")
         print(f"  - branch: {branch}")
         print(f"  - remote: {args.remote}")
@@ -275,7 +334,13 @@ def main() -> int:
         return 0
 
     run_build_check(skip=not run_check)
-    new_version = bump_version(args.version, args.bump, args.preid)
+    new_version = bump_version(
+        current_version=old_version,
+        version=args.version,
+        bump=args.bump,
+        preid=args.preid,
+        version_strategy=args.version_strategy,
+    )
     sync_version_references(new_version)
 
     tag = f"{args.tag_prefix}{new_version}"

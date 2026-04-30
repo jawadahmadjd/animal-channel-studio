@@ -19,7 +19,9 @@ python push
 ```
 
 Default behavior:
-- `patch` bump (for example `1.2.8 -> 1.2.9`)
+- digit-cycle auto bump for patch releases:
+  - `1.3.0 -> 1.3.1 -> ... -> 1.3.9 -> 1.4.0`
+  - `1.9.9 -> 2.0.0`
 - stages all changes with `git add -A`
 - runs UI build check before release
 - commit message: `chore(release): vX.Y.Z`
@@ -36,6 +38,12 @@ Minor release:
 
 ```powershell
 python push --bump minor
+```
+
+Use standard semver strategy instead of digit-cycle:
+
+```powershell
+python push --version-strategy semver
 ```
 
 Explicit version:
@@ -67,6 +75,7 @@ python push --no-stage-all
 You can set defaults without putting secrets in source:
 
 - `PUSH_DEFAULT_BUMP` (default: `patch`)
+- `PUSH_VERSION_STRATEGY` (`digit-cycle` or `semver`, default: `digit-cycle`)
 - `PUSH_PREID` (for prerelease identifiers)
 - `PUSH_REMOTE` (default: `origin`)
 - `PUSH_BRANCH` (default: current git branch)
@@ -98,7 +107,9 @@ setx PUSH_DEFAULT_BUMP "minor"
 - `get_current_branch()`: Reads current git branch and blocks detached HEAD.
 - `validate_semver(version)`: Validates explicit version format.
 - `get_package_version()`: Reads current app version from `ui/package.json`.
-- `bump_version(version, bump, preid)`: Executes npm version bump without auto-tag.
+- `next_digit_cycle_version(current_version)`: Computes the next version in your custom cycle.
+- `resolve_target_version(...)`: Decides explicit/auto target version based on options.
+- `bump_version(...)`: Executes version bump without auto-tag.
 - `sync_version_references(version)`: Updates known hardcoded version labels in local files.
 - `run_build_check(skip)`: Runs or skips pre-release UI build check.
 - `stage_files(stage_all)`: Stages either all changes or only version files.
