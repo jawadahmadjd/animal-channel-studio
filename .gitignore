@@ -1,7 +1,13 @@
 # Environment & secrets
 .env
+.env.*
+!.env.example
 state/flow_auth.json
+state/app_settings.json
 state/login_screenshot.png
+*.pem
+*.key
+*.p12
 
 # Python
 .venv/

@@ -20,6 +20,7 @@ import requests as _requests
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse, StreamingResponse
+from dotenv import load_dotenv
 from pydantic import BaseModel, field_validator
 from starlette.middleware.base import BaseHTTPMiddleware
 
@@ -35,11 +36,46 @@ from starlette.middleware.base import BaseHTTPMiddleware
 
 ROOT_DIR  = Path(__file__).resolve().parents[1]   # scripts sibling in both dev & pkg
 BASE_DATA_DIR  = Path(os.environ.get("ANIMAL_STUDIO_DATA_DIR", str(ROOT_DIR)))
+SECRET_ENV_MAP = {
+    "deepseek_api_key": "DEEPSEEK_API_KEY",
+    "elevenlabs_api_key": "ELEVENLABS_API_KEY",
+}
+SECRET_SETTING_KEYS = frozenset(SECRET_ENV_MAP.keys())
+SECRET_REDACTION = "***"
 
 IDEAS_FILE    = ROOT_DIR / "Ideas.md"  # legacy; kept for _validate_idea_index fallback only
 SCRIPTS_DIR   = ROOT_DIR / "scripts"
 PYTHON_EXE    = sys.executable
 BOOTSTRAP_APP_SETTINGS = BASE_DATA_DIR / "state" / "app_settings.json"
+
+
+def _candidate_env_files() -> list[Path]:
+    candidates: list[Path] = []
+    explicit = os.environ.get("ANIMAL_STUDIO_ENV_FILE", "").strip()
+    if explicit:
+        candidates.append(Path(explicit).expanduser())
+    candidates.append(BASE_DATA_DIR / ".env")
+    candidates.append(ROOT_DIR / ".env")
+    unique: list[Path] = []
+    seen: set[str] = set()
+    for candidate in candidates:
+        key = str(candidate)
+        if key in seen:
+            continue
+        seen.add(key)
+        unique.append(candidate)
+    return unique
+
+
+def _resolve_env_file() -> Path:
+    for candidate in _candidate_env_files():
+        if candidate.exists():
+            return candidate
+    return _candidate_env_files()[-1]
+
+
+ENV_FILE = _resolve_env_file()
+load_dotenv(ENV_FILE, override=False)
 
 
 def _read_json(path: Path) -> dict:
@@ -50,6 +86,66 @@ def _read_json(path: Path) -> dict:
         return payload if isinstance(payload, dict) else {}
     except Exception:
         return {}
+
+
+def _quote_env_value(value: str) -> str:
+    if value == "":
+        return ""
+    if re.search(r'[\s#"\'=]', value):
+        escaped = value.replace("\\", "\\\\").replace('"', '\\"')
+        return f'"{escaped}"'
+    return value
+
+
+def _upsert_env_vars(updates: dict[str, str]) -> None:
+    if not updates:
+        return
+    ENV_FILE.parent.mkdir(parents=True, exist_ok=True)
+    lines: list[str] = []
+    if ENV_FILE.exists():
+        lines = ENV_FILE.read_text(encoding="utf-8").splitlines()
+    key_pattern = re.compile(r"^\s*(?:export\s+)?([A-Za-z_][A-Za-z0-9_]*)\s*=")
+    key_to_index: dict[str, int] = {}
+    for idx, line in enumerate(lines):
+        match = key_pattern.match(line)
+        if match:
+            key_to_index[match.group(1)] = idx
+
+    for key, value in updates.items():
+        normalized = str(value).strip()
+        env_line = f"{key}={_quote_env_value(normalized)}"
+        if key in key_to_index:
+            lines[key_to_index[key]] = env_line
+        else:
+            lines.append(env_line)
+        os.environ[key] = normalized
+
+    ENV_FILE.write_text("\n".join(lines).rstrip() + "\n", encoding="utf-8")
+    load_dotenv(ENV_FILE, override=True)
+
+
+def _split_secret_settings(payload: dict) -> tuple[dict, dict]:
+    secret_updates: dict[str, str] = {}
+    safe_payload: dict = {}
+    for key, value in payload.items():
+        if key in SECRET_SETTING_KEYS:
+            env_key = SECRET_ENV_MAP[key]
+            normalized = str(value).strip()
+            if normalized and normalized != SECRET_REDACTION:
+                secret_updates[env_key] = normalized
+            continue
+        safe_payload[key] = value
+    return safe_payload, secret_updates
+
+
+def _sanitize_settings_file(path: Path, payload: dict) -> dict:
+    safe_payload, secret_updates = _split_secret_settings(payload)
+    if secret_updates:
+        _upsert_env_vars(secret_updates)
+    if safe_payload != payload:
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text(json.dumps(safe_payload, indent=2, ensure_ascii=False), encoding="utf-8")
+    return safe_payload
 
 
 def _resolve_initial_data_dir() -> Path:
@@ -133,8 +229,6 @@ blog.info(f"ROOT_DIR={ROOT_DIR}  DATA_DIR={DATA_DIR}")
 # ── App settings (merged from app_settings.json + env vars) ───────────────────
 
 _DEFAULT_APP_SETTINGS = {
-    "deepseek_api_key": "",
-    "elevenlabs_api_key": "",
     "output_dir": "",
     "flow_headless": False,
     "wait_between_scenes": 5,
@@ -167,9 +261,13 @@ def _flow_runtime_from_settings() -> dict:
 
 def _load_app_settings() -> dict:
     saved = _read_json(APP_SETTINGS)
+    if saved:
+        saved = _sanitize_settings_file(APP_SETTINGS, saved)
     if not saved and APP_SETTINGS != BOOTSTRAP_APP_SETTINGS:
         # First run after data-dir migration: bootstrap settings can seed the new location.
         saved = _read_json(BOOTSTRAP_APP_SETTINGS)
+        if saved:
+            saved = _sanitize_settings_file(BOOTSTRAP_APP_SETTINGS, saved)
     merged = {**_DEFAULT_APP_SETTINGS, **saved}
     if not merged.get("output_dir"):
         merged["output_dir"] = str(DATA_DIR)
@@ -229,19 +327,22 @@ def _set_data_dir(new_dir: Path, migrate_from: Path | None = None) -> None:
 
 
 def _sync_bootstrap_settings(current: dict) -> None:
-    _save_json(BOOTSTRAP_APP_SETTINGS, {**current, "output_dir": str(DATA_DIR)})
+    safe_current, secret_updates = _split_secret_settings(current)
+    if secret_updates:
+        _upsert_env_vars(secret_updates)
+    _save_json(BOOTSTRAP_APP_SETTINGS, {**safe_current, "output_dir": str(DATA_DIR)})
 
 
 def _save_app_settings(new_values: dict) -> None:
     APP_SETTINGS.parent.mkdir(parents=True, exist_ok=True)
+    safe_values, secret_updates = _split_secret_settings(new_values)
+    if secret_updates:
+        _upsert_env_vars(secret_updates)
+        if "_ENV" in globals():
+            _ENV.update(secret_updates)
+
     current = _load_app_settings()
-    _KEY_FIELDS = {"deepseek_api_key", "elevenlabs_api_key"}
-    for k, v in new_values.items():
-        # Never overwrite a saved key with the redaction sentinel or an empty string
-        if v == "***":
-            continue
-        if k in _KEY_FIELDS and v == "" and current.get(k):
-            continue
+    for k, v in safe_values.items():
         current[k] = v
     configured_dir = str(current.get("output_dir", "")).strip()
     if configured_dir:
@@ -257,20 +358,16 @@ def _save_app_settings(new_values: dict) -> None:
 
 # ── Credential resolution (settings file > env vars) ──────────────────────────
 
-def _get_api_key(setting_key: str, env_key: str) -> str:
-    cfg = _load_app_settings()
-    from_file = cfg.get(setting_key, "")
-    if from_file:
-        return str(from_file)
-    return os.getenv(env_key, "")
+def _get_api_key(env_key: str) -> str:
+    return os.getenv(env_key, "").strip()
 
 
 def _deepseek_key() -> str:
-    return _get_api_key("deepseek_api_key", "DEEPSEEK_API_KEY")
+    return _get_api_key("DEEPSEEK_API_KEY")
 
 
 def _elevenlabs_key() -> str:
-    return _get_api_key("elevenlabs_api_key", "ELEVENLABS_API_KEY")
+    return _get_api_key("ELEVENLABS_API_KEY")
 
 
 DEEPSEEK_BASE_URL = os.getenv("DEEPSEEK_BASE_URL", "https://api.deepseek.com")
@@ -293,9 +390,9 @@ _ENV = {
 }
 
 if not _config_status["deepseek"]:
-    blog.warning("deepseek_api_key not configured — use Settings to add it")
+    blog.warning("DEEPSEEK_API_KEY not configured - add it to .env or your environment")
 if not _config_status["elevenlabs"]:
-    blog.warning("elevenlabs_api_key not configured — use Settings to add it")
+    blog.warning("ELEVENLABS_API_KEY not configured - add it to .env or your environment")
 
 # ── FastAPI app ────────────────────────────────────────────────────────────────
 
@@ -639,10 +736,9 @@ def _reconcile_run_state_file(story_id: str) -> tuple[dict, bool]:
 
 @app.get("/health")
 def health_check():
-    cfg = _load_app_settings()
     keys = {
-        "deepseek":   bool(cfg.get("deepseek_api_key") or os.getenv("DEEPSEEK_API_KEY")),
-        "elevenlabs": bool(cfg.get("elevenlabs_api_key") or os.getenv("ELEVENLABS_API_KEY")),
+        "deepseek":   bool(_deepseek_key()),
+        "elevenlabs": bool(_elevenlabs_key()),
     }
     return {
         "status": "ok",
@@ -755,10 +851,9 @@ def clear_idea_metadata(story_id: str):
 
 @app.get("/auth/status")
 def get_auth_status():
-    cfg = _load_app_settings()
     keys_configured = {
-        "deepseek":   bool(cfg.get("deepseek_api_key") or os.getenv("DEEPSEEK_API_KEY")),
-        "elevenlabs": bool(cfg.get("elevenlabs_api_key") or os.getenv("ELEVENLABS_API_KEY")),
+        "deepseek":   bool(_deepseek_key()),
+        "elevenlabs": bool(_elevenlabs_key()),
     }
 
     # Check if Google session cookies expire within 24 hours (H6)
@@ -832,8 +927,8 @@ def get_app_settings():
     cfg = _load_app_settings()
     # Redact key values — return *** if set
     return {
-        "deepseek_api_key":      "***" if cfg.get("deepseek_api_key") else "",
-        "elevenlabs_api_key":    "***" if cfg.get("elevenlabs_api_key") else "",
+        "deepseek_api_key":      SECRET_REDACTION if _deepseek_key() else "",
+        "elevenlabs_api_key":    SECRET_REDACTION if _elevenlabs_key() else "",
         "output_dir":            str(DATA_DIR),
         "flow_headless":         cfg.get("flow_headless", False),
         "wait_between_scenes":   cfg.get("wait_between_scenes", 5),
