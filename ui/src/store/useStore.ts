@@ -103,7 +103,7 @@ interface ContentSnapshot {
 }
 
 interface AppState {
-  activeView: 'pipeline' | 'logs' | 'settings'
+  activeView: 'pipeline' | 'logs' | 'prompts' | 'settings'
   setupStage: 'idle' | 'python' | 'pip' | 'bridge' | 'browser' | 'done' | 'error'
   setupDetail: string
   setSetupProgress: (stage: AppState['setupStage'], detail: string) => void
@@ -150,7 +150,7 @@ interface AppState {
   contentUndoStack: ContentSnapshot[]
   contentRedoStack: ContentSnapshot[]
 
-  setActiveView: (view: 'pipeline' | 'logs' | 'settings') => void
+  setActiveView: (view: 'pipeline' | 'logs' | 'prompts' | 'settings') => void
   setIsAuthorized: (v: boolean) => void
   setSettings: (s: Partial<Settings>) => void
   setRunState: (s: AppState['runState']) => void

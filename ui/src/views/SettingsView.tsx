@@ -1,5 +1,5 @@
-import { useState, useEffect } from 'react'
-import { Settings, Eye, EyeOff, CheckCircle, XCircle, Folder, Loader2, KeyRound } from 'lucide-react'
+import { useState, useEffect, type CSSProperties } from 'react'
+import { Settings, Eye, EyeOff, CheckCircle, XCircle, Folder, Loader2, KeyRound, Sun, Moon, Monitor, RotateCcw } from 'lucide-react'
 import { api } from '../api/client'
 import { useStore } from '../store/useStore'
 
@@ -12,12 +12,53 @@ interface AppSettings {
   max_retries_per_scene: number
   pipeline_timeout_sec: number
   confirm_costly_operations: boolean
+  theme: 'light' | 'dark' | 'system'
+  flow_intervals: Record<string, number>
 }
 
 type ValidateState = 'idle' | 'configured' | 'testing' | 'ok' | 'error'
 
+interface FlowIntervalField {
+  key: string
+  label: string
+  description: string
+  default_ms: number
+  min_ms: number
+  max_ms: number
+}
+
+const MIN_VISIBLE_INTERVAL_MS = 1000
+
+function intervalLabelFromKey(key: string) {
+  return key
+    .replace(/_ms$/i, '')
+    .split('_')
+    .filter(Boolean)
+    .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+    .join(' ')
+}
+
+function applyTheme(theme: AppSettings['theme']) {
+  const effective = theme === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches
+    ? 'dark'
+    : theme === 'system'
+    ? 'light'
+    : theme
+  document.documentElement.dataset.theme = effective
+  document.documentElement.dataset.themePreference = theme
+}
+
+function formatIntervalSeconds(ms: number) {
+  if (!Number.isFinite(ms) || ms <= 0) return '0s'
+  const sec = ms / 1000
+  const rounded = sec >= 10 ? sec.toFixed(0) : sec.toFixed(1)
+  return `${rounded}s`
+}
+
 export default function SettingsView() {
   const { setApiKeysConfigured } = useStore()
+  const waitBetweenScenesMin = 0
+  const waitBetweenScenesMax = 30
   const [form, setForm] = useState<AppSettings>({
     deepseek_api_key: '',
     elevenlabs_api_key: '',
@@ -27,7 +68,10 @@ export default function SettingsView() {
     max_retries_per_scene: 3,
     pipeline_timeout_sec: 300,
     confirm_costly_operations: true,
+    theme: 'system',
+    flow_intervals: {},
   })
+  const [flowIntervalFields, setFlowIntervalFields] = useState<FlowIntervalField[]>([])
   const [showDeepSeek, setShowDeepSeek] = useState(false)
   const [showElevenLabs, setShowElevenLabs] = useState(false)
   const [dsValidate, setDsValidate] = useState<ValidateState>('idle')
@@ -39,7 +83,40 @@ export default function SettingsView() {
 
   useEffect(() => {
     api.getAppSettings().then((data) => {
-      setForm((f) => ({ ...f, ...data }))
+      const flowIntervalsRaw =
+        data.flow_intervals && typeof data.flow_intervals === 'object'
+          ? (data.flow_intervals as Record<string, unknown>)
+          : {}
+      const parsedFlowIntervals = Object.fromEntries(
+        Object.entries(flowIntervalsRaw).map(([key, value]) => [key, Number(value) || 0])
+      ) as Record<string, number>
+      const apiFields = Array.isArray(data.flow_interval_fields)
+        ? (data.flow_interval_fields as FlowIntervalField[])
+        : []
+      const fallbackFields: FlowIntervalField[] = Object.keys(parsedFlowIntervals)
+        .sort()
+        .map((key) => ({
+          key,
+          label: intervalLabelFromKey(key),
+          description: 'Flow automation timing interval.',
+          default_ms: parsedFlowIntervals[key],
+          min_ms: 0,
+          max_ms: 600000,
+        }))
+      setFlowIntervalFields(apiFields.length > 0 ? apiFields : fallbackFields)
+      setForm((f) => ({
+        ...f,
+        deepseek_api_key: String(data.deepseek_api_key ?? f.deepseek_api_key),
+        elevenlabs_api_key: String(data.elevenlabs_api_key ?? f.elevenlabs_api_key),
+        output_dir: String(data.output_dir ?? f.output_dir),
+        flow_headless: Boolean(data.flow_headless ?? f.flow_headless),
+        wait_between_scenes: Number(data.wait_between_scenes ?? f.wait_between_scenes),
+        max_retries_per_scene: Number(data.max_retries_per_scene ?? f.max_retries_per_scene),
+        pipeline_timeout_sec: Number(data.pipeline_timeout_sec ?? f.pipeline_timeout_sec),
+        confirm_costly_operations: Boolean(data.confirm_costly_operations ?? f.confirm_costly_operations),
+        theme: (data.theme as AppSettings['theme']) ?? f.theme,
+        flow_intervals: parsedFlowIntervals,
+      }))
       if (data.deepseek_api_key === '***') setDsValidate('configured')
       if (data.elevenlabs_api_key === '***') setElValidate('configured')
     }).catch(() => {})
@@ -47,7 +124,36 @@ export default function SettingsView() {
 
   function patch<K extends keyof AppSettings>(key: K, value: AppSettings[K]) {
     setForm((f) => ({ ...f, [key]: value }))
+    if (key === 'theme') {
+      applyTheme(value as AppSettings['theme'])
+    }
   }
+
+  function patchFlowInterval(field: FlowIntervalField, value: number) {
+    const min = Math.max(MIN_VISIBLE_INTERVAL_MS, field.min_ms || 0)
+    const max = field.max_ms || 600000
+    const clamped = Math.max(min, Math.min(max, value || field.default_ms || MIN_VISIBLE_INTERVAL_MS))
+    setForm((f) => ({
+      ...f,
+      flow_intervals: {
+        ...f.flow_intervals,
+        [field.key]: clamped,
+      },
+    }))
+  }
+
+  const waitBetweenScenesProgress =
+    ((form.wait_between_scenes - waitBetweenScenesMin) / (waitBetweenScenesMax - waitBetweenScenesMin)) * 100
+  const waitBetweenScenesStyle = {
+    ['--range-progress' as string]: `${waitBetweenScenesProgress}%`,
+  } as CSSProperties
+
+  const visibleFlowIntervalFields = flowIntervalFields
+    .filter((field) => {
+      const baseline = Number.isFinite(field.default_ms) ? field.default_ms : 0
+      return baseline >= MIN_VISIBLE_INTERVAL_MS
+    })
+    .sort((a, b) => a.label.localeCompare(b.label))
 
   async function handleBrowse() {
     const win = window as unknown as { electron?: { openFolder: () => Promise<string | null> } }
@@ -85,6 +191,7 @@ export default function SettingsView() {
         Object.entries(form).filter(([, v]) => v !== '***')
       ) as Record<string, unknown>
       await api.saveAppSettings(payload)
+      applyTheme(form.theme)
       // Refresh global key status so Sidebar updates immediately
       const health = await api.getHealth()
       setApiKeysConfigured(health.keys)
@@ -202,6 +309,38 @@ export default function SettingsView() {
 
         <div className="my-6 h-px bg-slate-100" />
 
+        {/* Appearance */}
+        <Section title="Appearance">
+          <Field
+            label="Theme"
+            description="Choose a light interface, a dark interface, or follow Windows."
+            hint="System uses your computer's current theme."
+          >
+            <div className="flex items-center gap-2 p-1 rounded-xl bg-slate-50 border border-slate-100">
+              <ThemeButton
+                active={form.theme === 'light'}
+                icon={<Sun size={14} />}
+                label="Light"
+                onClick={() => patch('theme', 'light')}
+              />
+              <ThemeButton
+                active={form.theme === 'dark'}
+                icon={<Moon size={14} />}
+                label="Dark"
+                onClick={() => patch('theme', 'dark')}
+              />
+              <ThemeButton
+                active={form.theme === 'system'}
+                icon={<Monitor size={14} />}
+                label="System"
+                onClick={() => patch('theme', 'system')}
+              />
+            </div>
+          </Field>
+        </Section>
+
+        <div className="my-6 h-px bg-slate-100" />
+
         {/* Pipeline Defaults */}
         <Section title="Pipeline Defaults">
           <Field
@@ -225,11 +364,12 @@ export default function SettingsView() {
           >
             <input
               type="range"
-              min={0}
-              max={30}
+              min={waitBetweenScenesMin}
+              max={waitBetweenScenesMax}
               value={form.wait_between_scenes}
               onChange={(e) => patch('wait_between_scenes', parseInt(e.target.value))}
-              className="w-48 accent-emerald-500"
+              className="settings-range w-48 accent-emerald-500"
+              style={waitBetweenScenesStyle}
             />
             <span className="ml-3 text-sm font-mono text-slate-600">{form.wait_between_scenes}s</span>
           </Field>
@@ -277,6 +417,66 @@ export default function SettingsView() {
             </button>
             <span className="ml-3 text-sm text-slate-500">{form.confirm_costly_operations ? 'Enabled (show cost estimate)' : 'Disabled (skip confirmation)'}</span>
           </Field>
+        </Section>
+
+        <div className="my-6 h-px bg-slate-100" />
+
+        <Section title="Flow Intervals">
+          <p className="text-xs text-slate-500">
+            Only user-meaningful waits are shown here ({'>='} 1 second). Short system click delays are hidden.
+          </p>
+          <div className="mt-2 rounded-lg border border-slate-200 divide-y divide-slate-100">
+            {visibleFlowIntervalFields.map((field) => {
+              const currentValue = form.flow_intervals[field.key] ?? field.default_ms
+              const min = Math.max(MIN_VISIBLE_INTERVAL_MS, field.min_ms || 0)
+              const max = field.max_ms || 600000
+              return (
+                <div key={field.key} className="px-3 py-2.5 grid grid-cols-[1fr_auto] gap-3 items-center">
+                  <div className="min-w-0">
+                    <p className="text-sm font-semibold text-slate-700 truncate">{field.label}</p>
+                    <p className="text-xs text-slate-500 leading-snug">{field.description}</p>
+                  </div>
+                  <div className="flex items-center gap-1.5">
+                    <button
+                      type="button"
+                      onClick={() => patchFlowInterval(field, currentValue - 500)}
+                      className="h-8 w-8 rounded-md border border-slate-200 text-slate-600 hover:bg-slate-50"
+                      title="Decrease by 500ms"
+                    >
+                      -
+                    </button>
+                    <div className="flex flex-col items-end">
+                      <input
+                        type="number"
+                        min={min}
+                        max={max}
+                        value={currentValue}
+                        onChange={(e) => patchFlowInterval(field, parseInt(e.target.value) || field.default_ms)}
+                        className="w-28 px-2.5 py-1.5 rounded-md border border-slate-200 text-sm text-right focus:outline-none focus:border-emerald-400 focus:ring-2 focus:ring-emerald-100"
+                      />
+                      <span className="text-[11px] text-slate-400 mt-0.5">{formatIntervalSeconds(currentValue)}</span>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => patchFlowInterval(field, currentValue + 500)}
+                      className="h-8 w-8 rounded-md border border-slate-200 text-slate-600 hover:bg-slate-50"
+                      title="Increase by 500ms"
+                    >
+                      +
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => patchFlowInterval(field, field.default_ms)}
+                      className="h-8 w-8 rounded-md border border-slate-200 text-slate-500 hover:text-slate-700 hover:bg-slate-50"
+                      title="Reset to default"
+                    >
+                      <RotateCcw size={13} className="mx-auto" />
+                    </button>
+                  </div>
+                </div>
+              )
+            })}
+          </div>
         </Section>
 
         {/* Save */}
@@ -373,5 +573,32 @@ function ValidMsg({ state, text }: { state: 'configured' | 'ok' | 'error'; text:
       {icons[state]}
       {text}
     </div>
+  )
+}
+
+function ThemeButton({
+  active,
+  icon,
+  label,
+  onClick,
+}: {
+  active: boolean
+  icon: React.ReactNode
+  label: string
+  onClick: () => void
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={`flex items-center gap-1.5 px-4 py-2 rounded-lg text-xs font-bold transition-all ${
+        active
+          ? 'bg-white text-emerald-600 shadow-sm'
+          : 'text-slate-500 hover:text-slate-800 hover:bg-white/70'
+      }`}
+    >
+      {icon}
+      {label}
+    </button>
   )
 }

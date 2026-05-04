@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { LayoutList, ScrollText, Settings, PlusCircle, ShieldCheck, ShieldAlert, AlertCircle, LogIn, KeyRound, CheckCircle2, XCircle } from 'lucide-react'
+import { LayoutList, ScrollText, Settings, PlusCircle, ShieldCheck, ShieldAlert, AlertCircle, LogIn, KeyRound, CheckCircle2, FileText } from 'lucide-react'
 import { useStore } from '../../store/useStore'
 import { api } from '../../api/client'
 
@@ -11,9 +11,11 @@ export default function Sidebar({ onNewVideo }: Props) {
   const { activeView, setActiveView, isAuthorized, setIsAuthorized, runState, apiKeysConfigured } = useStore()
   const [appVersion, setAppVersion] = useState<string>('')
   const [expiresSoon, setExpiresSoon] = useState(false)
+  const [windowFocused, setWindowFocused] = useState(true)
 
   useEffect(() => {
     window.electron?.getVersion?.().then(setAppVersion).catch(() => {})
+    window.electron?.onWindowFocusChanged?.(setWindowFocused)
   }, [])
 
   useEffect(() => {
@@ -27,11 +29,11 @@ export default function Sidebar({ onNewVideo }: Props) {
       }
     }
     // Poll less frequently when no pipeline running
-    const interval = runState === 'running' ? 4000 : 15000
+    const interval = !windowFocused ? 30000 : runState === 'running' ? 4000 : 15000
     poll()
     const id = setInterval(poll, interval)
     return () => clearInterval(id)
-  }, [setIsAuthorized, runState])
+  }, [setIsAuthorized, runState, windowFocused])
 
   function handleRelogin() {
     api.runLogin().catch(() => {})
@@ -40,11 +42,10 @@ export default function Sidebar({ onNewVideo }: Props) {
 
   return (
     <aside
-      className="flex flex-col h-full select-none border-r border-slate-200"
+      className="app-sidebar flex flex-col h-full select-none border-r border-slate-200"
       style={{
-        width: 260,
         flexShrink: 0,
-        background: '#ffffff',
+        background: 'var(--card)',
       }}
     >
       {/* Brand */}
@@ -53,7 +54,7 @@ export default function Sidebar({ onNewVideo }: Props) {
           <div className="w-10 h-10 rounded-xl bg-emerald-500 flex items-center justify-center text-2xl shadow-lg shadow-emerald-200">
             🦁
           </div>
-          <div className="flex flex-col">
+          <div className="sidebar-text flex flex-col">
             <span className="font-black text-lg tracking-tight leading-none text-slate-900">
               ANIMAL
             </span>
@@ -67,15 +68,15 @@ export default function Sidebar({ onNewVideo }: Props) {
       {/* Creator Studio badge */}
       <div className="mx-5 mb-8 rounded-2xl px-4 py-4 bg-slate-50 border border-slate-100">
         <div className="flex items-center justify-between mb-1">
-          <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400">
+          <p className="sidebar-text text-[10px] font-bold uppercase tracking-widest text-slate-400">
             Creator Studio
           </p>
-          <div className="flex items-center gap-1">
+          <div className="sidebar-text flex items-center gap-1">
             <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
             <span className="text-[10px] font-bold text-emerald-600">LIVE</span>
           </div>
         </div>
-        <p className="text-sm font-bold text-slate-700">
+        <p className="sidebar-text text-sm font-bold text-slate-700">
           {appVersion ? `v${appVersion}` : 'v—'}
         </p>
       </div>
@@ -95,6 +96,12 @@ export default function Sidebar({ onNewVideo }: Props) {
           onClick={() => setActiveView('logs')}
         />
         <NavItem
+          icon={<FileText size={18} />}
+          label="Prompts"
+          active={activeView === 'prompts'}
+          onClick={() => setActiveView('prompts')}
+        />
+        <NavItem
           icon={<Settings size={18} />}
           label="Settings"
           active={activeView === 'settings'}
@@ -106,7 +113,7 @@ export default function Sidebar({ onNewVideo }: Props) {
 
       {/* Auth Status */}
       <div className="px-7 mt-6">
-        <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-3">
+        <p className="sidebar-text text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-3">
           System Status
         </p>
         <div
@@ -124,7 +131,7 @@ export default function Sidebar({ onNewVideo }: Props) {
             : expiresSoon
             ? <AlertCircle size={16} />
             : <ShieldCheck size={16} />}
-          {!isAuthorized ? 'UNAUTHORIZED' : expiresSoon ? 'EXPIRES SOON' : 'AUTHORIZED'}
+          <span className="sidebar-text">{!isAuthorized ? 'UNAUTHORIZED' : expiresSoon ? 'EXPIRES SOON' : 'AUTHORIZED'}</span>
         </div>
 
         {/* Re-login button — shown when expired or expiring soon */}
@@ -134,7 +141,7 @@ export default function Sidebar({ onNewVideo }: Props) {
             className="mt-2 w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-[11px] font-black uppercase tracking-widest text-slate-600 bg-slate-50 border border-slate-200 hover:bg-slate-100 transition-all"
           >
             <LogIn size={13} />
-            Re-login to Google
+            <span className="sidebar-text">Re-login to Google</span>
           </button>
         )}
 
@@ -162,7 +169,7 @@ export default function Sidebar({ onNewVideo }: Props) {
           className="w-full flex items-center justify-center gap-2 py-3.5 rounded-xl text-sm font-bold text-white bg-slate-900 hover:bg-slate-800 transition-all shadow-lg shadow-slate-200 hover:scale-[1.02] active:scale-[0.98]"
         >
           <PlusCircle size={18} />
-          New Video
+          <span className="sidebar-text">New Video</span>
         </button>
       </div>
     </aside>
@@ -180,7 +187,7 @@ function ApiKeyRow({ label, configured, onFix }: { label: string; configured: bo
     >
       <div className="flex items-center gap-1.5">
         <KeyRound size={11} strokeWidth={2.5} />
-        {label}
+        <span className="sidebar-text">{label}</span>
       </div>
       {configured
         ? <CheckCircle2 size={12} strokeWidth={2.5} />
@@ -189,7 +196,7 @@ function ApiKeyRow({ label, configured, onFix }: { label: string; configured: bo
             onClick={onFix}
             className="text-[10px] font-black uppercase tracking-widest underline underline-offset-2 hover:text-red-800 transition-colors"
           >
-            Set up
+            <span className="sidebar-text">Set up</span>
           </button>
         )
       }

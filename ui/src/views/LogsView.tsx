@@ -119,6 +119,7 @@ export default function LogsView() {
   const [copiedId, setCopiedId] = useState<number | null>(null)
   const [sessionFiles, setSessionFiles] = useState<SessionFile[]>([])
   const [showSessionFiles, setShowSessionFiles] = useState(false)
+  const [exported, setExported] = useState(false)
   // Map<sessionId, 'collapsed' | 'expanded'> — overrides the default collapse logic
   const [overrides, setOverrides] = useState<Map<number, 'collapsed' | 'expanded'>>(new Map())
 
@@ -221,6 +222,22 @@ export default function LogsView() {
     })
   }
 
+  async function exportVisibleLogs() {
+    const timestamp = new Date().toISOString().replace(/[:.]/g, '-')
+    const text = filteredSessions
+      .map((session) => {
+        const header = `Session ${session.id}${session.startTimestamp ? ` (${session.startTimestamp}${session.endTimestamp ? ` to ${session.endTimestamp}` : ''})` : ''}`
+        const body = session.displayLines.map((l) => l.raw).join('\n')
+        return `${header}\n${body}`
+      })
+      .join('\n\n')
+    const ok = await window.electron?.saveTextFile?.(`log_${timestamp}.txt`, text)
+    if (ok) {
+      setExported(true)
+      setTimeout(() => setExported(false), 2000)
+    }
+  }
+
   function openLogsFolder() {
     window.electronAPI?.openPath('d:/Youtube/5- Animal Channel/logs')
   }
@@ -243,6 +260,14 @@ export default function LogsView() {
           </p>
         </div>
         <div className="flex items-center gap-3">
+          <button
+            onClick={exportVisibleLogs}
+            className="flex items-center gap-2 px-5 py-3 rounded-xl text-sm font-bold text-slate-600 bg-slate-100 hover:bg-slate-200 transition-all"
+            title="Save the currently visible log entries as a text file"
+          >
+            {exported ? <Check size={16} className="text-emerald-500" /> : <Download size={16} />}
+            {exported ? 'Exported' : 'Export Log'}
+          </button>
           <button
             onClick={() => setShowSessionFiles(p => !p)}
             className="flex items-center gap-2 px-5 py-3 rounded-xl text-sm font-bold text-slate-600 bg-slate-100 hover:bg-slate-200 transition-all"

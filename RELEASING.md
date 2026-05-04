@@ -2,39 +2,31 @@
 
 ## Prerequisites
 
-- A GitHub repository named `animal-channel-studio` under your account
-- A GitHub Personal Access Token with `repo` scope added as a repository secret named `GH_TOKEN`
-- The `owner` field in `ui/package.json` → `build.publish` must match your GitHub username
+- GitHub repository: `jawadahmadjd/animal-channel-studio`
+- The `owner` and `repo` fields in `ui/package.json` -> `build.publish` match the GitHub repository.
+- GitHub Actions has `contents: write` permission enabled. The release workflow uses the built-in `GITHUB_TOKEN`.
 
 ## Release Steps
 
-1. **Bump the version** in `ui/package.json`:
-   ```
-   "version": "1.3.0"
-   ```
+From the repo root:
 
-2. **Commit the version bump:**
-   ```
-   git add ui/package.json
-   git commit -m "chore: bump version to 1.3.0"
-   ```
+```powershell
+python push
+```
 
-3. **Tag the release:**
-   ```
-   git tag v1.3.0
-   ```
+The push script:
 
-4. **Push the commit and the tag:**
-   ```
-   git push && git push --tags
-   ```
+1. Runs `npm --prefix ui run electron:build` as a packaging preflight.
+2. Bumps `ui/package.json` and `ui/package-lock.json`.
+3. Commits the release bump.
+4. Creates an annotated tag like `v1.3.2`.
+5. Pushes the branch and tag.
 
-5. **GitHub Actions** picks up the `v*` tag, runs `electron-builder`, and publishes the installer as a GitHub Release automatically.
-
-6. **Running apps** detect the new release on their next launch and display the update banner.
+GitHub Actions picks up the `v*` tag, builds the Windows installer, publishes the GitHub Release, and running apps receive it through auto-update.
 
 ## Testing Auto-Update
 
-1. Install an older build on a test machine.
-2. Publish a new version tag (e.g. `v0.0.2-test`).
-3. Launch the installed app — within a minute it should detect the update and show the "Restart & Install" banner.
+1. Install an older release build on a test machine.
+2. Publish a newer version tag with `python push`.
+3. Launch the installed app and wait for the update banner.
+4. Click `Restart & Install` and confirm the app relaunches on the newer version.

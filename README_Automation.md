@@ -1,5 +1,19 @@
 # Automation Setup (Phase 1)
 
+## Customer Install
+
+Customers should use the Windows installer from the latest GitHub Release:
+
+1. Download `Animal Channel Studio Setup <version>.exe`.
+2. Run the installer and launch Animal Channel Studio.
+3. On first launch, enter the DeepSeek and ElevenLabs API keys in Settings.
+4. Use Settings to choose an output folder if the default is not desired.
+5. Capture the Google Flow login session, then run the pipeline.
+
+The installed app stores customer data in the app data folder, not in the install directory. Auto-update is delivered through GitHub Releases; when an update is downloaded, the app shows a restart-and-install banner.
+
+---
+
 This project prepares an automation pipeline for:
 - story generation from `Ideas.md`
 - validation + writing to `Stories.md`

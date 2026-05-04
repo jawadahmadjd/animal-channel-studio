@@ -9,10 +9,15 @@ const electronAPI = {
 
   // Open path in Explorer
   openPath: (path: string): Promise<void> => ipcRenderer.invoke('app:open-path', path),
+  saveTextFile: (defaultPath: string, content: string): Promise<boolean> =>
+    ipcRenderer.invoke('dialog:saveTextFile', { defaultPath, content }),
 
   // First-time setup progress from background installer
   onSetupProgress: (cb: (payload: { stage: string; detail: string }) => void) => {
     ipcRenderer.on('setup:progress', (_event, payload) => cb(payload))
+  },
+  onWindowFocusChanged: (cb: (focused: boolean) => void) => {
+    ipcRenderer.on('window:focus-changed', (_event, focused: boolean) => cb(focused))
   },
 
   // Auto-update (wired up once electron-updater is added in U2)

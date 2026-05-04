@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
 Automate release flow:
-1) Optional UI build check
+1) Optional release package check
 2) Version bump in ui/package.json (+ package-lock.json)
 3) Commit, tag, and push
 4) Trigger GitHub Actions release workflow (tag-based)
@@ -196,9 +196,9 @@ def sync_version_references(version: str) -> list[Path]:
 
 def run_build_check(skip: bool) -> None:
     if skip:
-        print("[info] Skipping UI build check.")
+        print("[info] Skipping release package check.")
         return
-    cmd = ["npm.cmd" if os.name == "nt" else "npm", "--prefix", str(UI_DIR), "run", "build"]
+    cmd = ["npm.cmd" if os.name == "nt" else "npm", "--prefix", str(UI_DIR), "run", "electron:build"]
     run(cmd)
 
 
@@ -291,7 +291,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--no-build-check",
         action="store_true",
-        help="Skip running `npm --prefix ui run build` before release.",
+        help="Skip running `npm --prefix ui run electron:build` before release.",
     )
     parser.add_argument(
         "--dry-run",
@@ -330,7 +330,7 @@ def main() -> int:
         print(f"  - remote: {args.remote}")
         print(f"  - version: {target}")
         print(f"  - stage_all: {stage_all}")
-        print(f"  - build_check: {run_check}")
+        print(f"  - package_check: {run_check}")
         return 0
 
     run_build_check(skip=not run_check)

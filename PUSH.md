@@ -2,7 +2,7 @@
 
 This repo now includes a root-level script named `push` that automates release publishing:
 
-1. Runs a UI build check (`npm --prefix ui run build`) unless skipped.
+1. Runs a release package check (`npm --prefix ui run electron:build`) unless skipped.
 2. Bumps `ui/package.json` version (and `ui/package-lock.json`).
 3. Syncs known local version labels (currently `scripts/ui_runner.py` badge text).
 4. Commits changes.
@@ -23,7 +23,7 @@ Default behavior:
   - `1.3.0 -> 1.3.1 -> ... -> 1.3.9 -> 1.4.0`
   - `1.9.9 -> 2.0.0`
 - stages all changes with `git add -A`
-- runs UI build check before release
+- runs the full Electron package check before release
 - commit message: `chore(release): vX.Y.Z`
 
 ## Common Commands
@@ -58,7 +58,7 @@ Preview actions only:
 python push --dry-run
 ```
 
-Skip build check:
+Skip package check:
 
 ```powershell
 python push --no-build-check
@@ -111,7 +111,7 @@ setx PUSH_DEFAULT_BUMP "minor"
 - `resolve_target_version(...)`: Decides explicit/auto target version based on options.
 - `bump_version(...)`: Executes version bump without auto-tag.
 - `sync_version_references(version)`: Updates known hardcoded version labels in local files.
-- `run_build_check(skip)`: Runs or skips pre-release UI build check.
+- `run_build_check(skip)`: Runs or skips the pre-release Electron package check.
 - `stage_files(stage_all)`: Stages either all changes or only version files.
 - `ensure_staged_changes()`: Prevents empty commits.
 - `commit_changes(message)`: Creates release commit.
@@ -135,7 +135,7 @@ setx PUSH_DEFAULT_BUMP "minor"
 ## Suggested Improvements
 
 1. Add changelog generation (for example from conventional commits) before tagging.
-2. Add automated tests/lint checks before release (not only `npm run build`).
+2. Add automated tests/lint checks before release.
 3. Add branch guard (`main` only) to prevent accidental releases from feature branches.
 4. Add optional GitHub Actions run polling so the script waits until release success/failure.
 5. Add signed tags and signed commits for stronger supply-chain trust.

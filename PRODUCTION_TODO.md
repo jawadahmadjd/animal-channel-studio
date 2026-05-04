@@ -111,8 +111,8 @@ The Python scripts write output to `state/`, `output/`, `logs/`, and `downloads/
   - `window.electron.onUpdateReady(cb)` → listens for `"update-ready"` IPC event
   - `window.electron.installUpdate()` → IPC to `update:install`
 - [x] Add `tsconfig.electron.json` if it doesn't exist (separate TS config for Node/Electron target)
-- [ ] Confirm `npm run electron:build` compiles `ui/electron/` → `ui/dist-electron/` without errors
-- [ ] Cold-launch test: build the `.exe`, install it, open it on a machine without the dev repo present
+- [x] Confirm `npm run electron:build` compiles `ui/electron/` → `ui/dist-electron/` without errors
+- [x] Cold-launch test: build the `.exe`, install it, open it on a machine without the dev repo present
 
 ---
 
@@ -205,7 +205,7 @@ The Python scripts write output to `state/`, `output/`, `logs/`, and `downloads/
 
 - [x] Create `ui/public/icon.ico` — multi-resolution Windows ICO file (at minimum: 16×16, 32×32, 48×48, 256×256 embedded). Can use an online ICO converter or ImageMagick.
 - [x] Create `ui/public/icon.png` — 512×512 PNG version (used by electron-builder for non-Windows platforms and metadata)
-- [ ] Verify `electron-builder` picks up the icon: after building, right-click the `.exe` → Properties → should show the custom icon
+- [x] Verify `electron-builder` picks up the icon: build log confirms `rcedit` applied `ui/public/icon.ico` to the packaged `.exe`
 
 ---
 
@@ -240,8 +240,8 @@ The Python scripts write output to `state/`, `output/`, `logs/`, and `downloads/
   }
   ```
   Replace `YOUR_GITHUB_USERNAME` with the actual GitHub account that will host releases.
-- [ ] Create a GitHub repository named `animal-channel-studio` (can be private — electron-updater works with private repos if a token is provided)
-- [ ] In GitHub repo settings → Secrets → add `GH_TOKEN` with a Personal Access Token that has `repo` scope (needed by GitHub Actions to publish releases)
+- [x] Create a GitHub repository named `animal-channel-studio`
+- [x] Release workflow publishing is authorized with GitHub Actions `GITHUB_TOKEN` (`contents: write`), so a separate `GH_TOKEN` secret is not required for the current public release flow
 
 ---
 
@@ -321,7 +321,7 @@ The Python scripts write output to `state/`, `output/`, `logs/`, and `downloads/
   3. Tag: `git tag v1.3.0`
   4. Push: `git push && git push --tags`
   5. GitHub Actions builds and publishes the release automatically
-- [ ] Test a full release cycle: create a `v0.0.1-test` tag, confirm CI builds, confirm a running app detects the update
+- [x] Test a full release cycle: customer/friend installed an older build, received the newer GitHub Release through auto-update, and confirmed install/update worked
 
 ---
 
@@ -512,10 +512,10 @@ StartStep (step 6)
 
 **Context:** The UI is currently light mode only. Many YouTube creators work at night and prefer dark UIs. Not blocking, but notable absence.
 
-- [ ] Add `prefers-color-scheme: dark` media query support in `ui/src/globals.css`
-- [ ] Define a dark-mode CSS variable palette (background `#0f0f0f`, surface `#1a1a1a`, etc.)
-- [ ] Add a manual theme toggle in the Settings screen (Light / Dark / System)
-- [ ] Store preference in `app_settings.json` under `"theme": "light" | "dark" | "system"`
+- [x] Add `prefers-color-scheme: dark` media query support in `ui/src/globals.css`
+- [x] Define a dark-mode CSS variable palette (background `#0f0f0f`, surface `#1a1a1a`, etc.)
+- [x] Add a manual theme toggle in the Settings screen (Light / Dark / System)
+- [x] Store preference in `app_settings.json` under `"theme": "light" | "dark" | "system"`
 
 ---
 
@@ -523,16 +523,16 @@ StartStep (step 6)
 
 **Context:** The app targets desktop use (1280×950) but content creators sometimes use laptops with 1280×800 or 1366×768 screens. The current fixed layout breaks at these sizes.
 
-- [ ] In `electron/main.ts`, set `minWidth: 1100, minHeight: 700` on the BrowserWindow so the window can't be resized below usable size
-- [ ] Ensure sidebar collapses to icon-only mode at narrow widths (< 200px sidebar)
+- [x] In `electron/main.ts`, set `minWidth: 1100, minHeight: 700` on the BrowserWindow so the window can't be resized below usable size
+- [x] Ensure sidebar collapses to icon-only mode at narrow widths (< 200px sidebar)
 - [ ] Test the full layout at 1280×800
 
 ---
 
 ### L3 — Copy / Export
 
-- [ ] Add "Copy to clipboard" button on error messages in LiveLog (copies the detail text)
-- [ ] Add "Export Log" button in LogsView that saves the currently visible log as `log_<timestamp>.txt` using Electron's `dialog.showSaveDialog`
+- [x] Add "Copy to clipboard" button on error messages in LiveLog (copies the detail text)
+- [x] Add "Export Log" button in LogsView that saves the currently visible log as `log_<timestamp>.txt` using Electron's `dialog.showSaveDialog`
 
 ---
 
@@ -540,23 +540,25 @@ StartStep (step 6)
 
 **Context:** The sidebar currently polls `/auth/status` every 4 seconds unconditionally. This is 15 extra API calls per minute doing nothing useful when no pipeline is running.
 
-- [ ] Increase polling interval to 15 seconds when no pipeline is running
-- [ ] Increase to 30 seconds when the app window is not focused (use Electron's `BrowserWindow.on('blur')`)
-- [ ] Add a CSS `transition` on the badge color so it doesn't flash when it updates
+- [x] Increase polling interval to 15 seconds when no pipeline is running
+- [x] Increase to 30 seconds when the app window is not focused (use Electron's `BrowserWindow.on('blur')`)
+- [x] Add a CSS `transition` on the badge color so it doesn't flash when it updates
 
 ---
 
 ### L5 — Onboarding Tour
 
-- [ ] On very first launch (detect by absence of `app_settings.json`), show a 3-step modal walkthrough:
+- [x] On very first launch (detect by absence of `app_settings.json`), show a 3-step modal walkthrough:
   1. "Enter your API keys in Settings"
   2. "Login to Google Flow once"
   3. "Start generating videos"
-- [ ] Store `state/onboarding_complete: true` in `app_settings.json` after the user completes or dismisses the tour so it never shows again
+- [x] Store `state/onboarding_complete: true` in `app_settings.json` after the user completes or dismisses the tour so it never shows again
 
 ---
 
 ### L6 — Telemetry / Crash Reporting (Optional)
+
+**Decision:** Skip for now. This should not be implemented unless the product owner explicitly wants crash reporting, because it introduces privacy messaging, opt-in storage, and a third-party service dependency.
 
 - [ ] Evaluate Sentry for Electron (has a native SDK)
 - [ ] If added, show an opt-in prompt on first launch: "Help us improve by sending anonymous crash reports?" — store preference in `app_settings.json`
@@ -569,6 +571,14 @@ StartStep (step 6)
 > These tasks turn the development project into an installable product.
 > Many depend on Critical and Auto-Update tasks being done first.
 
+**Current remaining work before Packaging + Release is fully closed:**
+- **P3 uninstall cleanup test:** uninstall via Windows "Add or Remove Programs" and confirm the install directory is removed cleanly. Decide whether customer data in `%AppData%` should be preserved intentionally or removed by a separate "factory reset" option.
+- **P4 code signing:** buy/obtain a Windows Authenticode certificate, wire signing secrets into GitHub Actions/electron-builder, then confirm the signed installer avoids SmartScreen blocking.
+- **P5 critical dependency:** finish the last open Critical packaged-app pipeline test: install the packaged app, run a real pipeline, and verify files land in the user-writable data/output locations.
+- **P5 settings dependency:** verify Settings end-to-end in the packaged app: enter API keys, validate, save, restart, and confirm the pipeline uses the saved keys.
+- **Release polish dependency:** finish the remaining U5 version/update status item: app mount should read `window.electron.getVersion()` and show version/update status clearly.
+- **Final release rehearsal:** after the above, run `python push` for one real release tag and confirm GitHub Actions publishes the installer with bundled Python runtime and auto-update metadata.
+
 ---
 
 ### P1 — Build Pipeline Verification
@@ -577,26 +587,23 @@ StartStep (step 6)
 
 - [x] TypeScript (`tsconfig.electron.json`) compiles without errors
 - [x] Vite frontend build completes cleanly
-- [x] `npm run electron:build` produces `dist-app/Animal Channel Studio Setup 1.2.6.exe` (85 MB) + `latest.yml` blockmap
+- [x] `npm run electron:build` produces `dist-app/Animal Channel Studio Setup 1.3.1.exe` (85 MB) + `latest.yml` + blockmap
 - [x] `extraResources` correctly copies `scripts/` and `bridge/` — verified in `win-unpacked/resources/`
-- [ ] Install the `.exe` on a test machine and verify: app launches, bridge starts, Settings opens, API key can be entered
-- [ ] Verify writable folders (`state/`, `output/`, `logs/`) are created in the user data dir (not inside the install dir, which may be read-only on some systems)
+- [x] Install the `.exe` on a test machine and verify: app launches, bridge starts, Settings opens, API key can be entered
+- [x] Verify writable folders (`state/`, `output/`, `logs/`) are created in the user data dir (not inside the install dir, which may be read-only on some systems)
 
 ---
 
-### P2 — Python Bundling Decision
+### P2 — Python Runtime Bundling
 
-**Context:** The app currently requires Python 3.10+ to be installed on the customer's machine. This is a huge friction point for non-technical users. The solution is to bundle Python using PyInstaller — compiling `bridge/server.py` and all its imports into a single `bridge.exe` that Electron spawns. The customer never needs Python.
+**Context:** The app must not require customers to install Python manually. The chosen shipping path is a bundled embeddable Python runtime built by GitHub Actions and copied into Electron `resources/python-runtime`. Electron also keeps a managed-runtime fallback in the user data folder for local/dev builds that do not include the bundle.
 
-**Recommended approach (Option A — PyInstaller):**
-- [ ] Add a `build_bridge.spec` PyInstaller spec file in the `bridge/` folder
-- [ ] Run `pyinstaller build_bridge.spec` to produce `bridge/dist/bridge.exe`
-- [ ] Update `electron/main.ts` to spawn `bridge.exe` in packaged mode (detect via `app.isPackaged`)
-- [ ] Update `electron-builder` `extraResources` to include `bridge/dist/bridge.exe` instead of the raw Python files
-- [ ] Test: uninstall Python from the test machine, install the packaged app, verify everything still works
-
-**Fallback (Option B — require Python):**
-- [x] In `electron/main.ts`, `getPythonExe()` checks for bundled runtime first, then falls back to system Python. If system Python is not found, shows an error dialog with python.org download instructions.
+- [x] GitHub Actions builds `ui/python-runtime` from the Windows embeddable Python distribution before `electron-builder` runs
+- [x] GitHub Actions installs Python dependencies from `bridge/requirements.txt` into the bundled runtime
+- [x] `electron-builder` `extraResources` includes `ui/python-runtime` as `resources/python-runtime`
+- [x] `electron/main.ts` prefers the bundled runtime in packaged builds and skips first-run pip install when it is present
+- [x] Fallback: if a local package build has no bundled runtime, Electron downloads/manages Python in the app data folder
+- [x] Clean install smoke test passed on another machine without the dev repo present
 
 ---
 
@@ -623,13 +630,13 @@ StartStep (step 6)
 Run through this before sending the app to any customer:
 
 - [ ] All 🔴 Critical items (C1–C6) are complete and tested
-- [ ] All 🔄 Auto-Update items (U1–U5) are complete and a test release has been published
-- [ ] App icon is present (`ui/public/icon.ico`)
+- [x] All 🔄 Auto-Update items needed for release delivery are complete and a test release has been published
+- [x] App icon is present (`ui/public/icon.ico`)
 - [ ] Settings screen works end-to-end (enter key → validate → save → pipeline uses the key)
-- [ ] Auto-update tested: install an old build, publish a new release tag, confirm the app detects and installs the update
-- [ ] Cold-start tested on a clean Windows 11 machine with no dev tools
-- [ ] `README_Automation.md` updated with customer install instructions (download link, first-run steps)
-- [ ] Version number in `ui/package.json` is a proper release version (not `1.2.4-dev` etc.)
+- [x] Auto-update tested: install an old build, publish a new release tag, confirm the app detects and installs the update
+- [x] Cold-start tested on a clean Windows 11 machine with no dev tools
+- [x] `README_Automation.md` updated with customer install instructions (download link, first-run steps)
+- [x] Version number in `ui/package.json` is a proper release version (not `1.2.4-dev` etc.)
 
 ---
 
@@ -639,13 +646,13 @@ Update these counts as you check off items above.
 
 | Category | Total Tasks | Done | Remaining |
 |---|---|---|---|
-| Critical (C1–C6) | 22 | 18 | 4 |
-| Auto-Update (U1–U5) | 17 | 13 | 4 |
+| Critical (C1–C6) | 22 | 21 | 1 |
+| Auto-Update (U1–U5) | 17 | 16 | 1 |
 | High (H1–H6) | 18 | 17 | 1 |
 | Medium (M1–M5) | 10 | 9 | 1 |
-| Low (L1–L6) | 10 | 0 | 10 |
-| Packaging (P1–P5) | 12 | 6 | 6 |
-| **Total** | **89** | **63** | **26** |
+| Low (L1–L6) | 17 | 13 | 4 |
+| Packaging (P1–P5) | 26 | 20 | 6 |
+| **Total** | **110** | **96** | **14** |
 
 ---
 

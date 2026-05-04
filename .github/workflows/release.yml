@@ -24,7 +24,7 @@ jobs:
       - name: Build Python runtime bundle
         shell: pwsh
         run: |
-          $pythonVersion = "3.11.9"
+          $pythonVersion = "3.12.9"
           $embedUrl = "https://www.python.org/ftp/python/$pythonVersion/python-$pythonVersion-embed-amd64.zip"
           $destDir = "ui/python-runtime"
 
@@ -43,7 +43,7 @@ jobs:
 
           # Install project requirements
           Write-Host "Installing requirements..."
-          & "$destDir/python.exe" -m pip install -r requirements.txt --no-warn-script-location
+          & "$destDir/python.exe" -m pip install -r bridge/requirements.txt --no-warn-script-location
 
           Write-Host "Python runtime bundle ready."
 

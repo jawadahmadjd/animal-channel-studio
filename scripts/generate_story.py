@@ -12,6 +12,7 @@ from dotenv import load_dotenv
 from pydantic import BaseModel, Field, ValidationError, field_validator
 
 from read_ideas import Idea, parse_ideas
+from audit_log import audit_error, audit_event, current_run_id, summarize_text
 # from validate_story import build_validation_report, validate_story_data
 
 
@@ -194,23 +195,59 @@ def call_deepseek(
     timeout_seconds: int = 120,
 ) -> str:
     endpoint = f"{base_url.rstrip('/')}/chat/completions"
-    response = requests.post(
-        endpoint,
-        headers={
-            "Authorization": f"Bearer {api_key}",
-            "Content-Type": "application/json",
+    body = {
+        "model": model,
+        "messages": messages,
+        "temperature": temperature,
+        "response_format": {"type": "json_object"},
+    }
+    audit_event(
+        "api.request",
+        {
+            "provider": "deepseek",
+            "operation": "generate_story_script",
+            "method": "POST",
+            "url": endpoint,
+            "timeout_seconds": timeout_seconds,
+            "body": {
+                "model": model,
+                "temperature": temperature,
+                "response_format": body["response_format"],
+                "message_count": len(messages),
+                "messages": summarize_text(json.dumps(messages, ensure_ascii=False), limit=1200),
+            },
         },
-        json={
-            "model": model,
-            "messages": messages,
-            "temperature": temperature,
-            "response_format": {"type": "json_object"},
-        },
-        timeout=timeout_seconds,
     )
-    response.raise_for_status()
-    payload = response.json()
-    return payload["choices"][0]["message"]["content"]
+    try:
+        response = requests.post(
+            endpoint,
+            headers={
+                "Authorization": f"Bearer {api_key}",
+                "Content-Type": "application/json",
+            },
+            json=body,
+            timeout=timeout_seconds,
+        )
+        audit_event(
+            "api.response",
+            {
+                "provider": "deepseek",
+                "operation": "generate_story_script",
+                "status_code": response.status_code,
+                "elapsed_ms": int(response.elapsed.total_seconds() * 1000),
+                "response": summarize_text(response.text, limit=1200),
+            },
+        )
+        response.raise_for_status()
+        payload = response.json()
+        return payload["choices"][0]["message"]["content"]
+    except Exception as exc:
+        audit_error(
+            "api.error",
+            exc,
+            {"provider": "deepseek", "operation": "generate_story_script", "url": endpoint},
+        )
+        raise
 
 
 def extract_json_block(text: str) -> str:
@@ -248,6 +285,7 @@ def validate_payload(raw_text: str) -> StoryPayload:
 
 def main() -> None:
     load_dotenv(ROOT_DIR / ".env")
+    current_run_id()
     args = parse_args()
     idea = load_idea(args)
 

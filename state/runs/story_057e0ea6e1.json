@@ -1,0 +1,325 @@
+{
+  "schema_version": 1,
+  "story_id": "story_057e0ea6e1",
+  "metadata_hash": "34de261afa30",
+  "flow_prompt_hash": "3c1999bf88e0",
+  "idea_index": 0,
+  "idea_title": "Desert Tortoise: 50 Years of Solitude",
+  "run_status": "in_progress",
+  "created_at": "2026-05-02T07:07:16.223751+00:00",
+  "updated_at": "2026-05-02T07:07:16.223751+00:00",
+  "story_payload": {
+    "story_title": "Desert Tortoise: 50 Years of Solitude",
+    "metadata_hash": "34de261afa30",
+    "flow_prompt_hash": "3c1999bf88e0",
+    "scenes": [
+      {
+        "scene_no": 1,
+        "scene_name": "The sun sears the cracked earth, and a shelled silhouette inches forward across the endless Mojave.",
+        "vo": "The sun beats down on the cracked earth as a shelled silhouette slowly moves across the vast Mojave.",
+        "veo_prompt": "Cinematic wide shot of a desert tortoise crawling across cracked, sun-baked earth in the Mojave Desert. Harsh midday sunlight, deep shadows, heat shimmer in the air. Camera slowly tracks forward at ground level, capturing the tortoise's deliberate movement. Warm, desaturated color palette, dust particles floating in the air."
+      },
+      {
+        "scene_no": 2,
+        "scene_name": "Each step is a labor against the weight of solitude.",
+        "vo": "Every step is a struggle against the heavy weight of being alone.",
+        "veo_prompt": "Close-up low angle shot of a desert tortoise's front leg lifting and placing down on cracked dirt. Slow motion, dust rising with each step. Soft, melancholic lighting, shallow depth of field focusing on the weathered claws. Camera stays low to the ground, emphasizing effort."
+      },
+      {
+        "scene_no": 3,
+        "scene_name": "For half a century, this desert tortoise has wandered the same dry washes.",
+        "vo": "For fifty years, this tortoise has roamed these same dry riverbeds.",
+        "veo_prompt": "Aerial drone shot slowly descending over a dry desert wash with sparse creosote bushes. A lone tortoise is a tiny speck moving along the sandy bottom. Golden hour light, long shadows. Camera circles gently to show the vast, empty landscape."
+      },
+      {
+        "scene_no": 4,
+        "scene_name": "It remembers the scent of rain from a decade ago, but not the touch of another shell.",
+        "vo": "It can still recall the smell of rain from ten years ago, but it doesn't remember what it feels like to touch another tortoise.",
+        "veo_prompt": "Extreme close-up of a tortoise's face, nostrils flaring as it samples the dry air. Soft, diffused light, eyes half-closed in memory. Slow pan across its weathered shell, focusing on the smooth, worn scutes. Warm amber tones, a sense of longing."
+      },
+      {
+        "scene_no": 5,
+        "scene_name": "Its home burrow is empty, dug deep into the gravelly slope as a fortress against loneliness.",
+        "vo": "Its burrow, dug deep into a gravelly hillside, sits empty—a fortress built against loneliness.",
+        "veo_prompt": "Low angle shot looking into a dark burrow entrance in a gravelly slope. The tortoise's head appears at the entrance, silhouetted against the bright desert outside. Camera slowly pushes in, revealing the empty darkness inside. Contrast of bright exterior and dark interior."
+      },
+      {
+        "scene_no": 6,
+        "scene_name": "The tortoise stops, lifting its wrinkled head to taste the air for a familiar pheromone.",
+        "vo": "The tortoise stops and lifts its wrinkled head, tasting the air for a familiar scent.",
+        "veo_prompt": "Medium shot of a tortoise raising its head high, neck extended, mouth slightly open. Slow motion, tongue flicking out to sample the air. Backlit by late afternoon sun, highlighting the texture of its skin. Camera focuses on the nostrils and tongue."
+      },
+      {
+        "scene_no": 7,
+        "scene_name": "There is only the bitter dust of isolation.",
+        "vo": "All it finds is the bitter taste of dust and isolation.",
+        "veo_prompt": "Close-up of a tortoise's face, then a slow dissolve to a cloud of dust blowing across the empty desert. Desaturated colors, harsh wind. Camera pulls back to reveal the tortoise alone in the frame, surrounded by nothing but barren land."
+      },
+      {
+        "scene_no": 8,
+        "scene_name": "It has outlived its siblings, its parents, and the last tortoise it ever saw.",
+        "vo": "It has outlived its brothers and sisters, its parents, and the last tortoise it ever laid eyes on.",
+        "veo_prompt": "Montage of fading images: young tortoises hatching, an older tortoise walking away, then a single tortoise alone. Each image dissolves into the next, ending with the current tortoise standing still. Soft, dreamlike focus, sepia tones. Camera slowly zooms in on the tortoise's eye."
+      },
+      {
+        "scene_no": 9,
+        "scene_name": "Each spring, it digs a shallow nest, but no eggs ever come to fill it.",
+        "vo": "Every spring, it digs a shallow nest, but no eggs ever fill it.",
+        "veo_prompt": "Close-up of a tortoise's back legs scraping at the dirt, digging a shallow depression. Spring wildflowers bloom in the background, but the nest remains empty. Camera stays on the empty hole, then slowly tilts up to the tortoise's face. Bright but sad lighting."
+      },
+      {
+        "scene_no": 10,
+        "scene_name": "The seasons blur into one long heatstroke of yearning.",
+        "vo": "The seasons blur together into one endless, burning ache of longing.",
+        "veo_prompt": "Time-lapse of the same desert landscape cycling through seasons—spring blooms, summer heat, autumn dusk, winter frost—all blending into each other. The tortoise remains in the center, unmoving. Camera stays fixed, creating a hypnotic blur of colors."
+      },
+      {
+        "scene_no": 11,
+        "scene_name": "Once, it heard a distant scrape—a rival male—but the sound faded into the wind.",
+        "vo": "Once, it heard a distant scraping sound—a rival male—but it faded away on the wind.",
+        "veo_prompt": "Wide shot of the tortoise turning its head toward a sound. Dust rises in the distance, but nothing is there. Camera pans slowly to the empty horizon, wind blowing sand. Late afternoon light, long shadows. A sense of missed connection."
+      },
+      {
+        "scene_no": 12,
+        "scene_name": "Now, the only company is the shadow of a vulture circling overhead.",
+        "vo": "Now, its only companion is the shadow of a vulture circling high above.",
+        "veo_prompt": "Low angle shot looking up at a vulture circling in a bright blue sky. The tortoise is in the foreground, small and vulnerable. Camera slowly tilts down to show the vulture's shadow passing over the tortoise. High contrast, stark lighting."
+      },
+      {
+        "scene_no": 13,
+        "scene_name": "The tortoise's legs are worn thin from decades of searching.",
+        "vo": "Its legs have grown thin and worn from decades of searching.",
+        "veo_prompt": "Extreme close-up of a tortoise's front leg, showing wrinkled, weathered skin and worn claws. Slow pan up the leg to the shell. Harsh light emphasizes every crack and crease. Camera holds on the leg as it takes a slow step."
+      },
+      {
+        "scene_no": 14,
+        "scene_name": "Its shell bears the scars of fires and droughts, a map of survival without love.",
+        "vo": "Its shell is covered in the scars of fires and droughts—a map of survival, but without love.",
+        "veo_prompt": "Close-up rotating shot around the tortoise's shell, revealing burn marks, cracks, and faded scutes. Each scar tells a story. Soft, warm light, then a shadow passes over. Camera moves slowly, reverently, as if reading a map."
+      },
+      {
+        "scene_no": 15,
+        "scene_name": "It pauses by a dried-up water hole, hoping for a miracle that never arrives.",
+        "vo": "It stops by a dried-up water hole, hoping for a miracle that never comes.",
+        "veo_prompt": "Medium shot of the tortoise standing at the edge of a cracked, dry water hole. Its head hangs low. Camera slowly zooms in on the empty basin, then back to the tortoise's reflection in a tiny puddle. Desolate, muted colors."
+      },
+      {
+        "scene_no": 16,
+        "scene_name": "The night comes cold and silent, and the tortoise retreats into its burrow alone.",
+        "vo": "Night falls, cold and silent, and the tortoise retreats into its burrow—alone.",
+        "veo_prompt": "Wide shot of the desert at dusk, the tortoise slowly disappearing into its burrow. Stars begin to appear in the darkening sky. Camera stays outside, looking into the dark hole. Cool blue tones, a single cricket chirps."
+      },
+      {
+        "scene_no": 17,
+        "scene_name": "It dreams of a mate's low grunt, but wakes to the howl of a coyote.",
+        "vo": "It dreams of a mate's low grunt, but wakes to the howl of a coyote.",
+        "veo_prompt": "Inside the burrow, the tortoise's head rests on the ground. Dream sequence: soft focus, warm light, a female tortoise appears briefly. Then a harsh cut to the burrow's entrance, a coyote's silhouette against the moon. Cold, stark lighting."
+      },
+      {
+        "scene_no": 18,
+        "scene_name": "Fifty years of patience, fifty years of silence.",
+        "vo": "Fifty years of patience. Fifty years of silence.",
+        "veo_prompt": "Static wide shot of the tortoise sitting alone in the desert at twilight. The camera holds for a long moment. Stars begin to appear. Slow, meditative pace. Deep, rich colors fading to night."
+      },
+      {
+        "scene_no": 19,
+        "scene_name": "The desert remembers no promises, only the slow march of an ancient heart.",
+        "vo": "The desert doesn't remember promises—only the slow march of an ancient heart.",
+        "veo_prompt": "Aerial shot slowly pulling back from the tortoise, revealing the endless desert. The tortoise becomes a tiny speck. Golden hour light, then a time-lapse of stars moving overhead. Epic, lonely scale. Camera continues to rise until the tortoise is lost in the landscape."
+      },
+      {
+        "scene_no": 20,
+        "scene_name": "The tortoise will keep walking until its legs give out, a ghost in a land of emptiness.",
+        "vo": "The tortoise will keep walking until its legs give out—a ghost in a land of emptiness.",
+        "veo_prompt": "Final shot: the tortoise walking away from the camera into the vast desert. Slow motion, dust rising. The image gradually desaturates to black and white, then fades to white. Camera stays fixed as the tortoise shrinks to a dot and disappears. Haunting, peaceful, final."
+      }
+    ]
+  },
+  "scenes": [
+    {
+      "scene_no": 1,
+      "scene_name": "The sun sears the cracked earth, and a shelled silhouette inches forward across the endless Mojave.",
+      "status": "pending",
+      "attempts": 0,
+      "downloads": [],
+      "error": "",
+      "updated_at": "2026-05-02T07:07:16.223751+00:00"
+    },
+    {
+      "scene_no": 2,
+      "scene_name": "Each step is a labor against the weight of solitude.",
+      "status": "pending",
+      "attempts": 0,
+      "downloads": [],
+      "error": "",
+      "updated_at": "2026-05-02T07:07:16.223751+00:00"
+    },
+    {
+      "scene_no": 3,
+      "scene_name": "For half a century, this desert tortoise has wandered the same dry washes.",
+      "status": "pending",
+      "attempts": 0,
+      "downloads": [],
+      "error": "",
+      "updated_at": "2026-05-02T07:07:16.223751+00:00"
+    },
+    {
+      "scene_no": 4,
+      "scene_name": "It remembers the scent of rain from a decade ago, but not the touch of another shell.",
+      "status": "pending",
+      "attempts": 0,
+      "downloads": [],
+      "error": "",
+      "updated_at": "2026-05-02T07:07:16.223751+00:00"
+    },
+    {
+      "scene_no": 5,
+      "scene_name": "Its home burrow is empty, dug deep into the gravelly slope as a fortress against loneliness.",
+      "status": "pending",
+      "attempts": 0,
+      "downloads": [],
+      "error": "",
+      "updated_at": "2026-05-02T07:07:16.223751+00:00"
+    },
+    {
+      "scene_no": 6,
+      "scene_name": "The tortoise stops, lifting its wrinkled head to taste the air for a familiar pheromone.",
+      "status": "pending",
+      "attempts": 0,
+      "downloads": [],
+      "error": "",
+      "updated_at": "2026-05-02T07:07:16.223751+00:00"
+    },
+    {
+      "scene_no": 7,
+      "scene_name": "There is only the bitter dust of isolation.",
+      "status": "pending",
+      "attempts": 0,
+      "downloads": [],
+      "error": "",
+      "updated_at": "2026-05-02T07:07:16.223751+00:00"
+    },
+    {
+      "scene_no": 8,
+      "scene_name": "It has outlived its siblings, its parents, and the last tortoise it ever saw.",
+      "status": "pending",
+      "attempts": 0,
+      "downloads": [],
+      "error": "",
+      "updated_at": "2026-05-02T07:07:16.223751+00:00"
+    },
+    {
+      "scene_no": 9,
+      "scene_name": "Each spring, it digs a shallow nest, but no eggs ever come to fill it.",
+      "status": "pending",
+      "attempts": 0,
+      "downloads": [],
+      "error": "",
+      "updated_at": "2026-05-02T07:07:16.223751+00:00"
+    },
+    {
+      "scene_no": 10,
+      "scene_name": "The seasons blur into one long heatstroke of yearning.",
+      "status": "pending",
+      "attempts": 0,
+      "downloads": [],
+      "error": "",
+      "updated_at": "2026-05-02T07:07:16.223751+00:00"
+    },
+    {
+      "scene_no": 11,
+      "scene_name": "Once, it heard a distant scrape—a rival male—but the sound faded into the wind.",
+      "status": "pending",
+      "attempts": 0,
+      "downloads": [],
+      "error": "",
+      "updated_at": "2026-05-02T07:07:16.223751+00:00"
+    },
+    {
+      "scene_no": 12,
+      "scene_name": "Now, the only company is the shadow of a vulture circling overhead.",
+      "status": "pending",
+      "attempts": 0,
+      "downloads": [],
+      "error": "",
+      "updated_at": "2026-05-02T07:07:16.223751+00:00"
+    },
+    {
+      "scene_no": 13,
+      "scene_name": "The tortoise's legs are worn thin from decades of searching.",
+      "status": "pending",
+      "attempts": 0,
+      "downloads": [],
+      "error": "",
+      "updated_at": "2026-05-02T07:07:16.223751+00:00"
+    },
+    {
+      "scene_no": 14,
+      "scene_name": "Its shell bears the scars of fires and droughts, a map of survival without love.",
+      "status": "pending",
+      "attempts": 0,
+      "downloads": [],
+      "error": "",
+      "updated_at": "2026-05-02T07:07:16.223751+00:00"
+    },
+    {
+      "scene_no": 15,
+      "scene_name": "It pauses by a dried-up water hole, hoping for a miracle that never arrives.",
+      "status": "pending",
+      "attempts": 0,
+      "downloads": [],
+      "error": "",
+      "updated_at": "2026-05-02T07:07:16.223751+00:00"
+    },
+    {
+      "scene_no": 16,
+      "scene_name": "The night comes cold and silent, and the tortoise retreats into its burrow alone.",
+      "status": "pending",
+      "attempts": 0,
+      "downloads": [],
+      "error": "",
+      "updated_at": "2026-05-02T07:07:16.223751+00:00"
+    },
+    {
+      "scene_no": 17,
+      "scene_name": "It dreams of a mate's low grunt, but wakes to the howl of a coyote.",
+      "status": "pending",
+      "attempts": 0,
+      "downloads": [],
+      "error": "",
+      "updated_at": "2026-05-02T07:07:16.223751+00:00"
+    },
+    {
+      "scene_no": 18,
+      "scene_name": "Fifty years of patience, fifty years of silence.",
+      "status": "pending",
+      "attempts": 0,
+      "downloads": [],
+      "error": "",
+      "updated_at": "2026-05-02T07:07:16.223751+00:00"
+    },
+    {
+      "scene_no": 19,
+      "scene_name": "The desert remembers no promises, only the slow march of an ancient heart.",
+      "status": "pending",
+      "attempts": 0,
+      "downloads": [],
+      "error": "",
+      "updated_at": "2026-05-02T07:07:16.223751+00:00"
+    },
+    {
+      "scene_no": 20,
+      "scene_name": "The tortoise will keep walking until its legs give out, a ghost in a land of emptiness.",
+      "status": "pending",
+      "attempts": 0,
+      "downloads": [],
+      "error": "",
+      "updated_at": "2026-05-02T07:07:16.223751+00:00"
+    }
+  ],
+  "flow_tracker": {
+    "downloaded_card_keys": [],
+    "failed_card_keys": []
+  },
+  "downloaded_cards": []
+}

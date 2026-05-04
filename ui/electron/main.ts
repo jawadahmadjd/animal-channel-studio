@@ -42,11 +42,26 @@ function getPythonRuntimeDir(): string {
   return join(app.getPath('userData'), 'AnimalChannelStudio', 'python-runtime')
 }
 
+function getBundledPythonRuntimeDir(): string {
+  return join(getResourcesDir(), 'python-runtime')
+}
+
+function getBundledPythonExe(): string {
+  return join(getBundledPythonRuntimeDir(), 'python.exe')
+}
+
+function hasBundledPythonRuntime(): boolean {
+  return app.isPackaged && existsSync(getBundledPythonExe())
+}
+
 function getPythonExe(): string {
-  // Always prefer the self-managed runtime we downloaded
+  // Release builds include a prebuilt runtime in resources/python-runtime.
+  if (hasBundledPythonRuntime()) return getBundledPythonExe()
+
+  // Fallback for dev/local package builds that did not include the runtime.
   const managed = join(getPythonRuntimeDir(), 'python.exe')
   if (existsSync(managed)) return managed
-  // Dev fallback: system Python
+
   return process.platform === 'win32' ? 'python' : 'python3'
 }
 
@@ -116,6 +131,11 @@ function downloadFile(url: string, dest: string): Promise<void> {
 // ── Python runtime bootstrap ──────────────────────────────────────────────────
 
 async function ensurePythonRuntime(): Promise<void> {
+  if (hasBundledPythonRuntime()) {
+    log.info('[setup] bundled Python runtime found at', getBundledPythonExe())
+    return
+  }
+
   const runtimeDir = getPythonRuntimeDir()
   const pythonExe = join(runtimeDir, 'python.exe')
 
@@ -184,28 +204,33 @@ async function runBackgroundSetup(): Promise<void> {
   const python = getPythonExe()
 
   // ── Step 2: pip install ───────────────────────────────────────────────────
-  sendSetupProgress('pip', 'Installing Python packages…')
-  log.info('[setup] running pip install')
-  await new Promise<void>((resolve) => {
-    const args = ['-m', 'pip', 'install', '--upgrade', '-r', requirementsFile]
-    const proc = spawn(python, args, { stdio: 'pipe' })
-    const onData = (d: Buffer) => {
-      for (const line of d.toString().trim().split('\n')) {
-        if (!line.trim()) continue
-        log.info('[pip]', line)
-        const lower = line.toLowerCase()
-        if (lower.startsWith('downloading') || lower.startsWith('installing') || lower.startsWith('successfully')) {
-          sendSetupProgress('pip', line.trim())
+  if (hasBundledPythonRuntime()) {
+    sendSetupProgress('pip', 'Python packages bundled')
+    log.info('[setup] skipping pip install; bundled Python runtime is active')
+  } else {
+    sendSetupProgress('pip', 'Installing Python packages…')
+    log.info('[setup] running pip install')
+    await new Promise<void>((resolve) => {
+      const args = ['-m', 'pip', 'install', '--upgrade', '-r', requirementsFile]
+      const proc = spawn(python, args, { stdio: 'pipe' })
+      const onData = (d: Buffer) => {
+        for (const line of d.toString().trim().split('\n')) {
+          if (!line.trim()) continue
+          log.info('[pip]', line)
+          const lower = line.toLowerCase()
+          if (lower.startsWith('downloading') || lower.startsWith('installing') || lower.startsWith('successfully')) {
+            sendSetupProgress('pip', line.trim())
+          }
         }
       }
-    }
-    proc.stdout?.on('data', onData)
-    proc.stderr?.on('data', onData)
-    proc.on('exit', (code) => {
-      if (code !== 0) log.warn('[pip] exit code', code)
-      resolve()
+      proc.stdout?.on('data', onData)
+      proc.stderr?.on('data', onData)
+      proc.on('exit', (code) => {
+        if (code !== 0) log.warn('[pip] exit code', code)
+        resolve()
+      })
     })
-  })
+  }
 
   // ── Step 3: start bridge ──────────────────────────────────────────────────
   sendSetupProgress('bridge', 'Starting background service…')
@@ -292,6 +317,13 @@ async function createWindow(): Promise<void> {
     },
   })
 
+  mainWindow.on('focus', () => {
+    mainWindow?.webContents.send('window:focus-changed', true)
+  })
+  mainWindow.on('blur', () => {
+    mainWindow?.webContents.send('window:focus-changed', false)
+  })
+
   if (app.isPackaged) {
     mainWindow.loadFile(join(__dirname, '../dist/index.html'))
   } else {
@@ -352,6 +384,17 @@ ipcMain.handle('dialog:openFolder', async () => {
     title: 'Select Output Folder',
   })
   return result.canceled ? null : result.filePaths[0]
+})
+
+ipcMain.handle('dialog:saveTextFile', async (_event, payload: { defaultPath: string; content: string }) => {
+  const result = await dialog.showSaveDialog(mainWindow!, {
+    title: 'Export Log',
+    defaultPath: payload.defaultPath,
+    filters: [{ name: 'Text Files', extensions: ['txt'] }],
+  })
+  if (result.canceled || !result.filePath) return false
+  writeFileSync(result.filePath, payload.content, 'utf8')
+  return true
 })
 
 ipcMain.on('install-update', () => autoUpdater.quitAndInstall())

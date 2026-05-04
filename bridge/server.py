@@ -13,7 +13,7 @@ import sys
 import time
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import AsyncGenerator
+from typing import Any, AsyncGenerator
 from urllib.parse import urlparse
 
 import requests as _requests
@@ -21,18 +21,19 @@ from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse, StreamingResponse
 from dotenv import load_dotenv
-from pydantic import BaseModel, field_validator
+from pydantic import BaseModel, Field, field_validator
 from starlette.middleware.base import BaseHTTPMiddleware
+from starlette.responses import Response
 
-# ── Directory layout ───────────────────────────────────────────────────────────
+# â”€â”€ Directory layout â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 #
 # Read-only assets (scripts, bridge code) always relative to this file:
-#   dev  → <project_root>/bridge/server.py  →  parents[1] = project_root
-#   pkg  → resources/bridge/server.py       →  parents[1] = resources/
+#   dev  â†’ <project_root>/bridge/server.py  â†’  parents[1] = project_root
+#   pkg  â†’ resources/bridge/server.py       â†’  parents[1] = resources/
 #
 # Writable data (state, output, logs) go to DATA_DIR:
-#   dev  → project_root  (same as ROOT_DIR)
-#   pkg  → %AppData%\AnimalChannelStudio  (set by Electron via env var)
+#   dev  â†’ project_root  (same as ROOT_DIR)
+#   pkg  â†’ %AppData%\AnimalChannelStudio  (set by Electron via env var)
 
 ROOT_DIR  = Path(__file__).resolve().parents[1]   # scripts sibling in both dev & pkg
 BASE_DATA_DIR  = Path(os.environ.get("ANIMAL_STUDIO_DATA_DIR", str(ROOT_DIR)))
@@ -47,6 +48,17 @@ IDEAS_FILE    = ROOT_DIR / "Ideas.md"  # legacy; kept for _validate_idea_index f
 SCRIPTS_DIR   = ROOT_DIR / "scripts"
 PYTHON_EXE    = sys.executable
 BOOTSTRAP_APP_SETTINGS = BASE_DATA_DIR / "state" / "app_settings.json"
+
+if str(SCRIPTS_DIR) not in sys.path:
+    sys.path.insert(0, str(SCRIPTS_DIR))
+
+from audit_log import audit_error, audit_event, new_run_id, sanitize, summarize_text
+from flow_intervals import (
+    default_flow_intervals,
+    flow_interval_fields,
+    merge_flow_intervals,
+    normalize_flow_intervals,
+)
 
 
 def _candidate_env_files() -> list[Path]:
@@ -194,11 +206,11 @@ def _ensure_data_dirs() -> None:
         _d.mkdir(parents=True, exist_ok=True)
 
 
-# ── Ensure writable dirs exist ─────────────────────────────────────────────────
+# â”€â”€ Ensure writable dirs exist â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 _ensure_data_dirs()
 
-# ── Session logger ─────────────────────────────────────────────────────────────
+# â”€â”€ Session logger â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 # Each bridge launch gets its own timestamped log file so you can send a user
 # a specific file (e.g. session_20250427_143012.log) to diagnose their problem.
 
@@ -225,8 +237,18 @@ blog.addHandler(_ch)
 
 blog.info(f"Session log: {_SESSION_LOG_FILE}")
 blog.info(f"ROOT_DIR={ROOT_DIR}  DATA_DIR={DATA_DIR}")
+audit_event(
+    "bridge.session.start",
+    {
+        "session_log": str(_SESSION_LOG_FILE),
+        "root_dir": str(ROOT_DIR),
+        "data_dir": str(DATA_DIR),
+        "python_exe": PYTHON_EXE,
+        "pid": os.getpid(),
+    },
+)
 
-# ── App settings (merged from app_settings.json + env vars) ───────────────────
+# â”€â”€ App settings (merged from app_settings.json + env vars) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 _DEFAULT_APP_SETTINGS = {
     "output_dir": "",
@@ -235,7 +257,111 @@ _DEFAULT_APP_SETTINGS = {
     "max_retries_per_scene": 3,
     "pipeline_timeout_sec": 300,
     "confirm_costly_operations": True,
+    "theme": "system",
+    "onboarding_complete": False,
+    "prompt_idea_generation": "",
+    "prompt_script_generation": "",
+    "prompt_vo_narration_generation": "",
+    "prompt_veo_prompt_generation": "",
+    # Legacy combined prompt key (kept for backward compatibility)
+    "prompt_vo_prompt_generation": "",
+    "prompt_story_master_template": "",
+    "flow_intervals": default_flow_intervals(),
 }
+
+_PROMPT_SETTINGS_KEYS = (
+    "prompt_idea_generation",
+    "prompt_script_generation",
+    "prompt_vo_narration_generation",
+    "prompt_veo_prompt_generation",
+    "prompt_vo_prompt_generation",
+    "prompt_story_master_template",
+)
+
+_DEFAULT_IDEA_GENERATION_PROMPT = (
+    "You are a creative content strategist for YouTube. "
+    "Your job is to generate exactly {idea_count} compelling video ideas for a given niche and content type. "
+    "Return ONLY a JSON array with exactly {idea_count} objects. Each object must have exactly two keys: "
+    '"title" (a short, punchy video title) and "description" (one sentence explaining the idea). '
+    "No markdown, no extra text, no numbering outside the JSON. Output valid JSON only."
+)
+
+_DEFAULT_SCRIPT_GENERATION_PROMPT = (
+    "You are a professional scriptwriter specializing in {niche} content for YouTube. "
+    "Write a compelling, narration-ready video script for the given idea. "
+    "The script MUST be approximately {target_words} words - aim for exactly {target_words} words. "
+    "Each sentence is a self-contained scene or narration beat. "
+    "Write in vivid, engaging, present-tense prose suitable for a voiceover. "
+    "Output ONLY the script sentences, one per line, no scene numbers, no timestamps, no headings."
+)
+
+_DEFAULT_VO_NARRATION_GENERATION_PROMPT = (
+    "You are an expert voiceover writer for wildlife documentary videos. "
+    "For each sentence in the script, return a JSON array where every element has exactly two keys:\n"
+    '  "sentence" - the original sentence (verbatim)\n'
+    '  "narration" - a warm, conversational, narration-ready line for TTS\n\n'
+    "Return ONLY a valid JSON array. No markdown fences, no explanation."
+)
+
+_DEFAULT_VEO_PROMPT_GENERATION_PROMPT = (
+    "You are an expert cinematic prompt engineer for AI video generation. "
+    "For each sentence in the script, return a JSON array where every element has exactly two keys:\n"
+    '  "sentence" - the original sentence (verbatim)\n'
+    '  "veo_prompt" - a detailed VEO 3 video generation prompt: camera angle, lighting, animal behavior, '
+    "environment, mood\n\n"
+    "Return ONLY a valid JSON array. No markdown fences, no explanation."
+)
+
+
+def _default_story_master_prompt() -> str:
+    path = ROOT_DIR / "Master_Prompts.md"
+    try:
+        return path.read_text(encoding="utf-8")
+    except Exception:
+        return (
+            "Generate cinematic wildlife scenes from the idea input. "
+            "Return only a table with Scene, VO Narration, and VEO 3 Prompt."
+        )
+
+
+def _default_prompt_values() -> dict[str, str]:
+    return {
+        "prompt_idea_generation": _DEFAULT_IDEA_GENERATION_PROMPT,
+        "prompt_script_generation": _DEFAULT_SCRIPT_GENERATION_PROMPT,
+        "prompt_vo_narration_generation": _DEFAULT_VO_NARRATION_GENERATION_PROMPT,
+        "prompt_veo_prompt_generation": _DEFAULT_VEO_PROMPT_GENERATION_PROMPT,
+        "prompt_story_master_template": _default_story_master_prompt(),
+    }
+
+
+def _effective_prompt_settings(cfg: dict | None = None) -> dict[str, str]:
+    cfg = cfg or _load_app_settings()
+    defaults = _default_prompt_values()
+    effective: dict[str, str] = {}
+    legacy_combined = str(cfg.get("prompt_vo_prompt_generation", "")).strip()
+    for key, default_value in defaults.items():
+        value = str(cfg.get(key, "")).strip()
+        if value:
+            effective[key] = value
+            continue
+        if key in {"prompt_vo_narration_generation", "prompt_veo_prompt_generation"} and legacy_combined:
+            effective[key] = legacy_combined
+            continue
+        effective[key] = default_value
+    # Surface legacy key too so existing callsites remain tolerant.
+    effective["prompt_vo_prompt_generation"] = legacy_combined or (
+        _DEFAULT_VO_NARRATION_GENERATION_PROMPT + "\n\n" + _DEFAULT_VEO_PROMPT_GENERATION_PROMPT
+    )
+    return effective
+
+
+def _render_prompt_template(template: str, values: dict[str, Any]) -> str:
+    rendered = template
+    for key, value in values.items():
+        token = str(value)
+        rendered = rendered.replace(f"{{{{{key}}}}}", token)
+        rendered = rendered.replace(f"{{{key}}}", token)
+    return rendered
 
 
 def _flow_wait_bounds(wait_between_sec: int, wait_max_sec: int) -> tuple[int, int]:
@@ -250,12 +376,14 @@ def _flow_runtime_from_settings() -> dict:
     wait_between = int(cfg.get("wait_between_scenes", 5) or 5)
     wait_max = wait_between + 10
     safe_wait_between, safe_wait_max = _flow_wait_bounds(wait_between, wait_max)
+    intervals = normalize_flow_intervals(cfg.get("flow_intervals"))
     return {
         "wait_between_sec": safe_wait_between,
         "wait_max_sec": safe_wait_max,
         "scene_max_retries": int(cfg.get("max_retries_per_scene", 3) or 3),
         "timeout_sec": int(cfg.get("pipeline_timeout_sec", 300) or 300),
         "headless": bool(cfg.get("flow_headless", False)),
+        "flow_intervals": intervals,
     }
 
 
@@ -269,6 +397,10 @@ def _load_app_settings() -> dict:
         if saved:
             saved = _sanitize_settings_file(BOOTSTRAP_APP_SETTINGS, saved)
     merged = {**_DEFAULT_APP_SETTINGS, **saved}
+    merged["flow_intervals"] = merge_flow_intervals(
+        _DEFAULT_APP_SETTINGS.get("flow_intervals"),
+        saved.get("flow_intervals") if isinstance(saved, dict) else None,
+    )
     if not merged.get("output_dir"):
         merged["output_dir"] = str(DATA_DIR)
     return merged
@@ -356,7 +488,7 @@ def _save_app_settings(new_values: dict) -> None:
     _sync_bootstrap_settings(current)
 
 
-# ── Credential resolution (settings file > env vars) ──────────────────────────
+# â”€â”€ Credential resolution (settings file > env vars) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 def _get_api_key(env_key: str) -> str:
     return os.getenv(env_key, "").strip()
@@ -370,6 +502,65 @@ def _elevenlabs_key() -> str:
     return _get_api_key("ELEVENLABS_API_KEY")
 
 
+def _external_request(
+    provider: str,
+    method: str,
+    url: str,
+    *,
+    operation: str,
+    headers: dict | None = None,
+    json_body: dict | None = None,
+    timeout: int = 60,
+) -> _requests.Response:
+    started = time.monotonic()
+    audit_event(
+        "api.request",
+        {
+            "provider": provider,
+            "operation": operation,
+            "method": method.upper(),
+            "url": url,
+            "headers": sanitize(headers or {}),
+            "json": sanitize(json_body or {}),
+            "timeout": timeout,
+        },
+    )
+    try:
+        resp = _requests.request(
+            method=method.upper(),
+            url=url,
+            headers=headers,
+            json=json_body,
+            timeout=timeout,
+        )
+        content_type = (resp.headers.get("content-type") or "").lower()
+        if "json" in content_type or "text" in content_type:
+            response_body: dict | str = summarize_text(resp.text, limit=1200)
+        else:
+            response_body = {"bytes": len(resp.content), "content_type": content_type}
+        audit_event(
+            "api.response",
+            {
+                "provider": provider,
+                "operation": operation,
+                "method": method.upper(),
+                "url": url,
+                "status_code": resp.status_code,
+                "elapsed_ms": int((time.monotonic() - started) * 1000),
+                "content_type": content_type,
+                "response": response_body,
+            },
+        )
+        return resp
+    except Exception as exc:
+        audit_error(
+            "api.error",
+            exc,
+            {"provider": provider, "operation": operation, "method": method.upper(), "url": url},
+        )
+        raise
+
+
 DEEPSEEK_BASE_URL = os.getenv("DEEPSEEK_BASE_URL", "https://api.deepseek.com")
 DEEPSEEK_MODEL    = os.getenv("DEEPSEEK_MODEL", "deepseek-chat")
 
@@ -379,7 +570,7 @@ _config_status = {
     "elevenlabs": bool(_elevenlabs_key()),
 }
 
-# Subprocess env — include scripts/ so run_pipeline.py can import flow_automation etc.
+# Subprocess env â€” include scripts/ so run_pipeline.py can import flow_automation etc.
 _scripts_path = str(ROOT_DIR / "scripts")
 _existing_pythonpath = os.environ.get("PYTHONPATH", "")
 _ENV = {
@@ -394,7 +585,7 @@ if not _config_status["deepseek"]:
 if not _config_status["elevenlabs"]:
     blog.warning("ELEVENLABS_API_KEY not configured - add it to .env or your environment")
 
-# ── FastAPI app ────────────────────────────────────────────────────────────────
+# â”€â”€ FastAPI app â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 BRIDGE_VERSION = 2  # Increment whenever API contracts change
 
@@ -419,15 +610,22 @@ class _RequestLogMiddleware(BaseHTTPMiddleware):
         path = request.url.path
         method = request.method
 
-        # Skip noisy polling endpoints
-        skip_log = path in ("/run/stream", "/output/watch", "/flow/live-buffer/watch", "/health")
+        # Skip noisy polling and binary/streaming endpoints.
+        skip_log = (
+            path in ("/run/stream", "/output/watch", "/flow/live-buffer/watch", "/health")
+            or path.startswith("/audio/")
+            or path.startswith("/output/file")
+            or path.startswith("/logs/download/")
+        )
 
         body_str = ""
+        request_body = {}
         if not skip_log and method in ("POST", "PUT", "PATCH"):
             try:
                 raw = await request.body()
                 body = json.loads(raw) if raw else {}
                 body = self._redact(body)
+                request_body = body
                 body_str = f" body={json.dumps(body, separators=(',', ':'))}"
                 # Rebuild the body so FastAPI can still read it
                 async def _receive():
@@ -436,32 +634,76 @@ class _RequestLogMiddleware(BaseHTTPMiddleware):
             except Exception:
                 pass
 
+        if not skip_log:
+            audit_event(
+                "bridge.http.request",
+                {
+                    "method": method,
+                    "path": path,
+                    "query": str(request.url.query),
+                    "body": request_body,
+                },
+            )
+
         response = await call_next(request)
         ms = int((time.monotonic() - t0) * 1000)
+        response_payload: dict | str = ""
 
         if not skip_log:
-            blog.info(f"[http] {method} {path}{body_str} → {response.status_code} ({ms}ms)")
+            body_bytes = b""
+            async for chunk in response.body_iterator:
+                body_bytes += chunk
+            media_type = response.media_type or response.headers.get("content-type", "")
+            text = body_bytes.decode("utf-8", errors="replace")
+            try:
+                response_payload = self._redact(json.loads(text)) if text else {}
+            except Exception:
+                response_payload = summarize_text(text, limit=1200)
+            headers = dict(response.headers)
+            headers.pop("content-length", None)
+            response = Response(
+                content=body_bytes,
+                status_code=response.status_code,
+                headers=headers,
+            )
+
+        if not skip_log:
+            blog.info(f"[http] {method} {path}{body_str} â†’ {response.status_code} ({ms}ms)")
+
+        if not skip_log:
+            audit_event(
+                "bridge.http.response",
+                {
+                    "method": method,
+                    "path": path,
+                    "status_code": response.status_code,
+                    "elapsed_ms": ms,
+                    "body": response_payload,
+                },
+            )
 
         return response
 
     def _redact(self, obj):
         if isinstance(obj, dict):
             return {
-                k: ("***" if k in self._REDACT and v else v)
+                k: ("***" if k in self._REDACT and v else self._redact(v))
                 for k, v in obj.items()
             }
+        if isinstance(obj, list):
+            return [self._redact(v) for v in obj[:60]]
         return obj
 
 
 app.add_middleware(_RequestLogMiddleware)
 
-# ── Active subprocess state ────────────────────────────────────────────────────
+# â”€â”€ Active subprocess state â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 _active_proc: subprocess.Popen | None = None
 _log_queue: asyncio.Queue[str | None] = asyncio.Queue()
 
 
-# ── Helpers ────────────────────────────────────────────────────────────────────
+# â”€â”€ Helpers â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 def _load_ideas_db() -> dict:
     if not IDEAS_DB_FILE.exists():
@@ -553,7 +795,7 @@ def _kill_proc_tree(pid: int) -> None:
                 pass
         parent.kill()
     except Exception:
-        # psutil not available or process already dead — fall back
+        # psutil not available or process already dead â€” fall back
         try:
             import signal
             os.kill(pid, signal.SIGTERM if os.name != 'nt' else signal.CTRL_BREAK_EVENT)
@@ -565,6 +807,7 @@ async def _stream_process(cmd: list[str], cwd: str, timeout_seconds: int = 1800)
     """Spawn a subprocess, push stdout lines to _log_queue, kill after timeout."""
     global _active_proc
     loop = asyncio.get_running_loop()
+    run_id = new_run_id("subprocess")
 
     def _run():
         global _active_proc
@@ -572,13 +815,19 @@ async def _stream_process(cmd: list[str], cwd: str, timeout_seconds: int = 1800)
         import re as _re
 
         short_cmd = " ".join(str(a) for a in cmd[-6:])  # last 6 args for brevity
-        blog.info(f"[subprocess] START  cmd=…{short_cmd}  cwd={cwd}  timeout={timeout_seconds}s")
+        audit_event(
+            "subprocess.start",
+            {"run_id": run_id, "cmd": cmd, "cwd": cwd, "timeout_seconds": timeout_seconds},
+            run_id=run_id,
+        )
+        blog.info(f"[subprocess] START  cmd=â€¦{short_cmd}  cwd={cwd}  timeout={timeout_seconds}s")
 
         def _timeout_kill():
             proc = _active_proc
             if proc and proc.poll() is None:
                 msg = f'\n[Error: Pipeline timed out after {timeout_seconds // 60} minutes. Stopping.]\n'
-                blog.error(f"[subprocess] TIMEOUT after {timeout_seconds}s — killing PID {proc.pid}")
+                blog.error(f"[subprocess] TIMEOUT after {timeout_seconds}s â€” killing PID {proc.pid}")
+                audit_event("subprocess.timeout", {"pid": proc.pid, "timeout_seconds": timeout_seconds}, run_id=run_id)
                 loop.call_soon_threadsafe(_log_queue.put_nowait, msg)
                 _kill_proc_tree(proc.pid)
 
@@ -599,9 +848,10 @@ async def _stream_process(cmd: list[str], cwd: str, timeout_seconds: int = 1800)
                     cmd, cwd=cwd,
                     stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
                     text=True, bufsize=1, encoding="utf-8", errors="replace",
-                    env=_ENV,
+                    env={**_ENV, "ANIMAL_STUDIO_RUN_ID": run_id},
                 )
                 blog.info(f"[subprocess] PID={_active_proc.pid}")
+                audit_event("subprocess.pid", {"pid": _active_proc.pid}, run_id=run_id)
                 timer.start()
                 assert _active_proc.stdout
 
@@ -630,22 +880,29 @@ async def _stream_process(cmd: list[str], cwd: str, timeout_seconds: int = 1800)
                             })
                             emit(struct + '\n')
                             blog.error(f"[subprocess] Python exception: {stripped[:200]}")
+                            audit_event(
+                                "subprocess.traceback",
+                                {"exception": stripped, "traceback": "\n".join(tb_buf)},
+                                run_id=run_id,
+                            )
                             in_tb = False
                             tb_buf = []
                         elif stripped and stripped[0] not in (' ', '\t', '|', '+', '_') and stripped != '':
-                            # Non-indented line that is not an exception → end tb without match
+                            # Non-indented line that is not an exception â†’ end tb without match
                             in_tb = False
                             tb_buf = []
 
                 code = _active_proc.wait()
-                done_msg = f"\n[Done — exit code {code}]\n"
+                done_msg = f"\n[Done â€” exit code {code}]\n"
                 tee(done_msg)
                 blog.info(f"[subprocess] EXIT code={code}")
+                audit_event("subprocess.exit", {"exit_code": code}, run_id=run_id)
                 loop.call_soon_threadsafe(_log_queue.put_nowait, None)
             except Exception as exc:
                 err_msg = f"\n[Error starting process: {exc}]\n"
                 tee(err_msg)
                 blog.error(f"[subprocess] FAILED to start: {exc}")
+                audit_error("subprocess.error", exc, {"cmd": cmd, "cwd": cwd})
                 loop.call_soon_threadsafe(_log_queue.put_nowait, None)
             finally:
                 timer.cancel()
@@ -732,7 +989,7 @@ def _reconcile_run_state_file(story_id: str) -> tuple[dict, bool]:
     return state, changed
 
 
-# ── Route: Health ──────────────────────────────────────────────────────────────
+# â”€â”€ Route: Health â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 @app.get("/health")
 def health_check():
@@ -749,7 +1006,7 @@ def health_check():
     }
 
 
-# ── Routes: Ideas DB ──────────────────────────────────────────────────────────
+# â”€â”€ Routes: Ideas DB â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 class IdeaDbSaveRequest(BaseModel):
     title: str
@@ -847,7 +1104,7 @@ def clear_idea_metadata(story_id: str):
     return {"status": "metadata_cleared", "story_id": story_id, "run_state_deleted": run_state_deleted}
 
 
-# ── Routes: Auth ───────────────────────────────────────────────────────────────
+# â”€â”€ Routes: Auth â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 @app.get("/auth/status")
 def get_auth_status():
@@ -886,7 +1143,7 @@ def delete_auth():
     return {"status": "cleared"}
 
 
-# ── Routes: Flow Settings ──────────────────────────────────────────────────────
+# â”€â”€ Routes: Flow Settings â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 @app.get("/settings")
 def get_settings():
@@ -920,12 +1177,14 @@ def save_settings(payload: SettingsPayload):
     return {"status": "saved"}
 
 
-# ── Routes: App Settings (C3) ──────────────────────────────────────────────────
+# â”€â”€ Routes: App Settings (C3) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 @app.get("/settings/app")
 def get_app_settings():
     cfg = _load_app_settings()
-    # Redact key values — return *** if set
+    prompt_values = _effective_prompt_settings(cfg)
+    flow_intervals = normalize_flow_intervals(cfg.get("flow_intervals"))
+    # Redact key values â€” return *** if set
     return {
         "deepseek_api_key":      SECRET_REDACTION if _deepseek_key() else "",
         "elevenlabs_api_key":    SECRET_REDACTION if _elevenlabs_key() else "",
@@ -935,6 +1194,17 @@ def get_app_settings():
         "max_retries_per_scene": cfg.get("max_retries_per_scene", 3),
         "pipeline_timeout_sec":          cfg.get("pipeline_timeout_sec", 300),
         "confirm_costly_operations":     cfg.get("confirm_costly_operations", True),
+        "theme":                         cfg.get("theme", "system"),
+        "onboarding_complete":           cfg.get("onboarding_complete", False),
+        "prompt_idea_generation":        prompt_values["prompt_idea_generation"],
+        "prompt_script_generation":      prompt_values["prompt_script_generation"],
+        "prompt_vo_narration_generation": prompt_values["prompt_vo_narration_generation"],
+        "prompt_veo_prompt_generation":   prompt_values["prompt_veo_prompt_generation"],
+        "prompt_vo_prompt_generation":   prompt_values["prompt_vo_prompt_generation"],
+        "prompt_story_master_template":  prompt_values["prompt_story_master_template"],
+        "flow_intervals":                flow_intervals,
+        "flow_interval_fields":          flow_interval_fields(),
+        "first_launch":                  not APP_SETTINGS.exists(),
     }
 
 
@@ -947,20 +1217,39 @@ class AppSettingsPayload(BaseModel):
     max_retries_per_scene: int = 3
     pipeline_timeout_sec: int = 300
     confirm_costly_operations: bool = True
+    theme: str = "system"
+    onboarding_complete: bool = False
+    prompt_idea_generation: str = ""
+    prompt_script_generation: str = ""
+    prompt_vo_narration_generation: str = ""
+    prompt_veo_prompt_generation: str = ""
+    prompt_vo_prompt_generation: str = ""
+    prompt_story_master_template: str = ""
+    flow_intervals: dict[str, int] = Field(default_factory=dict)
 
     def validate_fields(self) -> None:
         if not (0 <= self.wait_between_scenes <= 120):
             raise HTTPException(status_code=422, detail="wait_between_scenes must be between 0 and 120")
         if not (1 <= self.max_retries_per_scene <= 10):
             raise HTTPException(status_code=422, detail="max_retries_per_scene must be between 1 and 10")
+        if self.theme not in {"light", "dark", "system"}:
+            raise HTTPException(status_code=422, detail="theme must be light, dark, or system")
+        for key in _PROMPT_SETTINGS_KEYS:
+            value = str(getattr(self, key, "") or "")
+            if len(value) > 100_000:
+                raise HTTPException(status_code=422, detail=f"{key} is too long")
+        normalize_flow_intervals(self.flow_intervals)
 
 
 @app.post("/settings/app")
 def save_app_settings(payload: AppSettingsPayload):
     payload.validate_fields()
+    patch_payload = payload.model_dump(exclude_unset=True)
+    if "flow_intervals" in patch_payload:
+        patch_payload["flow_intervals"] = normalize_flow_intervals(patch_payload.get("flow_intervals"))
     # Treat this endpoint as PATCH semantics: only persist fields provided
     # by the caller so partial saves do not reset unrelated settings.
-    _save_app_settings(payload.model_dump(exclude_unset=True))
+    _save_app_settings(patch_payload)
     # Refresh startup config status
     global _config_status
     _config_status = {
@@ -970,7 +1259,7 @@ def save_app_settings(payload: AppSettingsPayload):
     return {"status": "saved"}
 
 
-# ── Routes: API Key Validation (C3) ───────────────────────────────────────────
+# â”€â”€ Routes: API Key Validation (C3) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 @app.post("/validate/deepseek")
 def validate_deepseek():
@@ -978,8 +1267,11 @@ def validate_deepseek():
     if not key:
         return {"ok": False, "error": "No DeepSeek API key configured"}
     try:
-        resp = _requests.get(
+        resp = _external_request(
+            "deepseek",
+            "GET",
             f"{DEEPSEEK_BASE_URL}/models",
+            operation="validate_key",
             headers={"Authorization": f"Bearer {key}"},
             timeout=10,
         )
@@ -995,8 +1287,11 @@ def validate_elevenlabs():
     if not key:
         return {"ok": False, "error": "No ElevenLabs API key configured"}
     try:
-        resp = _requests.get(
+        resp = _external_request(
+            "elevenlabs",
+            "GET",
             "https://api.elevenlabs.io/v1/voices",
+            operation="validate_key",
             headers={"xi-api-key": key},
             timeout=10,
         )
@@ -1006,7 +1301,7 @@ def validate_elevenlabs():
         return {"ok": False, "error": str(exc)}
 
 
-# ── Routes: Run ────────────────────────────────────────────────────────────────
+# â”€â”€ Routes: Run â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 class LoginRequest(BaseModel):
     headless: bool | None = None
@@ -1016,6 +1311,7 @@ class LoginRequest(BaseModel):
 async def run_login(req: LoginRequest):
     runtime = _flow_runtime_from_settings()
     headless = runtime["headless"]
+    _ENV["FLOW_INTERVALS_JSON"] = json.dumps(runtime["flow_intervals"], ensure_ascii=False)
     blog.info(f"[run/login] headless={headless}")
     cmd = [
         PYTHON_EXE, str(SCRIPTS_DIR / "flow_automation.py"),
@@ -1054,6 +1350,7 @@ async def run_pipeline(req: PipelineRequest):
     scene_max_retries = runtime["scene_max_retries"]
     timeout_sec = runtime["timeout_sec"]
     headless = runtime["headless"]
+    _ENV["FLOW_INTERVALS_JSON"] = json.dumps(runtime["flow_intervals"], ensure_ascii=False)
     blog.info(
         f"[run/pipeline] story_id={req.story_id!r} idea_index={req.idea_index} "
         f"headless={headless} timeout={timeout_sec}s wait={wait_between_sec}-{wait_max_sec}s retries={scene_max_retries}"
@@ -1099,6 +1396,7 @@ async def run_resume(req: ResumeRequest):
     scene_max_retries = runtime["scene_max_retries"]
     timeout_sec = runtime["timeout_sec"]
     headless = runtime["headless"]
+    _ENV["FLOW_INTERVALS_JSON"] = json.dumps(runtime["flow_intervals"], ensure_ascii=False)
     blog.info(
         f"[run/resume] story_id={req.story_id!r} headless={headless} "
         f"timeout={timeout_sec}s wait={wait_between_sec}-{wait_max_sec}s retries={scene_max_retries}"
@@ -1164,6 +1462,7 @@ async def run_flow_only(req: FlowOnlyRequest):
     scene_max_retries = runtime["scene_max_retries"]
     timeout_sec = runtime["timeout_sec"]
     headless = runtime["headless"]
+    _ENV["FLOW_INTERVALS_JSON"] = json.dumps(runtime["flow_intervals"], ensure_ascii=False)
     blog.info(
         f"[run/flow-only] story_id={req.story_id!r} headless={headless} "
         f"timeout={timeout_sec}s wait={wait_between_sec}-{wait_max_sec}s retries={scene_max_retries}"
@@ -1201,7 +1500,7 @@ async def run_flow_only(req: FlowOnlyRequest):
             raise HTTPException(
                 status_code=404,
                 detail=f"No story found for story_id '{req.story_id}'. "
-                       "Complete Steps 2–5 and save to the database first."
+                       "Complete Steps 2â€“5 and save to the database first."
             )
 
         now_iso = datetime.now(timezone.utc).isoformat()
@@ -1312,7 +1611,7 @@ def run_stop():
     return {"status": "nothing_running"}
 
 
-# ── SSE Stream ─────────────────────────────────────────────────────────────────
+# â”€â”€ SSE Stream â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 @app.get("/run/stream")
 async def run_stream():
@@ -1332,7 +1631,7 @@ async def run_stream():
     )
 
 
-# ── Log file endpoint ──────────────────────────────────────────────────────────
+# â”€â”€ Log file endpoint â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 @app.get("/logs/{filename}")
 def get_log_file(filename: str):
@@ -1344,30 +1643,34 @@ def get_log_file(filename: str):
     return {"lines": text.splitlines()}
 
 
-# ── DeepSeek helper ────────────────────────────────────────────────────────────
+# â”€â”€ DeepSeek helper â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 def _deepseek_chat(system_prompt: str, user_message: str, temperature: float = 0.8) -> str:
     key = _deepseek_key()
     if not key:
-        raise HTTPException(status_code=400, detail="DeepSeek API key not configured — go to Settings")
-    resp = _requests.post(
+        raise HTTPException(status_code=400, detail="DeepSeek API key not configured â€” go to Settings")
+    body = {
+        "model": DEEPSEEK_MODEL,
+        "messages": [
+            {"role": "system", "content": system_prompt},
+            {"role": "user", "content": user_message},
+        ],
+        "temperature": temperature,
+    }
+    resp = _external_request(
+        "deepseek",
+        "POST",
         f"{DEEPSEEK_BASE_URL}/chat/completions",
+        operation="content_generation",
         headers={"Authorization": f"Bearer {key}", "Content-Type": "application/json"},
-        json={
-            "model": DEEPSEEK_MODEL,
-            "messages": [
-                {"role": "system", "content": system_prompt},
-                {"role": "user", "content": user_message},
-            ],
-            "temperature": temperature,
-        },
+        json_body=body,
         timeout=60,
     )
     resp.raise_for_status()
     return resp.json()["choices"][0]["message"]["content"]
 
 
-# ── Routes: Content creation pipeline ─────────────────────────────────────────
+# â”€â”€ Routes: Content creation pipeline â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 class IdeaRequest(BaseModel):
     niche: str
@@ -1383,12 +1686,14 @@ class IdeaRequest(BaseModel):
 @app.post("/generate/idea")
 def generate_idea(req: IdeaRequest):
     idea_count = req.idea_count
-    system = (
-        "You are a creative content strategist for YouTube. "
-        f"Your job is to generate exactly {idea_count} compelling video ideas for a given niche and content type. "
-        f"Return ONLY a JSON array with exactly {idea_count} objects. Each object must have exactly two keys: "
-        '"title" (a short, punchy video title) and "description" (one sentence explaining the idea). '
-        "No markdown, no extra text, no numbering outside the JSON. Output valid JSON only."
+    prompt_cfg = _effective_prompt_settings()
+    system = _render_prompt_template(
+        prompt_cfg["prompt_idea_generation"],
+        {
+            "idea_count": idea_count,
+            "niche": req.niche,
+            "content_type": req.content_type,
+        },
     )
     user_message = (
         f"Niche: {req.niche}\n"
@@ -1434,13 +1739,15 @@ class ScriptRequest(BaseModel):
 @app.post("/generate/script")
 def generate_script(req: ScriptRequest):
     target_words = req.word_count
-    system = (
-        f"You are a professional scriptwriter specializing in {req.niche} content for YouTube. "
-        f"Write a compelling, narration-ready video script for the given idea. "
-        f"The script MUST be approximately {target_words} words — aim for exactly {target_words} words. "
-        "Each sentence is a self-contained scene or narration beat. "
-        "Write in vivid, engaging, present-tense prose suitable for a voiceover. "
-        "Output ONLY the script sentences, one per line, no scene numbers, no timestamps, no headings."
+    prompt_cfg = _effective_prompt_settings()
+    system = _render_prompt_template(
+        prompt_cfg["prompt_script_generation"],
+        {
+            "niche": req.niche,
+            "target_words": target_words,
+            "word_count": target_words,
+            "idea": req.idea,
+        },
     )
     user_message = f"Niche: {req.niche}\n\nVideo idea: {req.idea}"
     result = _deepseek_chat(system, user_message)
@@ -1453,40 +1760,81 @@ def generate_script(req: ScriptRequest):
 
     return {"script": result, "word_count": actual_words, "target_word_count": target_words, "length_ok": length_ok}
 
-
 class VoNarrationRequest(BaseModel):
     script: str
 
 
+def _parse_model_json_array(raw: str, label: str) -> list[dict]:
+    cleaned = re.sub(r"^```(?:json)?\s*|\s*```$", "", raw.strip(), flags=re.MULTILINE)
+    start = cleaned.find("[")
+    end = cleaned.rfind("]")
+    if start != -1 and end != -1 and end >= start:
+        cleaned = cleaned[start : end + 1]
+    try:
+        parsed = json.loads(cleaned)
+    except json.JSONDecodeError:
+        raise HTTPException(status_code=500, detail=f"{label} returned invalid JSON:\n{raw[:400]}")
+    if not isinstance(parsed, list):
+        raise HTTPException(status_code=500, detail=f"{label} returned non-array JSON")
+    return [item for item in parsed if isinstance(item, dict)]
+
+
 @app.post("/generate/vo-narration")
 def generate_vo_narration(req: VoNarrationRequest):
-    system = (
-        "You are an expert adapting wildlife documentary scripts for voiceover recording and AI video generation. "
-        "For each sentence in the script, output a JSON array where every element has exactly three keys:\n"
-        '  "sentence"  — the original script sentence (verbatim)\n'
-        '  "narration" — a natural, warm, conversational voiceover line suitable for text-to-speech\n'
-        '  "veo_prompt" — a detailed VEO 3 video generation prompt: cinematic, specific camera angle, '
-        "lighting, animal behaviors, environment, mood\n\n"
-        "Return ONLY a valid JSON array. No markdown fences, no explanation."
+    prompt_cfg = _effective_prompt_settings()
+    narration_system = _render_prompt_template(
+        prompt_cfg["prompt_vo_narration_generation"],
+        {"script": req.script},
     )
-    raw = _deepseek_chat(system, req.script, temperature=0.6)
-    cleaned = re.sub(r"^```(?:json)?\s*|\s*```$", "", raw.strip(), flags=re.MULTILINE)
-    try:
-        items = json.loads(cleaned)
-    except json.JSONDecodeError:
-        raise HTTPException(status_code=500, detail=f"Model returned invalid JSON:\n{raw[:400]}")
+    veo_system = _render_prompt_template(
+        prompt_cfg["prompt_veo_prompt_generation"],
+        {"script": req.script},
+    )
+
+    raw_narration = _deepseek_chat(narration_system, req.script, temperature=0.6)
+    raw_veo = _deepseek_chat(veo_system, req.script, temperature=0.6)
+
+    narration_items = _parse_model_json_array(raw_narration, "VO narration generator")
+    veo_items = _parse_model_json_array(raw_veo, "VEO prompt generator")
+
+    script_lines = [line.strip() for line in req.script.splitlines() if line.strip()]
+    max_len = max(len(script_lines), len(narration_items), len(veo_items))
+    items: list[dict[str, str]] = []
+    for i in range(max_len):
+        narration_item = narration_items[i] if i < len(narration_items) else {}
+        veo_item = veo_items[i] if i < len(veo_items) else {}
+        sentence = (
+            str(narration_item.get("sentence", "")).strip()
+            or str(veo_item.get("sentence", "")).strip()
+            or (script_lines[i] if i < len(script_lines) else f"Scene {i + 1}")
+        )
+        narration = str(narration_item.get("narration", "")).strip()
+        if not narration:
+            narration = str(narration_item.get("vo", "")).strip()
+        veo_prompt = str(veo_item.get("veo_prompt", "")).strip()
+        if not veo_prompt:
+            veo_prompt = str(narration_item.get("veo_prompt", "")).strip()
+        items.append(
+            {
+                "sentence": sentence,
+                "narration": narration,
+                "veo_prompt": veo_prompt,
+            }
+        )
     return {"items": items}
 
-
-# ── Routes: ElevenLabs ─────────────────────────────────────────────────────────
+# â”€â”€ Routes: ElevenLabs â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 @app.get("/elevenlabs/voices")
 def get_elevenlabs_voices():
     key = _elevenlabs_key()
     if not key:
-        raise HTTPException(status_code=400, detail="ElevenLabs API key not configured — go to Settings")
-    resp = _requests.get(
+        raise HTTPException(status_code=400, detail="ElevenLabs API key not configured â€” go to Settings")
+    resp = _external_request(
+        "elevenlabs",
+        "GET",
         "https://api.elevenlabs.io/v1/voices",
+        operation="list_voices",
         headers={"xi-api-key": key},
         timeout=15,
     )
@@ -1523,11 +1871,14 @@ class ImportVoiceoverFileRequest(BaseModel):
 def generate_voiceover(req: VoiceoverRequest):
     key = _elevenlabs_key()
     if not key:
-        raise HTTPException(status_code=400, detail="ElevenLabs API key not configured — go to Settings")
-    resp = _requests.post(
+        raise HTTPException(status_code=400, detail="ElevenLabs API key not configured â€” go to Settings")
+    resp = _external_request(
+        "elevenlabs",
+        "POST",
         f"https://api.elevenlabs.io/v1/text-to-speech/{req.voice_id}",
+        operation="generate_voiceover",
         headers={"xi-api-key": key, "Content-Type": "application/json"},
-        json={
+        json_body={
             "text": req.narration_text,
             "model_id": "eleven_multilingual_v2",
             "voice_settings": {"stability": 0.5, "similarity_boost": 0.75},
@@ -1555,7 +1906,13 @@ def import_voiceover(req: ImportVoiceoverRequest):
         raise HTTPException(status_code=400, detail="Voiceover URL must start with http:// or https://")
 
     try:
-        resp = _requests.get(req.url, timeout=120)
+        resp = _external_request(
+            "external",
+            "GET",
+            req.url,
+            operation="import_voiceover",
+            timeout=120,
+        )
         resp.raise_for_status()
     except Exception as exc:
         raise HTTPException(status_code=400, detail=f"Failed to fetch voiceover: {exc}") from exc
@@ -1604,7 +1961,7 @@ def serve_audio(filename: str):
     return FileResponse(str(audio_path), media_type="audio/mpeg")
 
 
-# ── Routes: Output file serving (H3) ──────────────────────────────────────────
+# â”€â”€ Routes: Output file serving (H3) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 @app.get("/output/file")
 def serve_output_file(path: str):
@@ -1713,7 +2070,7 @@ def _parse_scene_from_filename(name: str) -> int:
     return int(m.group(1)) if m else 0
 
 
-# ── Routes: Run state (M4) ────────────────────────────────────────────────────
+# â”€â”€ Routes: Run state (M4) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 CURRENT_RUN_STATE_SCHEMA_VERSION = 1
 
@@ -1748,7 +2105,7 @@ def get_run_state(story_id: str):
     }
 
 
-# ── Routes: Log sessions (H4) ─────────────────────────────────────────────────
+# â”€â”€ Routes: Log sessions (H4) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 @app.get("/logs/sessions")
 def get_log_sessions():
@@ -1796,7 +2153,7 @@ def get_log_sessions():
     return {"sessions": sessions}
 
 
-# ── Routes: UI event logging ───────────────────────────────────────────────────
+# â”€â”€ Routes: UI event logging â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 class UIEventRequest(BaseModel):
     action: str
@@ -1809,16 +2166,18 @@ def ui_event(req: UIEventRequest):
     """Frontend sends button clicks and state transitions here for server-side logging."""
     ts = req.timestamp or datetime.now(timezone.utc).strftime("%H:%M:%S")
     blog.info(f"[ui] {ts} {req.action}" + (f" | {req.detail}" if req.detail else ""))
+    audit_event("ui.event", {"action": req.action, "detail": req.detail, "timestamp": ts})
     return {"ok": True}
 
 
-# ── Routes: Log file listing ───────────────────────────────────────────────────
+# â”€â”€ Routes: Log file listing â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 @app.get("/logs/list")
 def list_log_files():
     """Return all session log files with size and modification time, newest first."""
     files = []
-    for p in sorted(LOGS_DIR.glob("*.log"), key=lambda f: f.stat().st_mtime, reverse=True):
+    candidates = list(LOGS_DIR.glob("*.log")) + list(LOGS_DIR.glob("*.jsonl"))
+    for p in sorted(candidates, key=lambda f: f.stat().st_mtime, reverse=True):
         stat = p.stat()
         files.append({
             "filename": p.name,
@@ -1851,4 +2210,6 @@ def download_log_file(filename: str):
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run(app, host="127.0.0.1", port=7477, log_level="warning")
+
+
 

@@ -82,9 +82,11 @@ from flow_automation import (
     download_clips_via_edit_pages,
     click_visible_retry_buttons,
 )
+from flow_intervals import interval_ms, parse_flow_intervals_json
 from generate_story import build_messages, call_deepseek, log_raw_response, validate_payload
 from read_ideas import Idea, parse_ideas
 from write_stories import append_story_block
+from audit_log import audit_error, audit_event, current_run_id, summarize_text
 
 
 ROOT_DIR = Path(__file__).resolve().parents[1]
@@ -110,6 +112,11 @@ DATA_DEFAULT_ELEMENTS_PATH = DATA_STATE_DIR / "flow_elements.json"
 DATA_DEFAULT_SETTINGS_PATH = DATA_STATE_DIR / "flow_settings.json"
 DATA_DEFAULT_DOWNLOADS_DIR = DATA_DIR / "downloads"
 LIVE_FLOW_BUFFER_PATH = DATA_STATE_DIR / "live_flow_buffer.json"
+FLOW_INTERVALS = parse_flow_intervals_json(os.environ.get("FLOW_INTERVALS_JSON"))
+
+
+def _iv(key: str) -> int:
+    return interval_ms(FLOW_INTERVALS, key)
 
 
 def utc_now() -> str:
@@ -125,6 +132,25 @@ def load_json(path: Path, fallback: dict[str, Any]) -> dict[str, Any]:
 def save_json(path: Path, payload: dict[str, Any]) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(json.dumps(payload, indent=2, ensure_ascii=False), encoding="utf-8")
+    if RUNS_DIR in path.parents or path == LIVE_FLOW_BUFFER_PATH:
+        audit_event(
+            "state.write",
+            {
+                "path": str(path),
+                "run_status": payload.get("run_status"),
+                "updated_at": payload.get("updated_at"),
+                "scene_statuses": [
+                    {
+                        "scene_no": item.get("scene_no"),
+                        "status": item.get("status"),
+                        "attempts": item.get("attempts"),
+                        "downloads": len(item.get("downloads", []) or []),
+                        "error": item.get("error", ""),
+                    }
+                    for item in payload.get("scenes", [])
+                ][:30],
+            },
+        )
 
 
 def save_live_flow_buffer(payload: dict[str, Any]) -> None:
@@ -156,6 +182,7 @@ def log_event(path: Path, event: str, payload: dict[str, Any]) -> None:
     row = {"ts": utc_now(), "event": event, **payload}
     with path.open("a", encoding="utf-8") as f:
         f.write(json.dumps(row, ensure_ascii=False) + "\n")
+    audit_event(event, payload)
 
 
 def select_idea(ideas: list[Idea], story_id: str | None, idea_index: int | None, idea_title: str | None) -> Idea:
@@ -184,6 +211,19 @@ def select_idea(ideas: list[Idea], story_id: str | None, idea_index: int | None,
     return match
 
 
+def load_story_master_prompt(master_prompt_path: Path) -> tuple[str, str]:
+    app_settings_path = DATA_DIR / "state" / "app_settings.json"
+    if app_settings_path.exists():
+        try:
+            cfg = json.loads(app_settings_path.read_text(encoding="utf-8"))
+            custom_prompt = str(cfg.get("prompt_story_master_template", "")).strip()
+            if custom_prompt:
+                return custom_prompt, f"{app_settings_path}::prompt_story_master_template"
+        except Exception:
+            pass
+    return master_prompt_path.read_text(encoding="utf-8"), str(master_prompt_path)
+
+
 def generate_story_payload(
     idea: Idea,
     master_prompt_path: Path,
@@ -201,34 +241,105 @@ def generate_story_payload(
     _info(f"Idea   : {idea.title}")
     _info(f"Story ID: {idea.story_id}")
 
-    master_prompt = master_prompt_path.read_text(encoding="utf-8")
+    master_prompt, master_prompt_source = load_story_master_prompt(master_prompt_path)
     messages = build_messages(master_prompt, idea)
     last_error = "Unknown error"
+    audit_event(
+        "llm.story_generation.start",
+        {
+            "story_id": idea.story_id,
+            "idea_index": idea.index,
+            "idea_title": idea.title,
+            "model": model,
+            "temperature": temperature,
+            "max_retries": max_retries,
+            "master_prompt_path": master_prompt_source,
+            "message_count": len(messages),
+            "request_preview": summarize_text(json.dumps(messages, ensure_ascii=False), limit=1200),
+        },
+    )
 
     for attempt in range(1, max_retries + 1):
         print(f"\n  Attempt {attempt} of {max_retries}...")
         print(f"  Calling DeepSeek API...", flush=True)
         t0 = time.time()
-        raw = call_deepseek(
-            api_key=api_key,
-            base_url=base_url,
-            model=model,
-            messages=messages,
-            temperature=temperature,
+        audit_event(
+            "api.request",
+            {
+                "provider": "deepseek",
+                "operation": "story_generation",
+                "story_id": idea.story_id,
+                "attempt": attempt,
+                "method": "POST",
+                "url": f"{base_url.rstrip('/')}/chat/completions",
+                "model": model,
+                "temperature": temperature,
+                "message_count": len(messages),
+                "request_preview": summarize_text(json.dumps(messages, ensure_ascii=False), limit=1200),
+            },
         )
+        try:
+            raw = call_deepseek(
+                api_key=api_key,
+                base_url=base_url,
+                model=model,
+                messages=messages,
+                temperature=temperature,
+            )
+        except Exception as exc:
+            audit_error(
+                "api.error",
+                exc,
+                {
+                    "provider": "deepseek",
+                    "operation": "story_generation",
+                    "story_id": idea.story_id,
+                    "attempt": attempt,
+                },
+            )
+            raise
         elapsed = time.time() - t0
         print(f"  Response received in {elapsed:.1f}s ({len(raw):,} characters)")
         log_raw_response(raw, idea, attempt)
+        audit_event(
+            "api.response",
+            {
+                "provider": "deepseek",
+                "operation": "story_generation",
+                "story_id": idea.story_id,
+                "attempt": attempt,
+                "elapsed_ms": int(elapsed * 1000),
+                "response": summarize_text(raw, limit=1200),
+            },
+        )
         print(f"  Validating story structure...")
         try:
             validated = validate_payload(raw)
             payload = validated.model_dump()
             scene_count = len(payload.get("scenes", []))
             _ok(f"Story validated — \"{payload['story_title']}\" ({scene_count} scenes)")
+            audit_event(
+                "llm.story_generation.validated",
+                {
+                    "story_id": idea.story_id,
+                    "attempt": attempt,
+                    "story_title": payload.get("story_title"),
+                    "scene_count": scene_count,
+                    "scene_numbers": [scene.get("scene_no") for scene in payload.get("scenes", [])],
+                },
+            )
             return payload
         except ValueError as exc:
             last_error = str(exc)
             _warn(f"Validation failed: {last_error}")
+            audit_event(
+                "llm.story_generation.validation_failed",
+                {
+                    "story_id": idea.story_id,
+                    "attempt": attempt,
+                    "error": last_error,
+                },
+            )
             messages.append({"role": "assistant", "content": raw})
             messages.append(
                 {
@@ -502,6 +613,7 @@ def parse_args() -> argparse.Namespace:
 def main() -> None:
     load_dotenv(ROOT_DIR / ".env")
     args = parse_args()
+    run_id = current_run_id()
     ensure_config_files(
         Path(args.selectors_path),
         Path(args.settings_path),
@@ -515,7 +627,7 @@ def main() -> None:
     dry_run = args.dry_run == "true"
     confirm_costly = args.confirm_costly == "true"
 
-    log_event(PIPELINE_LOG_PATH, "pipeline_start", {"args": vars(args), "dry_run": dry_run})
+    log_event(PIPELINE_LOG_PATH, "pipeline_start", {"run_id": run_id, "args": vars(args), "dry_run": dry_run})
     RUNS_DIR.mkdir(parents=True, exist_ok=True)
 
     # ── Load or resume run state ───────────────────────────────────────────────
@@ -680,6 +792,16 @@ def main() -> None:
     )
     
     if scenes_to_run and not dry_run:
+        audit_event(
+            "browser.start",
+            {
+                "story_id": idea.story_id,
+                "headless": headless_flag,
+                "flow_url": args.flow_url,
+                "auth_path": args.auth_path,
+                "downloads_dir": args.downloads_dir,
+            },
+        )
         pw = sync_playwright().start()
         browser = pw.chromium.launch(headless=headless_flag)
         context = browser.new_context(
@@ -688,9 +810,10 @@ def main() -> None:
         )
         page = context.new_page()
         print(f"  [{utc_now()}] BROWSER  opening {args.flow_url}")
+        audit_event("browser.goto", {"story_id": idea.story_id, "url": args.flow_url, "wait_until": "domcontentloaded"})
         page.goto(args.flow_url, wait_until="domcontentloaded")
         print(f"  [{utc_now()}] BROWSER  waiting for page stabilization...")
-        page.wait_for_timeout(10000)
+        page.wait_for_timeout(_iv("pipeline_browser_stabilize_wait_ms"))
         browser_started = True
         
         # ── Initial setup (Run ONCE per session) ──────────────────────────────
@@ -698,6 +821,7 @@ def main() -> None:
         known_project_url = str(run_state.get("flow_project_url", "") or "").strip()
         if known_project_url:
             _info("Known Flow project URL found in state")
+            audit_event("flow.project.resume_url_found", {"story_id": idea.story_id, "url": known_project_url})
 
         # Try to resume existing project first
         if not open_existing_project(
@@ -711,19 +835,26 @@ def main() -> None:
             selectors_path=Path(args.selectors_path),
             elements_path=Path(args.elements_path),
         ):
+            audit_event("flow.project.existing_not_found", {"story_id": idea.story_id})
             click_new_project(page, Path(args.selectors_path), Path(args.elements_path))
             # Short wait for editor to load before renaming
-            page.wait_for_timeout(3000)
+            page.wait_for_timeout(_iv("pipeline_post_new_project_wait_ms"))
             rename_project(
                 page,
                 idea.story_id,
                 Path(args.selectors_path),
                 Path(args.elements_path),
             )
+        else:
+            audit_event("flow.project.opened_existing", {"story_id": idea.story_id, "url": page.url})
         
         settings_cfg = load_json(Path(args.settings_path), {})
         if settings_cfg:
             print(f"  [{utc_now()}] BROWSER  applying initial settings...")
+            audit_event(
+                "flow.settings.apply_requested",
+                {"story_id": idea.story_id, "settings": settings_cfg},
+            )
             apply_settings(
                 page,
                 settings_cfg,
@@ -737,6 +868,7 @@ def main() -> None:
                 run_state["updated_at"] = utc_now()
                 save_json(run_path, run_state)
                 _info("Saved Flow project URL for resume")
+                audit_event("flow.project.url_saved", {"story_id": idea.story_id, "url": current_url})
         # ──────────────────────────────────────────────────────────────────────
     try:
         if dry_run:
@@ -748,7 +880,7 @@ def main() -> None:
             max_concurrent = max(1, int(args.max_concurrent))
             min_wait = max(0, int(args.wait_between_sec))
             max_wait = max(min_wait, int(args.wait_max_sec))
-            poll_interval_sec = 5.0
+            poll_interval_sec = max(0.1, _iv("pipeline_generation_poll_interval_ms") / 1000.0)
 
             if min_wait < 20:
                 _warn(
@@ -782,6 +914,15 @@ def main() -> None:
             tracker["downloaded_card_keys"] = sorted(downloaded_card_keys)
             tracker["failed_card_keys"] = sorted(failed_card_keys)
             save_json(run_path, run_state)
+            audit_event(
+                "flow.generation.baseline_snapshot",
+                {
+                    "story_id": idea.story_id,
+                    "card_count": len(baseline_cards),
+                    "baseline_card_keys": sorted(baseline_card_keys),
+                    "failed_card_keys": sorted(failed_card_keys),
+                },
+            )
 
             pending_scene_nos = [int(s["scene_no"]) for s in scenes_to_run]
             scenes_by_no_state = {int(s["scene_no"]): s for s in run_state["scenes"]}
@@ -830,6 +971,17 @@ def main() -> None:
                             f"\n  [Submit] Scene {scene_no} attempt {attempt}/{max_attempts} "
                             f"(in-flight: {len(active_jobs)+1}/{max_concurrent})"
                         )
+                        audit_event(
+                            "flow.generation.submit_start",
+                            {
+                                "story_id": idea.story_id,
+                                "scene_no": scene_no,
+                                "attempt": attempt,
+                                "max_attempts": max_attempts,
+                                "prompt": summarize_text(prompt, limit=1200),
+                                "in_flight_before_submit": len(active_jobs),
+                            },
+                        )
                         wait_for_submit_ready(page, selectors_cfg)
                         # Capture all currently visible card keys right before submitting
                         # so we can exclude pre-existing cards (including old failures) from
@@ -845,10 +997,32 @@ def main() -> None:
                         for c in pre_submit_cards:
                             if bool(c.get("failed", False)):
                                 failed_card_keys.add(str(c.get("card_key", "")))
+                        audit_event(
+                            "flow.generation.pre_submit_snapshot",
+                            {
+                                "story_id": idea.story_id,
+                                "scene_no": scene_no,
+                                "attempt": attempt,
+                                "visible_card_count": len(pre_submit_cards),
+                                "known_card_keys": sorted(known_keys_now),
+                                "failed_card_keys": sorted(failed_card_keys),
+                            },
+                        )
 
                         fill_prompt(page, prompt)
                         submitted_at = time.time()
                         submit_generation(page, selectors_cfg)
+                        audit_event(
+                            "flow.generation.submitted",
+                            {
+                                "story_id": idea.story_id,
+                                "scene_no": scene_no,
+                                "attempt": attempt,
+                                "submitted_at": utc_now(),
+                                "deadline_at_epoch": submitted_at + float(args.timeout_sec),
+                                "timeout_sec": args.timeout_sec,
+                            },
+                        )
 
                         scene_state["attempts"] = attempt
                         scene_state["status"] = "running"
@@ -856,12 +1030,6 @@ def main() -> None:
                         scene_state["error"] = ""
                         scene_state["updated_at"] = utc_now()
                         save_json(run_path, run_state)
-                        for flow_card in scene_flow_cards:
-                            if flow_card.get("card_key"):
-                                downloaded_cards.append({
-                                    "scene_no": scene_no,
-                                    **flow_card,
-                                })
 
                         save_live_flow_buffer(
                             {
@@ -901,6 +1069,15 @@ def main() -> None:
                         if card.get("failed"):
                             if card_key in failed_card_keys:
                                 continue
+                            audit_event(
+                                "flow.generation.failure_card_detected",
+                                {
+                                    "story_id": idea.story_id,
+                                    "card_key": card_key,
+                                    "card": card,
+                                    "active_jobs": active_jobs,
+                                },
+                            )
                             current_job = active_jobs[0] if active_jobs else None
                             if (
                                 current_job
@@ -928,6 +1105,16 @@ def main() -> None:
                                     # Click Retry in Flow UI before doing a full re-generation
                                     clicked = click_visible_retry_buttons(page, selectors_cfg, 1)
                                     if clicked:
+                                        audit_event(
+                                            "flow.generation.ui_retry_clicked",
+                                            {
+                                                "story_id": idea.story_id,
+                                                "scene_no": scene_no_f,
+                                                "card_key": card_key,
+                                                "retry_number": ui_retries_used + 1,
+                                                "max_ui_retries": max_ui_retries,
+                                            },
+                                        )
                                         active_jobs[0]["ui_retries"] = ui_retries_used + 1
                                         active_jobs[0]["submitted_at"] = now  # Reset grace period
                                         active_jobs[0]["deadline_at"] = now + float(args.timeout_sec)
@@ -964,6 +1151,20 @@ def main() -> None:
                                     f"{failed_job.get('ui_retries', 0)} UI retry click(s)."
                                 )
                                 scene_state["updated_at"] = utc_now()
+                                scene_state["last_failure_card"] = card
+                                audit_event(
+                                    "flow.generation.failed",
+                                    {
+                                        "story_id": idea.story_id,
+                                        "scene_no": scene_no,
+                                        "attempt": int(scene_state.get("attempts", 0)),
+                                        "card_key": card_key,
+                                        "failed_job": failed_job,
+                                        "card": card,
+                                        "queued_for_retry": int(scene_state.get("attempts", 0)) < max_attempts,
+                                        "error": scene_state["error"],
+                                    },
+                                )
                                 save_live_flow_buffer(
                                     {
                                         "status": "failed",
@@ -999,6 +1200,17 @@ def main() -> None:
                             progress = card.get("progress_pct")
                             if progress is not None:
                                 _info(f"Card in progress at {progress}% (waiting)")
+                                audit_event(
+                                    "flow.generation.progress",
+                                    {
+                                        "story_id": idea.story_id,
+                                        "scene_no": int(active_jobs[0]["scene_no"]) if active_jobs else None,
+                                        "attempt": int(active_jobs[0]["attempt"]) if active_jobs else None,
+                                        "progress_pct": int(progress),
+                                        "card_key": card_key,
+                                        "card": card,
+                                    },
+                                )
                                 if active_jobs:
                                     save_live_flow_buffer(
                                         {
@@ -1027,7 +1239,7 @@ def main() -> None:
 
                         # Wait a few seconds so all x4 generated clips finish rendering
                         _info(f"Scene {scene_no}: first clip ready — waiting 8s for all clips to finish...")
-                        page.wait_for_timeout(8000)
+                        page.wait_for_timeout(_iv("pipeline_after_first_ready_wait_ms"))
 
                         # Collect ALL new ready cards from this generation batch
                         all_summaries = list_clip_card_summaries(page, selectors_cfg)
@@ -1081,6 +1293,24 @@ def main() -> None:
                             }
                         )
 
+                        for flow_card in scene_flow_cards:
+                            if flow_card.get("card_key"):
+                                downloaded_cards.append({
+                                    "scene_no": scene_no,
+                                    **flow_card,
+                                })
+                        audit_event(
+                            "flow.generation.ready",
+                            {
+                                "story_id": idea.story_id,
+                                "scene_no": scene_no,
+                                "attempt": int(completed_job["attempt"]),
+                                "clip_count": clip_count,
+                                "completed_job": completed_job,
+                                "cards": scene_flow_cards,
+                            },
+                        )
+
                         tracker["downloaded_card_keys"] = sorted(downloaded_card_keys)
                         tracker["failed_card_keys"] = sorted(failed_card_keys)
                         run_state["updated_at"] = utc_now()
@@ -1103,6 +1333,17 @@ def main() -> None:
                         f"Timed out after {args.timeout_sec}s without thumbnail completion."
                     )
                     scene_state["updated_at"] = utc_now()
+                    audit_event(
+                        "flow.generation.timeout",
+                        {
+                            "story_id": idea.story_id,
+                            "scene_no": scene_no,
+                            "attempt": int(scene_state.get("attempts", 0)),
+                            "job": job,
+                            "timeout_sec": args.timeout_sec,
+                            "queued_for_retry": int(scene_state.get("attempts", 0)) < max_attempts,
+                        },
+                    )
                     save_live_flow_buffer(
                         {
                             "status": "failed",
@@ -1127,7 +1368,7 @@ def main() -> None:
                     run_state["updated_at"] = utc_now()
                     save_json(run_path, run_state)
 
-                page.wait_for_timeout(500)
+                page.wait_for_timeout(_iv("pipeline_loop_sleep_ms"))
 
         # ── Project zip download ───────────────────────────────────────────────
         generated_scenes = [
@@ -1136,7 +1377,7 @@ def main() -> None:
         if not dry_run and generated_scenes:
             _section("STEP 2b — Downloading clips")
             _info("Waiting 30s for all clips to stabilise before downloading...")
-            page.wait_for_timeout(30000)
+            page.wait_for_timeout(_iv("pipeline_pre_download_stabilize_wait_ms"))
 
             project_url = str(run_state.get("flow_project_url") or args.flow_url)
             staging_dir = Path(args.downloads_dir) / "_staging_clips"
@@ -1158,6 +1399,15 @@ def main() -> None:
                 scene_dir = Path(args.downloads_dir) / f"scene_{scene_no:02d}"
                 scene_dir.mkdir(parents=True, exist_ok=True)
                 _info(f"Scene {scene_no}: downloading {len(hrefs)} tracked clip(s) by exact Flow link")
+                audit_event(
+                    "flow.download.tracked_start",
+                    {
+                        "story_id": idea.story_id,
+                        "scene_no": scene_no,
+                        "hrefs": hrefs,
+                        "target_dir": str(scene_dir),
+                    },
+                )
                 saved = [str(p) for p in download_clips_via_edit_pages(
                     page,
                     project_url,
@@ -1170,9 +1420,17 @@ def main() -> None:
                     scene_state["updated_at"] = utc_now()
                     total_clips += len(saved)
                     _ok(f"Scene {scene_no}: {len(saved)} tracked clip(s) saved")
+                    audit_event(
+                        "flow.download.tracked_success",
+                        {"story_id": idea.story_id, "scene_no": scene_no, "saved_files": saved},
+                    )
                 else:
                     remaining_generated_scenes.append(scene_state)
                     _warn(f"Scene {scene_no}: tracked download failed; will try fallback assignment")
+                    audit_event(
+                        "flow.download.tracked_failed",
+                        {"story_id": idea.story_id, "scene_no": scene_no, "hrefs": hrefs},
+                    )
                 save_json(run_path, run_state)
 
             generated_scenes = remaining_generated_scenes
@@ -1180,6 +1438,10 @@ def main() -> None:
 
             if zip_path and zip_path.exists():
                 _info(f"Extracting project zip: {zip_path.name}")
+                audit_event(
+                    "flow.download.project_zip_success",
+                    {"story_id": idea.story_id, "zip_path": str(zip_path), "size_bytes": zip_path.stat().st_size},
+                )
                 extract_dir = staging_dir / "_zip_extract"
                 extract_dir.mkdir(parents=True, exist_ok=True)
                 with zipfile.ZipFile(zip_path, "r") as zf:
@@ -1192,8 +1454,13 @@ def main() -> None:
             else:
                 # ── Attempt 2: per-clip download via edit pages ───────────────
                 _warn("Zip download failed — falling back to per-clip edit-page download...")
+                audit_event("flow.download.project_zip_failed", {"story_id": idea.story_id, "staging_dir": str(staging_dir)})
                 all_clips = download_clips_via_edit_pages(page, project_url, staging_dir)
                 _info(f"Downloaded {len(all_clips)} clip(s) individually")
+                audit_event(
+                    "flow.download.fallback_done",
+                    {"story_id": idea.story_id, "clip_count": len(all_clips), "files": [str(p) for p in all_clips]},
+                )
 
             if all_clips:
                 # Distribute clips to scenes in scene_no order, using generated_clip_count
@@ -1219,15 +1486,24 @@ def main() -> None:
                         scene_state["updated_at"] = utc_now()
                         total_clips += len(saved)
                         _ok(f"Scene {scene_no}: {len(saved)} clip(s) saved")
+                        audit_event(
+                            "flow.download.assigned_to_scene",
+                            {"story_id": idea.story_id, "scene_no": scene_no, "saved_files": saved},
+                        )
                     else:
                         scene_state["status"] = "failed"
                         scene_state["error"] = "No clips assigned from download."
                         scene_state["updated_at"] = utc_now()
                         _warn(f"Scene {scene_no}: no clips found")
+                        audit_event(
+                            "flow.download.assignment_failed",
+                            {"story_id": idea.story_id, "scene_no": scene_no, "clip_count_expected": clip_count},
+                        )
 
                 shutil.rmtree(staging_dir, ignore_errors=True)
             else:
                 _warn("All download attempts failed — scenes marked as failed")
+                audit_event("flow.download.all_attempts_failed", {"story_id": idea.story_id})
                 for scene_state in generated_scenes:
                     scene_state["status"] = "failed"
                     scene_state["error"] = "Both zip and per-clip downloads failed."

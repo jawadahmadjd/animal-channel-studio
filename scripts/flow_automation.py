@@ -22,6 +22,8 @@ else:
 
 from dotenv import load_dotenv
 from playwright.sync_api import BrowserContext, Page, TimeoutError, sync_playwright, Locator
+from audit_log import audit_error, audit_event, summarize_text
+from flow_intervals import interval_ms, parse_flow_intervals_json
 
 
 ROOT_DIR = Path(__file__).resolve().parents[1]
@@ -40,6 +42,11 @@ DEFAULT_ELEMENTS_PATH = STATE_DIR / "flow_elements.json"
 DEFAULT_SETTINGS_PATH = STATE_DIR / "flow_settings.json"
 DEFAULT_DOWNLOADS_DIR = DATA_DIR / "downloads"
 DEFAULT_FLOW_URL = "https://labs.google/fx/tools/flow"
+FLOW_INTERVALS = parse_flow_intervals_json(os.environ.get("FLOW_INTERVALS_JSON"))
+
+
+def _iv(key: str) -> int:
+    return interval_ms(FLOW_INTERVALS, key)
 
 
 def now_utc_compact() -> str:
@@ -57,6 +64,7 @@ def _print(msg: str) -> None:
 
 
 def _log_settings_trace(event: str, payload: dict[str, Any]) -> None:
+    audit_event(f"flow.settings.{event}", payload)
     try:
         LOGS_DIR.mkdir(parents=True, exist_ok=True)
         row = {"ts": datetime.now(timezone.utc).isoformat(), "event": event, **payload}
@@ -402,7 +410,7 @@ def first_locator(page: Page, selectors: list[str]):
 
 def wait_for_any_selector(root: Page | Locator, selectors: list[str], timeout_ms: int) -> tuple[bool, str]:
     """Waits for any of the given selectors to appear under the root (Page or Locator)."""
-    step_ms = 700
+    step_ms = _iv("selector_wait_step_ms")
     elapsed = 0
     # Determine the page object for the timeout call
     if hasattr(root, "wait_for_timeout"):
@@ -414,7 +422,7 @@ def wait_for_any_selector(root: Page | Locator, selectors: list[str], timeout_ms
         for selector in selectors:
             locator = root.locator(selector).first
             try:
-                if locator.count() > 0 and locator.is_visible(timeout=300):
+                if locator.count() > 0 and locator.is_visible(timeout=_iv("selector_visible_check_timeout_ms")):
                     return True, selector
             except Exception:
                 pass
@@ -425,7 +433,7 @@ def wait_for_any_selector(root: Page | Locator, selectors: list[str], timeout_ms
 
 def first_visible_locator(root: Page | Locator, selectors: list[str], timeout_ms: int = 0) -> tuple[Locator | None, str]:
     """Return the first visible locator matching any selector under the root."""
-    step_ms = 500
+    step_ms = _iv("first_visible_step_ms")
     elapsed = 0
     if hasattr(root, "wait_for_timeout"):
         pg = root
@@ -439,7 +447,7 @@ def first_visible_locator(root: Page | Locator, selectors: list[str], timeout_ms
                 count = matches.count()
                 for idx in range(count):
                     locator = matches.nth(idx)
-                    if locator.is_visible(timeout=200):
+                    if locator.is_visible(timeout=_iv("first_visible_check_timeout_ms")):
                         return locator, selector
             except Exception:
                 continue
@@ -526,7 +534,7 @@ def _click_button_by_text(page: Page, text: str, description: str) -> bool:
 
             el.scroll_into_view_if_needed()
             el.click(force=True)
-            page.wait_for_timeout(300)
+            page.wait_for_timeout(_iv("click_post_delay_ms"))
             _print(f"             OK      : clicked at [{_ts()}]")
             _log_settings_trace(
                 "click_success",
@@ -577,46 +585,67 @@ def fill_prompt(page: Page, prompt: str) -> None:
     ]
     preview = prompt[:90] + ("..." if len(prompt) > 90 else "")
     print(f"  [{_ts()}] WAITING  3s before filling prompt...")
-    page.wait_for_timeout(3000)
+    page.wait_for_timeout(_iv("fill_prompt_pre_wait_ms"))
     print(f"  [{_ts()}] FILL     prompt textarea  ({len(prompt)} chars)")
     print(f"             preview : {preview}")
+    audit_event(
+        "flow.prompt.fill_start",
+        {"prompt": summarize_text(prompt, limit=1200), "url": page.url},
+    )
     
     # Ensure any overlays (like settings) are cleared
     print(f"             ACTION  clearing potential overlays (Escape)...")
     page.keyboard.press("Escape")
-    page.wait_for_timeout(500)
+    page.wait_for_timeout(_iv("fill_prompt_escape_wait_ms"))
 
     for selector in selectors:
         _print(f"             trying  : {selector}")
         try:
             el = page.locator(selector).first
-            el.wait_for(state="visible", timeout=600 if "textarea" in selector else 1500)
+            el.wait_for(
+                state="visible",
+                timeout=_iv("prompt_textarea_visible_timeout_ms") if "textarea" in selector else _iv("prompt_input_visible_timeout_ms"),
+            )
             
             if el.count() > 0:
                 el.scroll_into_view_if_needed()
                 
                 # Click to focus
                 el.click(force=True)
-                page.wait_for_timeout(500)
+                page.wait_for_timeout(_iv("fill_prompt_focus_wait_ms"))
                 
                 # Clear existing content more aggressively
                 page.keyboard.press("Control+a")
                 page.keyboard.press("Backspace")
                 page.keyboard.press("Control+a")
                 page.keyboard.press("Backspace")
-                page.wait_for_timeout(800)
+                page.wait_for_timeout(_iv("fill_prompt_clear_wait_ms"))
                 
                 # Fill the prompt
                 el.fill(prompt)
                 
                 # Wait for editor to register content
-                page.wait_for_timeout(1000)
+                page.wait_for_timeout(_iv("fill_prompt_after_fill_wait_ms"))
                 _print(f"             OK      : filled at [{_ts()}]")
+                audit_event(
+                    "flow.prompt.filled",
+                    {
+                        "selector": selector,
+                        "prompt": summarize_text(prompt, limit=1200),
+                        "url": page.url,
+                    },
+                )
                 return
         except Exception as exc:
             _print(f"             info    : {selector} failed ({str(exc)[:60]})")
+            audit_event(
+                "flow.prompt.selector_failed",
+                {"selector": selector, "error": str(exc)[:300], "url": page.url},
+            )
             continue
-    raise RuntimeError("Could not find the prompt input on the Flow page.")
+    exc = RuntimeError("Could not find the prompt input on the Flow page.")
+    audit_error("flow.prompt.fill_failed", exc, {"url": page.url})
+    raise exc
 
 
 def _select_model_dropdown(
@@ -669,7 +698,7 @@ def _select_model_dropdown(
             if btn:
                 snap = _locator_snapshot(btn)
                 btn.click(force=True)
-                page.wait_for_timeout(800)
+                page.wait_for_timeout(_iv("settings_open_dropdown_wait_ms"))
                 print(f"             opened  : dropdown at [{_ts()}]")
                 _log_settings_trace(
                     "model_dropdown_opened",
@@ -689,7 +718,7 @@ def _select_model_dropdown(
         )
         return
 
-    page.wait_for_timeout(400)
+    page.wait_for_timeout(_iv("settings_model_dropdown_settle_wait_ms"))
 
     def _norm(text: str) -> str:
         text = (text or "").lower().replace("\u2014", "-").replace("\u2013", "-")
@@ -703,13 +732,13 @@ def _select_model_dropdown(
         )
         for i in range(visible_options.count()):
             opt = visible_options.nth(i)
-            if not opt.is_visible(timeout=200):
+            if not opt.is_visible(timeout=_iv("model_option_visible_timeout_ms")):
                 continue
             label = (opt.inner_text() or "").strip()
             if target_norm and target_norm in _norm(label):
                 snap = _locator_snapshot(opt)
                 opt.click(force=True)
-                page.wait_for_timeout(500)
+                page.wait_for_timeout(_iv("settings_model_option_click_wait_ms"))
                 print(f"             OK      : model set to '{model}' at [{_ts()}]")
                 _log_settings_trace(
                     "model_option_selected",
@@ -736,7 +765,7 @@ def _select_model_dropdown(
             if opt:
                 snap = _locator_snapshot(opt)
                 opt.click(force=True)
-                page.wait_for_timeout(500)
+                page.wait_for_timeout(_iv("settings_model_option_click_wait_ms"))
                 print(f"             OK      : model set to '{model}' at [{_ts()}]")
                 _log_settings_trace(
                     "model_option_selected",
@@ -747,7 +776,7 @@ def _select_model_dropdown(
             continue
     
     try:
-        page.locator(f"text='{model}'").first.click(timeout=2000)
+        page.locator(f"text='{model}'").first.click(timeout=_iv("model_fallback_click_timeout_ms"))
         print(f"             OK      : model set to '{model}' (fallback match)")
         return
     except Exception:
@@ -759,7 +788,7 @@ def _select_model_dropdown(
         opts = page.locator("[role='menuitemradio'], [role='menuitem'], [role='option'], [data-radix-collection-item]")
         for i in range(min(opts.count(), 20)):
             opt = opts.nth(i)
-            if opt.is_visible(timeout=150):
+            if opt.is_visible(timeout=_iv("model_option_scan_visible_timeout_ms")):
                 label = (opt.inner_text() or "").strip()
                 if label:
                     visible_labels.append(label[:120])
@@ -826,7 +855,7 @@ def _ensure_settings_panel_open(page: Page, selectors_cfg: dict[str, Any] | None
             if btn.count() > 0 and btn.is_visible():
                 snap = _locator_snapshot(btn)
                 btn.click()
-                page.wait_for_timeout(1200)
+                page.wait_for_timeout(_iv("settings_panel_toggle_wait_ms"))
                 marker, _ = first_visible_locator(page, marker_sels, 800)
                 if marker:
                     _log_settings_trace(
@@ -895,7 +924,7 @@ def apply_settings(
         _log_settings_trace("apply_settings_abort", {"reason": "editor_panel_not_ready", "url": page.url})
         return
     print(f"             OK      Editor panel ready (via {found_sel})")
-    page.wait_for_timeout(1000)
+    page.wait_for_timeout(_iv("apply_settings_editor_ready_wait_ms"))
 
     print(f"             ACTION  Checking settings panel visibility...")
     settings_visible = _ensure_settings_panel_open(page, selectors_cfg)
@@ -905,18 +934,18 @@ def apply_settings(
         print(f"             WARN    Could not verify settings panel visibility; proceeding with best effort")
 
     _click_button_by_text(page, mode, "mode")
-    page.wait_for_timeout(1500)
+    page.wait_for_timeout(_iv("apply_settings_mode_wait_ms"))
 
     if sub_type and mode == "Video":
         _click_button_by_text(page, sub_type, "sub type")
-        page.wait_for_timeout(1500)
+        page.wait_for_timeout(_iv("apply_settings_subtype_wait_ms"))
 
     if aspect:
         _click_button_by_text(page, aspect, "aspect ratio")
-        page.wait_for_timeout(3000)
+        page.wait_for_timeout(_iv("apply_settings_aspect_wait_ms"))
     if count:
         _click_button_by_text(page, count, "clip count")
-        page.wait_for_timeout(3000)
+        page.wait_for_timeout(_iv("apply_settings_clip_count_wait_ms"))
     if model:
         _ensure_settings_panel_open(page, selectors_cfg)
         _select_model_dropdown(page, model, selectors_path, elements_path)
@@ -930,7 +959,7 @@ def apply_settings(
     for sel in close_sels:
         try:
             btn = page.locator(sel).first
-            if btn.count() > 0 and btn.is_visible(timeout=1000):
+            if btn.count() > 0 and btn.is_visible(timeout=_iv("settings_panel_button_visible_timeout_ms")):
                 snap = _locator_snapshot(btn)
                 btn.click()
                 _log_settings_trace("settings_panel_collapsed", {"strategy": "close_button", "selector": sel, "element": snap})
@@ -943,7 +972,7 @@ def apply_settings(
         page.keyboard.press("Escape")
         _log_settings_trace("settings_panel_collapsed", {"strategy": "keyboard_escape"})
     
-    page.wait_for_timeout(1000)
+    page.wait_for_timeout(_iv("apply_settings_collapse_wait_ms"))
     print(f"  [{_ts()}] SETTINGS all applied and collapsed")
     _log_settings_trace("apply_settings_done", {"status": "completed"})
 
@@ -963,18 +992,22 @@ def click_new_project(
         "button:has(i:has-text('add'))",
     ]
     print(f"  [{_ts()}] ACTION    Clicking 'New project'")
-    page.wait_for_timeout(3000)
+    audit_event("flow.project.new_click_start", {"url": page.url, "selectors": selectors})
+    page.wait_for_timeout(_iv("new_project_initial_wait_ms"))
     for selector in selectors:
         try:
             btn = page.locator(selector).first
             if btn.count() > 0 and btn.is_visible():
                 btn.click()
-                page.wait_for_timeout(2000)
+                page.wait_for_timeout(_iv("new_project_post_click_wait_ms"))
                 print(f"             OK      : clicked at [{_ts()}]")
+                audit_event("flow.project.new_clicked", {"selector": selector, "url": page.url})
                 return
         except Exception as exc:
             print(f"             error   : {exc}")
+            audit_event("flow.project.new_selector_error", {"selector": selector, "error": str(exc), "url": page.url})
     print(f"  [{_ts()}] WARN     Could not find 'New project' button -- skipping")
+    audit_event("flow.project.new_not_found", {"url": page.url})
 
 
 def rename_project(
@@ -985,6 +1018,7 @@ def rename_project(
 ) -> None:
     """Rename the current Flow project to make it uniquely identifiable."""
     print(f"  [{_ts()}] ACTION    Renaming project to '{new_name}'")
+    audit_event("flow.project.rename_start", {"project_name": new_name, "url": page.url})
     selectors_cfg = load_selectors_config(selectors_path or DEFAULT_SELECTORS_PATH, elements_path)
 
     try:
@@ -997,13 +1031,13 @@ def rename_project(
             more_btn = page.locator(sel).first
             if more_btn.count() > 0 and more_btn.is_visible():
                 more_btn.click()
-                page.wait_for_timeout(1000)
+                page.wait_for_timeout(_iv("rename_more_menu_wait_ms"))
                 rename_sels = selector_list(selectors_cfg, "project_rename_item") or ["button:has-text('Rename')"]
                 for r_sel in rename_sels:
                     rename_item = page.locator(r_sel).first
                     if rename_item.count() > 0:
                         rename_item.click()
-                        page.wait_for_timeout(2000)
+                        page.wait_for_timeout(_iv("rename_item_click_wait_ms"))
                         found_trigger = True
                         break
                 if found_trigger: break
@@ -1015,7 +1049,7 @@ def rename_project(
                 edit_btn = page.locator(sel).first
                 if edit_btn.count() > 0:
                     edit_btn.click()
-                    page.wait_for_timeout(2000)
+                    page.wait_for_timeout(_iv("rename_fallback_edit_wait_ms"))
                     found_trigger = True
                     break
 
@@ -1026,12 +1060,15 @@ def rename_project(
                 if input_field.count() > 0:
                     input_field.fill(new_name)
                     page.keyboard.press("Enter")
-                    page.wait_for_timeout(2000)
+                    page.wait_for_timeout(_iv("rename_confirm_wait_ms"))
                     print(f"             OK      : renamed at [{_ts()}]")
+                    audit_event("flow.project.renamed", {"project_name": new_name, "input_selector": sel, "url": page.url})
                     return
     except Exception as exc:
         print(f"             error   : {exc}")
+        audit_error("flow.project.rename_error", exc, {"project_name": new_name, "url": page.url})
     print(f"  [{_ts()}] WARN     Project rename failed")
+    audit_event("flow.project.rename_failed", {"project_name": new_name, "url": page.url})
 
 
 def open_existing_project(
@@ -1043,6 +1080,15 @@ def open_existing_project(
     elements_path: Path | None = None,
 ) -> bool:
     print(f"  [{_ts()}] ACTION    Looking for existing project: '{project_name}'")
+    audit_event(
+        "flow.project.open_existing_start",
+        {
+            "project_name": project_name,
+            "known_project_url": known_project_url,
+            "alternate_project_names": alternate_project_names or [],
+            "url": page.url,
+        },
+    )
     selectors_cfg = load_selectors_config(selectors_path or DEFAULT_SELECTORS_PATH, elements_path)
 
     def _is_project_url(url: str) -> bool:
@@ -1052,14 +1098,14 @@ def open_existing_project(
         value = (url or "").lower()
         return ("/fx/tools/flow/project/" in value) or ("/project/" in value)
 
-    def _verify_project_entered(timeout_ms: int = 7000) -> bool:
+    def _verify_project_entered(timeout_ms: int = _iv("open_project_verify_timeout_ms")) -> bool:
         # Require explicit project URL path before considering navigation successful.
         start = time.time()
         while (time.time() - start) * 1000 < timeout_ms:
             curr_url = page.url
             if _has_project_path(curr_url):
                 return True
-            page.wait_for_timeout(400)
+            page.wait_for_timeout(_iv("open_project_verify_poll_wait_ms"))
         return False
 
     def _normalize(text: str) -> str:
@@ -1095,19 +1141,23 @@ def open_existing_project(
             print(f"             ACTION   navigating to saved project URL: {target}")
             try:
                 page.goto(target, wait_until="domcontentloaded")
-                page.wait_for_timeout(3000)
-                if _verify_project_entered(timeout_ms=12000):
+                page.wait_for_timeout(_iv("open_project_after_goto_wait_ms"))
+                if _verify_project_entered(timeout_ms=_iv("open_project_verify_timeout_ms")):
                     print(f"             OK      entered project via saved URL. URL: {page.url}")
+                    audit_event(
+                        "flow.project.open_existing_success",
+                        {"strategy": "saved_url", "project_name": project_name, "url": page.url},
+                    )
                     return True
                 print("             DEBUG   saved URL opened but /project/ verification failed; trying name search")
                 # Navigate back to Flow home to do name-based search
                 page.goto(DEFAULT_FLOW_URL, wait_until="domcontentloaded")
-                page.wait_for_timeout(3000)
+                page.wait_for_timeout(_iv("open_project_after_goto_wait_ms"))
             except Exception as exc:
                 print(f"             DEBUG   saved URL navigation failed: {exc}")
                 try:
                     page.goto(DEFAULT_FLOW_URL, wait_until="domcontentloaded")
-                    page.wait_for_timeout(3000)
+                    page.wait_for_timeout(_iv("open_project_after_goto_wait_ms"))
                 except Exception:
                     pass
 
@@ -1119,7 +1169,7 @@ def open_existing_project(
                 links = page.locator(link_sel)
                 for idx in range(links.count()):
                     link = links.nth(idx)
-                    if not link.is_visible(timeout=300):
+                    if not link.is_visible(timeout=_iv("open_project_link_visible_timeout_ms")):
                         continue
                     meta = link.evaluate(
                         """el => ({
@@ -1135,12 +1185,16 @@ def open_existing_project(
                     print(f"             MATCH   found project link via {link_sel}")
                     print(f"             CLICK   attempting entry...")
                     link.click(force=True)
-                    page.wait_for_timeout(1000)
+                    page.wait_for_timeout(_iv("open_project_after_click_wait_ms"))
                     curr_url = page.url
                     print(f"             DEBUG   Current URL after click: {curr_url}")
-                    if _verify_project_entered(timeout_ms=12000):
+                    if _verify_project_entered(timeout_ms=_iv("open_project_verify_timeout_ms")):
                         print(f"             OK      entered project. URL: {curr_url}")
-                        page.wait_for_timeout(2000)
+                        page.wait_for_timeout(_iv("open_project_after_enter_wait_ms"))
+                        audit_event(
+                            "flow.project.open_existing_success",
+                            {"strategy": "link_search", "project_name": project_name, "selector": link_sel, "url": page.url},
+                        )
                         return True
             except Exception:
                 continue
@@ -1171,18 +1225,24 @@ def open_existing_project(
                     else:
                         print(f"             CLICK   attempting card entry...")
                         card.click(force=True)
-                    page.wait_for_timeout(1000)
-                    if _verify_project_entered(timeout_ms=12000):
+                    page.wait_for_timeout(_iv("open_project_after_click_wait_ms"))
+                    if _verify_project_entered(timeout_ms=_iv("open_project_verify_timeout_ms")):
                         print(f"             OK      entered project. URL: {page.url}")
+                        audit_event(
+                            "flow.project.open_existing_success",
+                            {"strategy": "card_search", "project_name": project_name, "selector": card_sel, "url": page.url},
+                        )
                         return True
                 except Exception as e:
                     print(f"             DEBUG   card check error: {e}")
                     continue
 
         print(f"  [{_ts()}] INFO     Could not enter existing project '{project_name}' (Verification failed).")
+        audit_event("flow.project.open_existing_not_found", {"project_name": project_name, "url": page.url})
         return False
     except Exception as exc:
         print(f"             error   : {exc}")
+        audit_error("flow.project.open_existing_error", exc, {"project_name": project_name, "url": page.url})
     return False
 
 
@@ -1196,15 +1256,16 @@ def wait_for_submit_ready(page: Page, selectors_cfg: dict[str, Any], timeout_ms:
                 if l.count() > 0 and l.is_visible() and l.is_enabled():
                     return True
         except Exception: pass
-        page.wait_for_timeout(500)
+        page.wait_for_timeout(_iv("submit_ready_poll_wait_ms"))
     return False
 
 
 def submit_generation(page: Page, selectors_cfg: dict[str, Any]) -> None:
     selectors = selector_list(selectors_cfg, "generate_button") + ["button:has-text('Create')"]
     print(f"  [{_ts()}] WAITING  3s before submission...")
-    page.wait_for_timeout(3000)
+    page.wait_for_timeout(_iv("submit_pre_click_wait_ms"))
     print(f"  [{_ts()}] SUBMIT   generation button")
+    audit_event("flow.submit.click_start", {"url": page.url, "selectors": selectors})
     for selector in selectors:
         try:
             btns = page.locator(selector)
@@ -1213,9 +1274,13 @@ def submit_generation(page: Page, selectors_cfg: dict[str, Any]) -> None:
                 if btn.is_visible() and btn.is_enabled():
                     btn.click()
                     _print(f"             OK      : submitted at [{_ts()}]")
+                    audit_event("flow.submit.clicked", {"selector": selector, "button_index": i, "url": page.url})
                     return
-        except Exception: pass
-    raise RuntimeError("Could not find the Generate/Submit button.")
+        except Exception as exc:
+            audit_event("flow.submit.selector_error", {"selector": selector, "error": str(exc), "url": page.url})
+    exc = RuntimeError("Could not find the Generate/Submit button.")
+    audit_error("flow.submit.not_found", exc, {"url": page.url, "selectors": selectors})
+    raise exc
 
 
 def _click_retry_button(page: Page, selectors_cfg: dict[str, Any]) -> bool:
@@ -1225,7 +1290,7 @@ def _click_retry_button(page: Page, selectors_cfg: dict[str, Any]) -> bool:
             btn, _ = first_visible_locator(page, [sel], 400)
             if btn:
                 btn.click(force=True)
-                page.wait_for_timeout(2000)
+                page.wait_for_timeout(_iv("wait_until_complete_retry_pause_wait_ms"))
                 return True
         except Exception: pass
     return False
@@ -1269,7 +1334,7 @@ def list_clip_card_summaries(page: Page, selectors_cfg: dict[str, Any]) -> list[
     for idx in range(total):
         card = cards_loc.nth(idx)
         try:
-            if not card.is_visible(timeout=200):
+            if not card.is_visible(timeout=_iv("clip_card_visible_timeout_ms")):
                 continue
             info = card.evaluate(
                 """el => {
@@ -1298,7 +1363,7 @@ def list_clip_card_summaries(page: Page, selectors_cfg: dict[str, Any]) -> list[
             for sel in title_sels:
                 try:
                     t = card.locator(sel).first
-                    if t.count() > 0 and t.is_visible(timeout=100):
+                    if t.count() > 0 and t.is_visible(timeout=_iv("clip_title_visible_timeout_ms")):
                         title = t.inner_text().strip()
                         if title:
                             break
@@ -1310,7 +1375,7 @@ def list_clip_card_summaries(page: Page, selectors_cfg: dict[str, Any]) -> list[
             for sel in progress_sels:
                 try:
                     p = card.locator(sel).first
-                    if p.count() > 0 and p.is_visible(timeout=100):
+                    if p.count() > 0 and p.is_visible(timeout=_iv("clip_progress_visible_timeout_ms")):
                         progress_text = p.inner_text().strip()
                         m = re.search(r"(\\d{1,3})%", progress_text)
                         if m:
@@ -1371,7 +1436,7 @@ def count_visible_failures(page: Page, selectors_cfg: dict[str, Any]) -> int:
         try:
             matches = page.locator(sel)
             for idx in range(matches.count()):
-                if matches.nth(idx).is_visible(timeout=200):
+                if matches.nth(idx).is_visible(timeout=_iv("retry_scan_visible_timeout_ms")):
                     total += 1
         except Exception:
             continue
@@ -1388,12 +1453,16 @@ def click_visible_retry_buttons(page: Page, selectors_cfg: dict[str, Any], max_c
             buttons = page.locator(sel)
             for idx in range(buttons.count()):
                 btn = buttons.nth(idx)
-                if not btn.is_visible(timeout=200):
+                if not btn.is_visible(timeout=_iv("retry_scan_visible_timeout_ms")):
                     continue
                 btn.scroll_into_view_if_needed()
                 btn.click(force=True)
-                page.wait_for_timeout(1500)
+                page.wait_for_timeout(_iv("retry_button_post_click_wait_ms"))
                 clicked += 1
+                audit_event(
+                    "flow.retry.clicked",
+                    {"selector": sel, "button_index": idx, "clicked_count": clicked, "max_clicks": max_clicks, "url": page.url},
+                )
                 if clicked >= max_clicks:
                     return clicked
         except Exception:
@@ -1415,7 +1484,7 @@ def wait_for_new_generations(
     retry_clicks_used = 0
 
     _print(f"  [{_ts()}] WAITING  5s for UI transition...")
-    page.wait_for_timeout(5000)
+    page.wait_for_timeout(_iv("wait_until_complete_initial_transition_wait_ms"))
 
     while (time.time() - start) * 1000 < timeout_ms:
         now = time.time()
@@ -1431,7 +1500,7 @@ def wait_for_new_generations(
         if ready_cards >= baseline_ready_cards + expected_new_cards:
             _print(f"  [{_ts()}] OK       complete (new generated card(s) detected)")
             _print(f"  [{_ts()}] WAITING  5s for stabilization...")
-            page.wait_for_timeout(5000)
+            page.wait_for_timeout(_iv("wait_until_complete_done_stabilize_wait_ms"))
             return
 
         remaining_retries = max_in_browser_retries - retry_clicks_used
@@ -1443,7 +1512,7 @@ def wait_for_new_generations(
                     f"  [{_ts()}] RETRY    clicked {clicked} visible retry button(s) "
                     f"({retry_clicks_used}/{max_in_browser_retries})"
                 )
-                page.wait_for_timeout(2000)
+                page.wait_for_timeout(_iv("wait_until_complete_retry_pause_wait_ms"))
                 continue
 
         if now - last_heartbeat > 15:
@@ -1454,7 +1523,7 @@ def wait_for_new_generations(
             )
             last_heartbeat = now
 
-        page.wait_for_timeout(2000)
+        page.wait_for_timeout(_iv("wait_until_complete_loop_wait_ms"))
 
     raise TimeoutError(
         f"Timed out waiting for {expected_new_cards} new generated card(s); "
@@ -1474,7 +1543,7 @@ def wait_until_complete(
     in_browser_retries_used = 0
 
     _print(f"  [{_ts()}] WAITING  5s for UI transition...")
-    page.wait_for_timeout(5000)
+    page.wait_for_timeout(_iv("wait_until_complete_fallback_initial_transition_wait_ms"))
 
     last_heartbeat = time.time()
     last_progress_time = time.time()
@@ -1498,7 +1567,7 @@ def wait_until_complete(
             try:
                 root = page.locator(clip_card_sel).nth(card_index) if card_index is not None else page
                 p_el = root.locator(p_sel).first
-                if p_el.count() > 0 and p_el.is_visible(timeout=300):
+                if p_el.count() > 0 and p_el.is_visible(timeout=_iv("progress_visible_timeout_ms")):
                     p_text = p_el.inner_text().strip()
                     m = re.search(r"(\d+)%", p_text)
                     if m:
@@ -1514,7 +1583,7 @@ def wait_until_complete(
         for sel in fail_sels:
             try:
                 root = page.locator(clip_card_sel).nth(card_index) if card_index is not None else page
-                if root.locator(sel).first.is_visible(timeout=300):
+                if root.locator(sel).first.is_visible(timeout=_iv("failure_visible_timeout_ms")):
                     if in_browser_retries_used < max_in_browser_retries:
                         in_browser_retries_used += 1
                         if _click_retry_button(page, selectors_cfg):
@@ -1532,10 +1601,10 @@ def wait_until_complete(
         if done:
             _print(f"  [{_ts()}] OK       complete (via {done_sel})")
             _print(f"  [{_ts()}] WAITING  5s for stabilization...")
-            page.wait_for_timeout(5000)
+            page.wait_for_timeout(_iv("wait_until_complete_fallback_done_stabilize_wait_ms"))
             return
         
-        page.wait_for_timeout(2000)
+        page.wait_for_timeout(_iv("wait_until_complete_fallback_loop_wait_ms"))
     raise TimeoutError("Timed out")
 
 
@@ -1565,11 +1634,11 @@ def download_clips(page: Page, selectors_cfg: dict[str, Any], target_dir: Path, 
         try:
             card = cards_loc.nth(idx)
             card.scroll_into_view_if_needed()
-            page.wait_for_timeout(1000)
+            page.wait_for_timeout(_iv("download_card_open_wait_ms"))
             
             _print("             CLICK   opening video view...")
             card.click()
-            page.wait_for_timeout(5000)
+            page.wait_for_timeout(_iv("download_card_view_open_wait_ms"))
             
             dl_sels = selector_list(selectors_cfg, "download_buttons") or ["button:has-text('Download')"]
             done, dl_sel = wait_for_any_selector(page, dl_sels, 5000)
@@ -1580,7 +1649,7 @@ def download_clips(page: Page, selectors_cfg: dict[str, Any], target_dir: Path, 
                 more_done, more_sel = wait_for_any_selector(page, more_sels, 2000)
                 if more_done:
                     page.locator(more_sel).first.click()
-                    page.wait_for_timeout(1000)
+                    page.wait_for_timeout(_iv("download_menu_open_wait_ms"))
                     menu_sels = selector_list(selectors_cfg, "download_menu_item") or dl_sels
                     done, dl_sel = wait_for_any_selector(page, menu_sels, 3000)
 
@@ -1596,7 +1665,7 @@ def download_clips(page: Page, selectors_cfg: dict[str, Any], target_dir: Path, 
                 _go_back(page, selectors_cfg)
                 continue
             dl_btn.click(force=True)
-            page.wait_for_timeout(1500)
+            page.wait_for_timeout(_iv("download_after_download_click_wait_ms"))
             
             res_sels = selector_list(selectors_cfg, "resolution_720p") or ["button:has-text('720p')"]
             res_btn, res_sel = first_visible_locator(page, res_sels, 5000)
@@ -1608,7 +1677,7 @@ def download_clips(page: Page, selectors_cfg: dict[str, Any], target_dir: Path, 
             
             _print(f"             CLICK   720p version...")
             try:
-                with page.expect_download(timeout=45000) as download_info:
+                with page.expect_download(timeout=_iv("download_expect_clip_ms")) as download_info:
                     res_btn.click(force=True)
                 download = download_info.value
             except TimeoutError:
@@ -1622,7 +1691,7 @@ def download_clips(page: Page, selectors_cfg: dict[str, Any], target_dir: Path, 
             _print(f"             OK      : downloaded as {filename}")
             downloaded.append(dest_path)
             
-            page.wait_for_timeout(5000)
+            page.wait_for_timeout(_iv("download_after_save_wait_ms"))
             _go_back(page, selectors_cfg)
             
         except Exception as exc:
@@ -1641,6 +1710,7 @@ def download_project_zip(page: Page, selectors_cfg: dict[str, Any], save_dir: Pa
     """
     save_dir.mkdir(parents=True, exist_ok=True)
     _print(f"  [{_ts()}] DOWNLOAD opening toolbar menu (adjacent to help button)...")
+    audit_event("flow.download.project_zip_start", {"url": page.url, "save_dir": str(save_dir)})
 
     # The toolbar kebab is the more_vert button that directly follows the help button.
     # Selector: the more_vert button that is right-of (or after) the help button.
@@ -1665,10 +1735,11 @@ def download_project_zip(page: Page, selectors_cfg: dict[str, Any], save_dir: Pa
             page.locator(fallback_last_kebab).first.click()
         else:
             _print(f"  [{_ts()}] WARN    Toolbar kebab menu button not found")
+            audit_event("flow.download.project_zip_toolbar_missing", {"url": page.url})
             return None
     else:
         page.locator(sel).first.click()
-    page.wait_for_timeout(2000)
+    page.wait_for_timeout(_iv("project_zip_menu_open_wait_ms"))
 
     # The menu should now contain "Download Project"
     dl_sels = selector_list(selectors_cfg, "project_download_button") or [
@@ -1686,21 +1757,27 @@ def download_project_zip(page: Page, selectors_cfg: dict[str, Any], save_dir: Pa
             pass
         _print(f"  [{_ts()}] WARN     'Download Project' menu item not found")
         page.keyboard.press("Escape")
+        audit_event("flow.download.project_zip_menu_missing", {"url": page.url})
         return None
 
     _print(f"  [{_ts()}] CLICK   Download Project...")
     try:
-        with page.expect_download(timeout=180000) as dl_info:
+        with page.expect_download(timeout=_iv("download_expect_project_zip_ms")) as dl_info:
             page.locator(dl_sel).first.click()
         download = dl_info.value
     except Exception as exc:
         _print(f"  [{_ts()}] ERROR   Project download failed: {exc}")
+        audit_error("flow.download.project_zip_error", exc, {"url": page.url, "save_dir": str(save_dir)})
         return None
 
     filename = download.suggested_filename or f"project_{int(time.time())}.zip"
     zip_path = save_dir / filename
     download.save_as(str(zip_path))
     _print(f"  [{_ts()}] OK      Project zip saved: {zip_path.name}")
+    audit_event(
+        "flow.download.project_zip_saved",
+        {"url": page.url, "zip_path": str(zip_path), "suggested_filename": filename, "size_bytes": zip_path.stat().st_size},
+    )
     return zip_path
 
 
@@ -1719,11 +1796,20 @@ def download_clips_via_edit_pages(
     save_dir.mkdir(parents=True, exist_ok=True)
     downloaded: list[Path] = []
     base_url = "https://labs.google"
+    audit_event(
+        "flow.download.edit_pages_start",
+        {
+            "project_url": project_url,
+            "save_dir": str(save_dir),
+            "resolution": resolution,
+            "tracked_link_count": len(edit_hrefs) if edit_hrefs is not None else None,
+        },
+    )
 
     if edit_hrefs is None:
         _print(f"  [{_ts()}] DOWNLOAD collecting clip edit links from project page...")
-        page.goto(project_url, wait_until="networkidle", timeout=60000)
-        page.wait_for_timeout(5000)
+        page.goto(project_url, wait_until="networkidle", timeout=_iv("download_goto_timeout_ms"))
+        page.wait_for_timeout(_iv("edit_page_list_settle_wait_ms"))
 
         edit_hrefs = page.evaluate(
             "() => [...document.querySelectorAll('a[href*=\"/edit/\"]')]"
@@ -1737,18 +1823,19 @@ def download_clips_via_edit_pages(
         edit_url = base_url + href
         _print(f"\n  [{_ts()}] Clip {i+1}/{len(edit_hrefs)}: navigating to edit page...")
         try:
-            page.goto(edit_url, wait_until="networkidle", timeout=60000)
-            page.wait_for_timeout(3000)
+            page.goto(edit_url, wait_until="networkidle", timeout=_iv("download_goto_timeout_ms"))
+            page.wait_for_timeout(_iv("edit_page_open_settle_wait_ms"))
 
             # Click the Download dropdown button
             dl_btn_sel = "button[aria-haspopup='menu']:has(i:has-text('download'))"
             done, _ = wait_for_any_selector(page, [dl_btn_sel], 10000)
             if not done:
                 _print(f"  [{_ts()}] WARN     Download button not found for clip {i+1}")
+                audit_event("flow.download.clip_button_missing", {"clip_index": i + 1, "edit_url": edit_url})
                 continue
 
             page.locator(dl_btn_sel).click()
-            page.wait_for_timeout(1500)
+            page.wait_for_timeout(_iv("edit_page_download_menu_wait_ms"))
 
             # Click the resolution option (e.g. "720p")
             res_sel = f"[role='menuitem']:has-text('{resolution}')"
@@ -1756,10 +1843,11 @@ def download_clips_via_edit_pages(
             if not done2:
                 _print(f"  [{_ts()}] WARN     '{resolution}' option not found for clip {i+1}")
                 page.keyboard.press("Escape")
+                audit_event("flow.download.resolution_missing", {"clip_index": i + 1, "edit_url": edit_url, "resolution": resolution})
                 continue
 
             _print(f"  [{_ts()}] CLICK    {resolution} download...")
-            with page.expect_download(timeout=120000) as dl_info:
+            with page.expect_download(timeout=_iv("download_expect_edit_clip_ms")) as dl_info:
                 page.locator(res_sel).first.click()
             download = dl_info.value
             suggested = download.suggested_filename or f"clip_{i+1:02d}.mp4"
@@ -1769,12 +1857,27 @@ def download_clips_via_edit_pages(
             dest = save_dir / filename
             download.save_as(str(dest))
             _print(f"  [{_ts()}] OK       saved: {filename}  ({dest.stat().st_size:,} bytes)")
+            audit_event(
+                "flow.download.clip_saved",
+                {
+                    "clip_index": i + 1,
+                    "edit_url": edit_url,
+                    "destination": str(dest),
+                    "suggested_filename": suggested,
+                    "size_bytes": dest.stat().st_size,
+                },
+            )
             downloaded.append(dest)
 
         except Exception as exc:
             _print(f"  [{_ts()}] ERROR    clip {i+1}: {exc}")
             page.keyboard.press("Escape")
+            audit_error("flow.download.clip_error", exc, {"clip_index": i + 1, "edit_url": edit_url})
 
+    audit_event(
+        "flow.download.edit_pages_done",
+        {"project_url": project_url, "downloaded_count": len(downloaded), "files": [str(p) for p in downloaded]},
+    )
     return downloaded
 
 
@@ -1784,11 +1887,11 @@ def _go_back(page: Page, selectors_cfg: dict[str, Any]):
     done, back_sel = wait_for_any_selector(page, back_sels, 3000)
     if done:
         page.locator(back_sel).first.click()
-        page.wait_for_timeout(5000)
+        page.wait_for_timeout(_iv("go_back_after_click_wait_ms"))
     else:
         page.keyboard.press("Escape")
         page.keyboard.press("Escape")
-        page.wait_for_timeout(3000)
+        page.wait_for_timeout(_iv("go_back_after_escape_wait_ms"))
 
 
 def _is_authenticated(page: Page) -> bool:
@@ -1843,10 +1946,10 @@ def run_login_mode(flow_url: str, headless: bool, auth_path: Path, timeout_sec: 
         deadline = time.time() + timeout_sec
         while time.time() < deadline:
             if _is_authenticated(page): break
-            page.wait_for_timeout(1000)
+            page.wait_for_timeout(_iv("login_poll_wait_ms"))
         else: raise SystemExit("Login timed out")
         _print("[Login] Sign-in detected — saving session...")
-        page.wait_for_timeout(2000)
+        page.wait_for_timeout(_iv("login_after_auth_wait_ms"))
         context.storage_state(path=str(auth_path))
         browser.close()
         _print("[Login] Session saved. Authorization complete.")
